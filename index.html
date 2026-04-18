@@ -2358,69 +2358,22 @@ function afGoStep1(){
   document.getElementById('afStep3').style.display='none';
   afUpdateProgress(1);
 }
-function afGoStep2() {
-  const amt = parseFloat(document.getElementById('addFundsAmt').value);
-  if (!amt || amt < 1) { 
-    showToast('أدخل مبلغاً صحيحاً (1$ على الأقل)', 'error'); 
-    return; 
-  }
-  
-  const pm = DB.paymentMethods.shamcash;
-  
-  // الرابط المباشر للصورة - ضع رابطك الحقيقي هنا
-  const directImageUrl = 'https://i.imgur.com/XXXXXXX.png'; // ⚠️ ضع رابط Imgur هنا
-  
-  document.getElementById('afAmtDisplay').textContent = '$' + amt.toFixed(2);
-  document.getElementById('afShamNum').textContent = pm.num || '0949277889';
-  document.getElementById('afShamName').textContent = pm.ownerName || 'عبدالحميد محمد الحسين';
-  document.getElementById('afShamAmt').textContent = '$' + amt.toFixed(2) + ' USD';
-  
-  const imgEl = document.getElementById('afQrImg');
-  const fallbackEl = document.getElementById('afQrFallback');
-  
-  if (imgEl && fallbackEl) {
-    // استخدام الرابط المباشر
-    const qrUrl = directImageUrl;
-    
-    if (qrUrl && qrUrl !== '') {
-      imgEl.style.display = 'block';
-      imgEl.style.opacity = '0.5';
-      imgEl.onload = function() {
-        this.style.opacity = '1';
-        fallbackEl.style.display = 'none';
-        console.log('تم تحميل الصورة بنجاح');
-      };
-      imgEl.onerror = function() {
-        console.log('فشل تحميل الصورة');
-        this.style.display = 'none';
-        fallbackEl.style.display = 'block';
-        fallbackEl.innerHTML = `
-          <div style="font-size:2rem;margin-bottom:12px">💳</div>
-          <div>رقم محفظة شام كاش:</div>
-          <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr">${pm.num || '0949277889'}</div>
-          <div>👤 اسم الحساب: ${pm.ownerName || 'عبدالحميد محمد الحسين'}</div>
-          <div>💵 المبلغ: $${amt.toFixed(2)}</div>
-          <button class="copy-btn" onclick="copyText('${pm.num || '0949277889'}')">📋 نسخ الرقم</button>
-        `;
-      };
-      imgEl.src = qrUrl;
-    } else {
-      imgEl.style.display = 'none';
-      fallbackEl.style.display = 'block';
-      fallbackEl.innerHTML = `
-        <div style="font-size:2rem;margin-bottom:12px">💳</div>
-        <div>رقم محفظة شام كاش:</div>
-        <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr">${pm.num || '0949277889'}</div>
-        <div>👤 اسم الحساب: ${pm.ownerName || 'عبدالحميد محمد الحسين'}</div>
-        <div>💵 المبلغ: $${amt.toFixed(2)}</div>
-        <button class="copy-btn" onclick="copyText('${pm.num || '0949277889'}')">📋 نسخ الرقم</button>
-      `;
-    }
-  }
-  
-  document.getElementById('afStep1').style.display = 'none';
-  document.getElementById('afStep2').style.display = 'block';
-  document.getElementById('afStep3').style.display = 'none';
+function afGoStep2(){
+  const amt=parseFloat(document.getElementById('addFundsAmt').value);
+  if(!amt||amt<1){ showToast('أدخل مبلغاً صحيحاً (1$ على الأقل)','error'); return; }
+  const pm=DB.paymentMethods.shamcash;
+  document.getElementById('afAmtDisplay').textContent='$'+amt.toFixed(2);
+  document.getElementById('afShamNum').textContent=pm.num||'0949277889';
+  document.getElementById('afShamName').textContent=pm.ownerName||'عبدالحميد محمد الحسين';
+  document.getElementById('afShamAmt').textContent='$'+amt.toFixed(2)+' USD';
+  const qr=pm.qr||'';
+  const imgEl=document.getElementById('afQrImg');
+  const fallbackEl=document.getElementById('afQrFallback');
+  if(qr&&imgEl&&fallbackEl){ imgEl.src=qr; imgEl.style.display='block'; fallbackEl.style.display='none'; }
+  else if(imgEl&&fallbackEl){ imgEl.style.display='none'; fallbackEl.style.display='block'; }
+  document.getElementById('afStep1').style.display='none';
+  document.getElementById('afStep2').style.display='block';
+  document.getElementById('afStep3').style.display='none';
   afUpdateProgress(2);
 }
 function afGoStep3(){
