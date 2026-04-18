@@ -2805,31 +2805,25 @@ async function deleteRcPkg(id){
 
 
   
-// ============================================================
-// رفع الصورة إلى Supabase Storage (نسخة تعمل دائماً)
-// ============================================================
-
 async function handleQrUpload(event, type) {
   const file = event.target.files[0];
   if (!file) return;
   
-  // إنشاء اتصال جديد بـ Supabase
-  const SUPABASE_URL = "https://clqekuhmpaesuauhxpam.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNscWVrdWhtcGFlc3VhdWh4cGFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjEwOTksImV4cCI6MjA5MjA5NzA5OX0.gPKYh__MGh0sNEA_F-0bBPKZiyCtmC3wPmJlXyo5Jt0";
-  
-  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // استخدام supabase المعرف مسبقاً
+  if (typeof supabase === 'undefined') {
+    showToast('خطأ: لم يتم تهيئة قاعدة البيانات', 'error');
+    return;
+  }
   
   showLoadingOverlay('جاري رفع الصورة...');
   
   try {
     if (type === 'shamcash') {
-      // إنشاء اسم فريد للصورة
       const fileExt = file.name.split('.').pop();
       const fileName = `shamcash_qr_${Date.now()}.${fileExt}`;
       const filePath = fileName;
       
-      // رفع الصورة إلى Supabase Storage
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabase
         .storage
         .from('qr-codes')
         .upload(filePath, file, {
@@ -2844,25 +2838,18 @@ async function handleQrUpload(event, type) {
         return;
       }
       
-      // الحصول على الرابط العام
-      const { data: publicUrlData } = supabaseClient
+      const { data: publicUrlData } = supabase
         .storage
         .from('qr-codes')
         .getPublicUrl(filePath);
       
       const imageUrl = publicUrlData.publicUrl;
       
-      // تحديث حقل الرابط في الواجهة
-      const qrInput = document.getElementById('pm-sham-qr');
-      const previewImg = document.getElementById('shamQrPreviewImg');
-      const previewDiv = document.getElementById('shamQrPreview');
-      
-      if (qrInput) qrInput.value = imageUrl;
-      if (previewImg) previewImg.src = imageUrl;
-      if (previewDiv) previewDiv.style.display = 'block';
+      document.getElementById('pm-sham-qr').value = imageUrl;
+      document.getElementById('shamQrPreviewImg').src = imageUrl;
+      document.getElementById('shamQrPreview').style.display = 'block';
       
       showToast('تم رفع الصورة بنجاح ✅', 'success');
-      console.log('Image URL:', imageUrl);
     }
   } catch (error) {
     console.error('Error:', error);
@@ -2876,31 +2863,28 @@ async function handleQrUpload(event, type) {
 
 
   
-function previewQrUrl(type){
-  if(type==='shamcash'){
-    const url=document.getElementById('pm-sham-qr').value.trim();
-    document.getElementById('shamQrPreviewImg').src=url;
-    document.getElementById('shamQrPreview').style.display=url?'block':'none';
+function previewQrUrl(type) {
+  if (type === 'shamcash') {
+    const url = document.getElementById('pm-sham-qr').value.trim();
+    const previewImg = document.getElementById('shamQrPreviewImg');
+    const previewDiv = document.getElementById('shamQrPreview');
+    
+    if (url && previewImg && previewDiv) {
+      // التحقق من أن الرابط صالح
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image')) {
+        previewImg.src = url;
+        previewDiv.style.display = 'block';
+        previewImg.onerror = function() {
+          previewDiv.style.display = 'none';
+          showToast('الرابط غير صالح', 'error');
+        };
+      } else {
+        previewDiv.style.display = 'none';
+      }
+    } else if (previewDiv) {
+      previewDiv.style.display = 'none';
+    }
   }
-}
-function openEditPM(){
-  const pm=DB.paymentMethods;
-  document.getElementById('pm-binance-addr').value=pm.binance?.addr||'';
-  document.getElementById('pm-binance-uid').value=pm.binance?.uid||'';
-  document.getElementById('pm-binance-qr').value=pm.binance?.qr||'';
-  document.getElementById('pm-binance-active').checked=pm.binance?.active||false;
-  document.getElementById('pm-sham-num').value=pm.shamcash?.num||'';
-  document.getElementById('pm-sham-name').value=pm.shamcash?.ownerName||'';
-  document.getElementById('pm-sham-qr').value=pm.shamcash?.qr||'';
-  document.getElementById('pm-sham-active').checked=pm.shamcash?.active||false;
-  document.getElementById('pm-wu-name').value=pm.western?.ownerName||'';
-  document.getElementById('pm-wu-country').value=pm.western?.country||'';
-  document.getElementById('pm-wu-active').checked=pm.western?.active||false;
-  if(pm.shamcash?.qr){
-    document.getElementById('shamQrPreviewImg').src=pm.shamcash.qr;
-    document.getElementById('shamQrPreview').style.display='block';
-  } else { document.getElementById('shamQrPreview').style.display='none'; }
-  openModal('editPMModal');
 }
 
 
@@ -2908,6 +2892,11 @@ function openEditPM(){
 
   
 async function savePaymentMethods() {
+  if (typeof supabase === 'undefined') {
+    showToast('خطأ: لم يتم تهيئة قاعدة البيانات', 'error');
+    return;
+  }
+  
   showLoadingOverlay('جاري حفظ الإعدادات...');
   
   try {
@@ -2943,7 +2932,6 @@ async function savePaymentMethods() {
                 { onConflict: 'method' });
     }
     
-    // تحديث البيانات المحلية
     await refreshAllData();
     
     closeModal('editPMModal');
