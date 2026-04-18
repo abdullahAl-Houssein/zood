@@ -2358,22 +2358,58 @@ function afGoStep1(){
   document.getElementById('afStep3').style.display='none';
   afUpdateProgress(1);
 }
-function afGoStep2(){
-  const amt=parseFloat(document.getElementById('addFundsAmt').value);
-  if(!amt||amt<1){ showToast('أدخل مبلغاً صحيحاً (1$ على الأقل)','error'); return; }
-  const pm=DB.paymentMethods.shamcash;
-  document.getElementById('afAmtDisplay').textContent='$'+amt.toFixed(2);
-  document.getElementById('afShamNum').textContent=pm.num||'0949277889';
-  document.getElementById('afShamName').textContent=pm.ownerName||'عبدالحميد محمد الحسين';
-  document.getElementById('afShamAmt').textContent='$'+amt.toFixed(2)+' USD';
-  const qr=pm.qr||'';
-  const imgEl=document.getElementById('afQrImg');
-  const fallbackEl=document.getElementById('afQrFallback');
-  if(qr&&imgEl&&fallbackEl){ imgEl.src=qr; imgEl.style.display='block'; fallbackEl.style.display='none'; }
-  else if(imgEl&&fallbackEl){ imgEl.style.display='none'; fallbackEl.style.display='block'; }
-  document.getElementById('afStep1').style.display='none';
-  document.getElementById('afStep2').style.display='block';
-  document.getElementById('afStep3').style.display='none';
+function afGoStep2() {
+  const amt = parseFloat(document.getElementById('addFundsAmt').value);
+  if (!amt || amt < 1) { 
+    showToast('أدخل مبلغاً صحيحاً (1$ على الأقل)', 'error'); 
+    return; 
+  }
+  
+  const pm = DB.paymentMethods.shamcash;
+  const qrUrl = pm.qr || '';
+  
+  document.getElementById('afAmtDisplay').textContent = '$' + amt.toFixed(2);
+  document.getElementById('afShamNum').textContent = pm.num || '0949277889';
+  document.getElementById('afShamName').textContent = pm.ownerName || 'عبدالحميد محمد الحسين';
+  document.getElementById('afShamAmt').textContent = '$' + amt.toFixed(2) + ' USD';
+  
+  const imgEl = document.getElementById('afQrImg');
+  const fallbackEl = document.getElementById('afQrFallback');
+  
+  if (imgEl && fallbackEl) {
+    if (qrUrl && qrUrl !== '') {
+      imgEl.style.display = 'block';
+      imgEl.style.opacity = '0.5';
+      imgEl.onload = function() {
+        this.style.opacity = '1';
+        fallbackEl.style.display = 'none';
+      };
+      imgEl.onerror = function() {
+        this.style.display = 'none';
+        fallbackEl.style.display = 'block';
+        fallbackEl.innerHTML = `
+          <div style="font-size:2rem;margin-bottom:12px">💳</div>
+          <div>رقم محفظة شام كاش:</div>
+          <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0">${pm.num || '0949277889'}</div>
+          <button class="copy-btn" onclick="copyText('${pm.num || '0949277889'}')">📋 نسخ الرقم</button>
+        `;
+      };
+      imgEl.src = qrUrl + '?t=' + Date.now(); // إضافة timestamp لتجنب الكاش
+    } else {
+      imgEl.style.display = 'none';
+      fallbackEl.style.display = 'block';
+      fallbackEl.innerHTML = `
+        <div style="font-size:2rem;margin-bottom:12px">💳</div>
+        <div>رقم محفظة شام كاش:</div>
+        <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0">${pm.num || '0949277889'}</div>
+        <button class="copy-btn" onclick="copyText('${pm.num || '0949277889'}')">📋 نسخ الرقم</button>
+      `;
+    }
+  }
+  
+  document.getElementById('afStep1').style.display = 'none';
+  document.getElementById('afStep2').style.display = 'block';
+  document.getElementById('afStep3').style.display = 'none';
   afUpdateProgress(2);
 }
 function afGoStep3(){
@@ -2765,22 +2801,71 @@ async function deleteRcPkg(id){
   renderDashboard(); showToast('تم الحذف','success');
 }
 
+
+
+
+  
 // PAYMENT METHODS
-function handleQrUpload(event,type){
-  const file=event.target.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=function(e){
-    const b64=e.target.result;
-    if(type==='shamcash'){
-      document.getElementById('pm-sham-qr').value=b64;
-      document.getElementById('shamQrPreviewImg').src=b64;
-      document.getElementById('shamQrPreview').style.display='block';
-    } else if(type==='binance'){
-      document.getElementById('pm-binance-qr').value=b64;
+// ============================================================
+// رفع الصورة إلى Supabase Storage
+// ============================================================
+
+async function handleQrUpload(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  showLoadingOverlay('جاري رفع الصورة...');
+  
+  try {
+    if (type === 'shamcash') {
+      // إنشاء اسم فريد للصورة
+      const fileExt = file.name.split('.').pop();
+      const fileName = `shamcash_qr_${Date.now()}.${fileExt}`;
+      const filePath = `qr-codes/${fileName}`;
+      
+      // رفع الصورة إلى Supabase Storage
+      const { data, error } = await supabase
+        .storage
+        .from('qr-codes')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (error) {
+        console.error('Error uploading:', error);
+        showToast('فشل رفع الصورة', 'error');
+        return;
+      }
+      
+      // الحصول على الرابط العام
+      const { data: publicUrl } = supabase
+        .storage
+        .from('qr-codes')
+        .getPublicUrl(filePath);
+      
+      const imageUrl = publicUrl.publicUrl;
+      
+      // تحديث حقل الرابط في الواجهة
+      document.getElementById('pm-sham-qr').value = imageUrl;
+      document.getElementById('shamQrPreviewImg').src = imageUrl;
+      document.getElementById('shamQrPreview').style.display = 'block';
+      
+      showToast('تم رفع الصورة بنجاح ✅', 'success');
     }
-  };
-  reader.readAsDataURL(file);
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('حدث خطأ أثناء رفع الصورة', 'error');
+  } finally {
+    hideLoadingOverlay();
+  }
 }
+
+
+
+
+
+  
 function previewQrUrl(type){
   if(type==='shamcash'){
     const url=document.getElementById('pm-sham-qr').value.trim();
@@ -2807,21 +2892,63 @@ function openEditPM(){
   } else { document.getElementById('shamQrPreview').style.display='none'; }
   openModal('editPMModal');
 }
-function savePaymentMethods(){
-  DB.paymentMethods.binance.addr=document.getElementById('pm-binance-addr').value.trim();
-  DB.paymentMethods.binance.uid=document.getElementById('pm-binance-uid').value.trim();
-  DB.paymentMethods.binance.qr=document.getElementById('pm-binance-qr').value.trim();
-  DB.paymentMethods.binance.active=document.getElementById('pm-binance-active').checked;
-  DB.paymentMethods.shamcash.num=document.getElementById('pm-sham-num').value.trim();
-  DB.paymentMethods.shamcash.ownerName=document.getElementById('pm-sham-name').value.trim();
-  DB.paymentMethods.shamcash.qr=document.getElementById('pm-sham-qr').value.trim();
-  DB.paymentMethods.shamcash.active=document.getElementById('pm-sham-active').checked;
-  DB.paymentMethods.western.ownerName=document.getElementById('pm-wu-name').value.trim();
-  DB.paymentMethods.western.country=document.getElementById('pm-wu-country').value.trim();
-  DB.paymentMethods.western.active=document.getElementById('pm-wu-active').checked;
-  saveDB(); closeModal('editPMModal'); renderDPM();
-  showToast('تم حفظ إعدادات الدفع ✅','success');
+
+
+
+
+  
+async function savePaymentMethods() {
+  showLoadingOverlay('جاري حفظ الإعدادات...');
+  
+  try {
+    const shamcashQr = document.getElementById('pm-sham-qr').value.trim();
+    
+    const methods = [
+      { method: 'binance', data: { 
+          addr: document.getElementById('pm-binance-addr').value.trim(), 
+          uid: document.getElementById('pm-binance-uid').value.trim(), 
+          qr: document.getElementById('pm-binance-qr').value.trim() 
+        }, 
+        active: document.getElementById('pm-binance-active').checked 
+      },
+      { method: 'shamcash', data: { 
+          num: document.getElementById('pm-sham-num').value.trim(), 
+          ownerName: document.getElementById('pm-sham-name').value.trim(), 
+          qr: shamcashQr 
+        }, 
+        active: document.getElementById('pm-sham-active').checked 
+      },
+      { method: 'western', data: { 
+          ownerName: document.getElementById('pm-wu-name').value.trim(), 
+          country: document.getElementById('pm-wu-country').value.trim() 
+        }, 
+        active: document.getElementById('pm-wu-active').checked 
+      }
+    ];
+    
+    for (const m of methods) {
+      await supabase
+        .from('payment_methods')
+        .upsert({ method: m.method, data: m.data, active: m.active }, 
+                { onConflict: 'method' });
+    }
+    
+    // تحديث البيانات المحلية
+    await refreshAllData();
+    
+    closeModal('editPMModal');
+    renderDashboard();
+    showToast('تم حفظ الإعدادات بنجاح ✅', 'success');
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('حدث خطأ أثناء الحفظ', 'error');
+  } finally {
+    hideLoadingOverlay();
+  }
 }
+
+
+  
 function switchPMTab(key,el){
   document.querySelectorAll('#editPMModal .tab-btn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
