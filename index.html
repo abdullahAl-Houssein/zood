@@ -1867,7 +1867,7 @@ async function initSupabase(){
       }
 
       saveDB();
-      showToast('قم بتسجيل الدخول واستمتع بخدماتنا','success');
+      
       const dbSt=document.getElementById('dbStatus');
       if(dbSt){ dbSt.style.display=''; dbSt.className='db-status connected'; dbSt.textContent='🟢 Supabase'; setTimeout(()=>dbSt.style.display='none',4000); }
     } else {
