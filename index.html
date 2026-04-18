@@ -3106,58 +3106,6 @@ window.openAddFunds = function() {
   if (originalOpenAddFunds) originalOpenAddFunds();
   setTimeout(addQRReloadButton, 500);
 };
-  // تحسين دالة عرض الباركود مع إظهار الرقم عند فشل الصورة
-const originalAfGoStep2 = window.afGoStep2;
-window.afGoStep2 = function() {
-    const amt = parseFloat(document.getElementById('addFundsAmt').value);
-    if (!amt || amt < 1) { 
-        showToast('أدخل مبلغاً صحيحاً (1$ على الأقل)', 'error'); 
-        return; 
-    }
-    
-    const pm = DB.paymentMethods.shamcash;
-    const qrUrl = pm.qr || '';
-    
-    // تحديث المعلومات النصية
-    document.getElementById('afAmtDisplay').textContent = '$' + amt.toFixed(2);
-    document.getElementById('afShamNum').textContent = pm.num || '0949277889';
-    document.getElementById('afShamName').textContent = pm.ownerName || 'عبدالحميد محمد الحسين';
-    document.getElementById('afShamAmt').textContent = '$' + amt.toFixed(2) + ' USD';
-    
-    const imgEl = document.getElementById('afQrImg');
-    const fallbackEl = document.getElementById('afQrFallback');
-    
-    if (qrUrl && imgEl && fallbackEl) {
-        imgEl.style.display = 'block';
-        imgEl.style.opacity = '0.5';
-        
-        imgEl.onload = function() {
-            this.style.opacity = '1';
-            fallbackEl.style.display = 'none';
-        };
-        
-        imgEl.onerror = function() {
-            this.style.display = 'none';
-            // عرض معلومات الحساب كنص بديل عند فشل تحميل الصورة
-            fallbackEl.style.display = 'block';
-            fallbackEl.innerHTML = `
-                <div style="font-size:2rem;margin-bottom:12px">💳</div>
-                <div>رقم محفظة شام كاش:</div>
-                <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr">${pm.num || '0949277889'}</div>
-                <div>اسم الحساب: ${pm.ownerName || 'عبدالحميد محمد الحسين'}</div>
-                <div>المبلغ المطلوب: ${amt}$</div>
-                <button class="copy-btn" onclick="copyText('${pm.num || '0949277889'}')" style="margin-top:10px">📋 نسخ الرقم</button>
-            `;
-        };
-        
-        imgEl.src = qrUrl;
-    }
-    
-    document.getElementById('afStep1').style.display = 'none';
-    document.getElementById('afStep2').style.display = 'block';
-    document.getElementById('afStep3').style.display = 'none';
-    if (window.afUpdateProgress) window.afUpdateProgress(2);
-};
-</script>
+ </script>
 </body>
 </html>
