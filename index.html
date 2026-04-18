@@ -716,6 +716,57 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
 .db-status{position:fixed;bottom:80px;right:24px;z-index:997;padding:6px 14px;border-radius:20px;font-size:0.75rem;font-weight:600;transition:.3s;}
 .db-status.connected{background:rgba(0,224,154,0.12);border:1px solid rgba(0,224,154,0.25);color:var(--green);}
 .db-status.local{background:rgba(255,200,66,0.1);border:1px solid rgba(255,200,66,0.2);color:var(--gold);}
+
+
+
+  /* إصلاحات إضافية للهواتف */
+@media (max-width: 768px) {
+  /* إصلاح السكرول */
+  body, html {
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    height: auto !important;
+    min-height: 100vh;
+  }
+  
+  /* تحسين عرض QR */
+  .af-qr-box {
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .af-qr-box img {
+    max-width: 180px;
+    width: auto;
+    height: auto;
+  }
+  
+  /* التأكد من أن المحتوى قابل للتمرير */
+  .page {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 100vh;
+  }
+  
+  /* تحسين ظهور النماذج */
+  .modal-box {
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+}
+
+/* تحسين عرض الصور بشكل عام */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* إصلاح مشكلة الـ modal على الهواتف */
+.modal-ov {
+  -webkit-overflow-scrolling: touch;
+}
 </style>
 </head>
 <body>
@@ -2899,6 +2950,120 @@ document.addEventListener('DOMContentLoaded', async function(){
     updateNav();
   }
 });
+
+
+
+
+
+
+
+
+  
+
+  // ============================================================
+// إصلاح مشاكل الهاتف
+// ============================================================
+
+// 1. إصلاح مشكلة السكرول
+function fixMobileScroll() {
+  // إزالة أي قيود على التمرير
+  document.body.style.overflow = '';
+  document.body.style.position = 'static';
+  document.body.style.height = 'auto';
+  document.documentElement.style.overflow = '';
+  document.documentElement.style.position = 'static';
+  document.documentElement.style.height = 'auto';
+  
+  // التأكد من أن جميع العناصر قابلة للتمرير
+  const allElements = document.querySelectorAll('*');
+  allElements.forEach(el => {
+    if (el.style.overflow === 'hidden' && el !== document.body) {
+      el.style.overflow = '';
+    }
+  });
+}
+
+// 2. تحسين عرض QR code على الهواتف
+function fixQROnMobile() {
+  const qrImages = document.querySelectorAll('.af-qr-box img, .pm-qr img');
+  qrImages.forEach(img => {
+    if (img.src && img.src.startsWith('data:image')) {
+      // الصورة موجودة كـ base64
+      img.style.display = 'block';
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+    }
+    img.onerror = function() {
+      console.log('QR image failed to load, using fallback');
+      const fallback = document.getElementById('afQrFallback');
+      if (fallback) fallback.style.display = 'block';
+      this.style.display = 'none';
+    };
+  });
+}
+
+// 3. تحسين دالة afGoStep2 لعرض QR
+const originalAfGoStep2 = afGoStep2;
+window.afGoStep2 = function() {
+  const amt = parseFloat(document.getElementById('addFundsAmt').value);
+  if (!amt || amt < 1) { showToast('أدخل مبلغاً صحيحاً (1$ على الأقل)', 'error'); return; }
+  
+  const pm = DB.paymentMethods.shamcash;
+  document.getElementById('afAmtDisplay').textContent = '$' + amt.toFixed(2);
+  document.getElementById('afShamNum').textContent = pm.num || '0949277889';
+  document.getElementById('afShamName').textContent = pm.ownerName || 'عبدالحميد محمد الحسين';
+  document.getElementById('afShamAmt').textContent = '$' + amt.toFixed(2) + ' USD';
+  
+  const qr = pm.qr || '';
+  const imgEl = document.getElementById('afQrImg');
+  const fallbackEl = document.getElementById('afQrFallback');
+  
+  if (qr && imgEl && fallbackEl) {
+    imgEl.src = qr;
+    imgEl.style.display = 'block';
+    imgEl.style.maxWidth = '100%';
+    imgEl.style.height = 'auto';
+    fallbackEl.style.display = 'none';
+    
+    // محاولة تحميل الصورة
+    imgEl.onload = function() {
+      console.log('QR loaded successfully');
+      this.style.opacity = '1';
+    };
+    imgEl.onerror = function() {
+      console.log('QR failed to load, showing fallback');
+      this.style.display = 'none';
+      if (fallbackEl) fallbackEl.style.display = 'block';
+    };
+  } else if (imgEl && fallbackEl) {
+    imgEl.style.display = 'none';
+    fallbackEl.style.display = 'block';
+  }
+  
+  document.getElementById('afStep1').style.display = 'none';
+  document.getElementById('afStep2').style.display = 'block';
+  document.getElementById('afStep3').style.display = 'none';
+  afUpdateProgress(2);
+};
+
+// 4. استدعاء الإصلاحات عند تحميل الصفحة
+window.addEventListener('DOMContentLoaded', function() {
+  fixMobileScroll();
+  fixQROnMobile();
+  
+  // مراقبة تغييرات الصفحة لإصلاح السكرول
+  const observer = new MutationObserver(function() {
+    fixMobileScroll();
+  });
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class', 'style'] });
+});
+
+// 5. تحسين دالة showPage لإصلاح السكرول
+const originalShowPage = showPage;
+window.showPage = function(name) {
+  originalShowPage(name);
+  setTimeout(fixMobileScroll, 100);
+};
 </script>
 </body>
 </html>
