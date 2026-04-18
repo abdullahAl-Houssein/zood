@@ -2805,14 +2805,19 @@ async function deleteRcPkg(id){
 
 
   
-// PAYMENT METHODS
 // ============================================================
-// رفع الصورة إلى Supabase Storage
+// رفع الصورة إلى Supabase Storage (نسخة تعمل دائماً)
 // ============================================================
 
 async function handleQrUpload(event, type) {
   const file = event.target.files[0];
   if (!file) return;
+  
+  // إنشاء اتصال جديد بـ Supabase
+  const SUPABASE_URL = "https://clqekuhmpaesuauhxpam.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNscWVrdWhtcGFlc3VhdWh4cGFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjEwOTksImV4cCI6MjA5MjA5NzA5OX0.gPKYh__MGh0sNEA_F-0bBPKZiyCtmC3wPmJlXyo5Jt0";
+  
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   
   showLoadingOverlay('جاري رفع الصورة...');
   
@@ -2821,10 +2826,10 @@ async function handleQrUpload(event, type) {
       // إنشاء اسم فريد للصورة
       const fileExt = file.name.split('.').pop();
       const fileName = `shamcash_qr_${Date.now()}.${fileExt}`;
-      const filePath = `qr-codes/${fileName}`;
+      const filePath = fileName;
       
       // رفع الصورة إلى Supabase Storage
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .storage
         .from('qr-codes')
         .upload(filePath, file, {
@@ -2834,24 +2839,30 @@ async function handleQrUpload(event, type) {
       
       if (error) {
         console.error('Error uploading:', error);
-        showToast('فشل رفع الصورة', 'error');
+        showToast('فشل رفع الصورة: ' + error.message, 'error');
+        hideLoadingOverlay();
         return;
       }
       
       // الحصول على الرابط العام
-      const { data: publicUrl } = supabase
+      const { data: publicUrlData } = supabaseClient
         .storage
         .from('qr-codes')
         .getPublicUrl(filePath);
       
-      const imageUrl = publicUrl.publicUrl;
+      const imageUrl = publicUrlData.publicUrl;
       
       // تحديث حقل الرابط في الواجهة
-      document.getElementById('pm-sham-qr').value = imageUrl;
-      document.getElementById('shamQrPreviewImg').src = imageUrl;
-      document.getElementById('shamQrPreview').style.display = 'block';
+      const qrInput = document.getElementById('pm-sham-qr');
+      const previewImg = document.getElementById('shamQrPreviewImg');
+      const previewDiv = document.getElementById('shamQrPreview');
+      
+      if (qrInput) qrInput.value = imageUrl;
+      if (previewImg) previewImg.src = imageUrl;
+      if (previewDiv) previewDiv.style.display = 'block';
       
       showToast('تم رفع الصورة بنجاح ✅', 'success');
+      console.log('Image URL:', imageUrl);
     }
   } catch (error) {
     console.error('Error:', error);
@@ -2860,7 +2871,6 @@ async function handleQrUpload(event, type) {
     hideLoadingOverlay();
   }
 }
-
 
 
 
