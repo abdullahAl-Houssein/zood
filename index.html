@@ -3231,6 +3231,141 @@ window.openAddFunds = function() {
   if (originalOpenAddFunds) originalOpenAddFunds();
   setTimeout(addQRReloadButton, 500);
 };
+
+
+
+
+
+
+
+
+  // ============================================================
+// دوال إدارة طرق الدفع
+// ============================================================
+
+function openEditPM() {
+  const pm = DB.paymentMethods;
+  
+  // تعبئة الحقول بالقيم الحالية
+  document.getElementById('pm-binance-addr').value = pm.binance?.addr || '';
+  document.getElementById('pm-binance-uid').value = pm.binance?.uid || '';
+  document.getElementById('pm-binance-qr').value = pm.binance?.qr || '';
+  document.getElementById('pm-binance-active').checked = pm.binance?.active || false;
+  
+  document.getElementById('pm-sham-num').value = pm.shamcash?.num || '';
+  document.getElementById('pm-sham-name').value = pm.shamcash?.ownerName || '';
+  document.getElementById('pm-sham-qr').value = pm.shamcash?.qr || '';
+  document.getElementById('pm-sham-active').checked = pm.shamcash?.active || false;
+  
+  document.getElementById('pm-wu-name').value = pm.western?.ownerName || '';
+  document.getElementById('pm-wu-country').value = pm.western?.country || '';
+  document.getElementById('pm-wu-active').checked = pm.western?.active || false;
+  
+  // عرض معاينة الصورة إذا وجدت
+  if (pm.shamcash?.qr) {
+    const previewImg = document.getElementById('shamQrPreviewImg');
+    const previewDiv = document.getElementById('shamQrPreview');
+    if (previewImg && previewDiv) {
+      previewImg.src = pm.shamcash.qr;
+      previewDiv.style.display = 'block';
+    }
+  } else {
+    const previewDiv = document.getElementById('shamQrPreview');
+    if (previewDiv) previewDiv.style.display = 'none';
+  }
+  
+  openModal('editPMModal');
+}
+
+function switchPMTab(key, el) {
+  // إزالة التحديد من جميع الأزرار
+  document.querySelectorAll('#editPMModal .tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  // تحديد الزر الحالي
+  el.classList.add('active');
+  
+  // إخفاء جميع المحتويات
+  document.querySelectorAll('#editPMModal .tab-content').forEach(content => {
+    content.classList.remove('active');
+  });
+  
+  // إظهار المحتوى المطلوب
+  const targetContent = document.getElementById('pmt-' + key);
+  if (targetContent) targetContent.classList.add('active');
+}
+
+function savePaymentMethods() {
+  // تحديث البيانات من الحقول
+  DB.paymentMethods.binance = {
+    addr: document.getElementById('pm-binance-addr').value.trim(),
+    uid: document.getElementById('pm-binance-uid').value.trim(),
+    qr: document.getElementById('pm-binance-qr').value.trim(),
+    active: document.getElementById('pm-binance-active').checked
+  };
+  
+  DB.paymentMethods.shamcash = {
+    num: document.getElementById('pm-sham-num').value.trim(),
+    ownerName: document.getElementById('pm-sham-name').value.trim(),
+    qr: document.getElementById('pm-sham-qr').value.trim(),
+    active: document.getElementById('pm-sham-active').checked
+  };
+  
+  DB.paymentMethods.western = {
+    ownerName: document.getElementById('pm-wu-name').value.trim(),
+    country: document.getElementById('pm-wu-country').value.trim(),
+    active: document.getElementById('pm-wu-active').checked
+  };
+  
+  // حفظ في localStorage
+  saveDB();
+  
+  // تحديث واجهة المستخدم
+  renderDPM();
+  
+  closeModal('editPMModal');
+  showToast('تم حفظ إعدادات الدفع بنجاح ✅', 'success');
+}
+
+function handleQrUpload(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const imageUrl = e.target.result;
+    
+    if (type === 'shamcash') {
+      document.getElementById('pm-sham-qr').value = imageUrl;
+      const previewImg = document.getElementById('shamQrPreviewImg');
+      const previewDiv = document.getElementById('shamQrPreview');
+      if (previewImg && previewDiv) {
+        previewImg.src = imageUrl;
+        previewDiv.style.display = 'block';
+      }
+      showToast('تم تحميل الصورة بنجاح ✅', 'success');
+    } else if (type === 'binance') {
+      document.getElementById('pm-binance-qr').value = imageUrl;
+      showToast('تم تحميل الصورة بنجاح ✅', 'success');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function previewQrUrl(type) {
+  if (type === 'shamcash') {
+    const url = document.getElementById('pm-sham-qr').value.trim();
+    const previewImg = document.getElementById('shamQrPreviewImg');
+    const previewDiv = document.getElementById('shamQrPreview');
+    
+    if (url && previewImg && previewDiv) {
+      previewImg.src = url;
+      previewDiv.style.display = 'block';
+    } else if (previewDiv) {
+      previewDiv.style.display = 'none';
+    }
+  }
+}
  </script>
 </body>
 </html>
