@@ -716,6 +716,54 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
 .db-status{position:fixed;bottom:80px;right:24px;z-index:997;padding:6px 14px;border-radius:20px;font-size:0.75rem;font-weight:600;transition:.3s;}
 .db-status.connected{background:rgba(0,224,154,0.12);border:1px solid rgba(0,224,154,0.25);color:var(--green);}
 .db-status.local{background:rgba(255,200,66,0.1);border:1px solid rgba(255,200,66,0.2);color:var(--gold);}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /* إصلاح صورة الباركود على الموبايل */
+.af-qr-box {
+  min-height: auto !important;
+  padding: 10px !important;
+  background: #fff !important;
+  border-radius: 12px !important;
+}
+
+.af-qr-box img {
+  max-width: 100% !important;
+  width: auto !important;
+  height: auto !important;
+  max-height: 200px !important;
+  display: block !important;
+  margin: 0 auto !important;
+}
+
+/* تحسين للهواتف */
+@media (max-width: 768px) {
+  .af-qr-box img {
+    max-height: 150px !important;
+  }
+  
+  .af-account-val {
+    font-size: 0.8rem !important;
+    word-break: break-all !important;
+  }
+  
+  .copy-btn {
+    padding: 4px 8px !important;
+    font-size: 0.7rem !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -1379,7 +1427,7 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
       <div class="af-qr-wrap" id="afQrWrap">
         <div class="af-qr-label">امسح الباركود بتطبيق شام كاش</div>
         <div class="af-qr-box" id="afQrBox">
-          <img id="afQrImg" src="" alt="QR شام كاش" style="max-width:100%;border-radius:12px;display:none">
+          <img id="afQrImg" src="" alt="QR شام كاش" style="max-width:100%;border-radius:12px;display:none;margin:0 auto;" loading="eager">
           <div id="afQrFallback" class="af-qr-fallback">
             <div style="font-size:3rem;margin-bottom:12px">📱</div>
             <div>لم يتم رفع الباركود بعد</div>
@@ -2900,6 +2948,164 @@ document.addEventListener('DOMContentLoaded', async function(){
   }
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // ============================================================
+// إصلاح مشكلة السكرول في صفحة الباركود
+// ============================================================
+
+// إصلاح دالة إغلاق القائمة
+function closeMMFixed() {
+  const hb = document.getElementById('hamburger');
+  const mm = document.getElementById('mobileMenu');
+  if (hb) hb.classList.remove('open');
+  if (mm) mm.classList.remove('open');
+  // إزالة الـ overflow المخفي من الـ body
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.height = '';
+  document.documentElement.style.overflow = '';
+}
+
+// استبدال الدالة القديمة
+window.closeMM = closeMMFixed;
+
+// إصلاح دالة فتح القائمة
+function toggleMobileMenuFixed() {
+  const hb = document.getElementById('hamburger');
+  const mm = document.getElementById('mobileMenu');
+  if (!hb || !mm) return;
+  const isOpen = mm.classList.contains('open');
+  hb.classList.toggle('open');
+  mm.classList.toggle('open');
+  if (!isOpen) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+}
+
+window.toggleMobileMenu = toggleMobileMenuFixed;
+
+// إضافة مستمع لإغلاق القائمة عند النقر خارجها
+document.addEventListener('click', function(e) {
+  const mm = document.getElementById('mobileMenu');
+  const hb = document.getElementById('hamburger');
+  if (mm && hb && mm.classList.contains('open') && !mm.contains(e.target) && !hb.contains(e.target)) {
+    closeMMFixed();
+  }
+});
+
+// إصلاح السكرول عند فتح وإغلاق الـ modal
+const originalOpenModal = window.openModal;
+const originalCloseModal = window.closeModal;
+
+window.openModal = function(id) {
+  if (originalOpenModal) originalOpenModal(id);
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeModal = function(id) {
+  if (originalCloseModal) originalCloseModal(id);
+  document.body.style.overflow = '';
+};
+// ============================================================
+// إصلاح صورة الباركود على الموبايل
+// ============================================================
+
+// تحسين دالة afGoStep2
+const originalAfGoStep2 = window.afGoStep2;
+window.afGoStep2 = function() {
+  const amt = parseFloat(document.getElementById('addFundsAmt').value);
+  if (!amt || amt < 1) { 
+    showToast('أدخل مبلغاً صحيحاً (1$ على الأقل)', 'error'); 
+    return; 
+  }
+  
+  const pm = DB.paymentMethods.shamcash;
+  document.getElementById('afAmtDisplay').textContent = '$' + amt.toFixed(2);
+  document.getElementById('afShamNum').textContent = pm.num || '0949277889';
+  document.getElementById('afShamName').textContent = pm.ownerName || 'عبدالحميد محمد الحسين';
+  document.getElementById('afShamAmt').textContent = '$' + amt.toFixed(2) + ' USD';
+  
+  const qr = pm.qr || '';
+  const imgEl = document.getElementById('afQrImg');
+  const fallbackEl = document.getElementById('afQrFallback');
+  
+  if (qr && imgEl && fallbackEl) {
+    // تنظيف الصورة القديمة
+    imgEl.src = '';
+    imgEl.style.display = 'none';
+    
+    // إنشاء صورة جديدة للتأكد من التحميل
+    const tempImg = new Image();
+    tempImg.onload = function() {
+      imgEl.src = qr;
+      imgEl.style.display = 'block';
+      imgEl.style.maxWidth = '100%';
+      imgEl.style.height = 'auto';
+      if (fallbackEl) fallbackEl.style.display = 'none';
+      console.log('QR code loaded successfully');
+    };
+    tempImg.onerror = function() {
+      console.log('QR code failed to load, using fallback');
+      imgEl.style.display = 'none';
+      if (fallbackEl) fallbackEl.style.display = 'block';
+    };
+    tempImg.src = qr;
+  } else if (imgEl && fallbackEl) {
+    imgEl.style.display = 'none';
+    fallbackEl.style.display = 'block';
+  }
+  
+  document.getElementById('afStep1').style.display = 'none';
+  document.getElementById('afStep2').style.display = 'block';
+  document.getElementById('afStep3').style.display = 'none';
+  
+  if (window.afUpdateProgress) window.afUpdateProgress(2);
+};
+
+// إضافة دالة لإعادة محاولة تحميل الصورة
+function retryLoadQR() {
+  const imgEl = document.getElementById('afQrImg');
+  const qr = DB.paymentMethods.shamcash?.qr;
+  if (imgEl && qr && imgEl.src !== qr) {
+    imgEl.src = qr;
+    imgEl.style.display = 'block';
+  }
+}
+
+// إضافة زر إعادة تحميل QR
+function addQRReloadButton() {
+  const qrBox = document.getElementById('afQrBox');
+  if (qrBox && !document.getElementById('qrReloadBtn')) {
+    const reloadBtn = document.createElement('button');
+    reloadBtn.id = 'qrReloadBtn';
+    reloadBtn.textContent = '🔄 إعادة تحميل الباركود';
+    reloadBtn.style.cssText = 'margin-top:10px;padding:6px 12px;background:rgba(245,200,66,0.2);border:1px solid rgba(245,200,66,0.3);border-radius:8px;color:var(--gold);cursor:pointer;font-size:0.75rem;width:100%';
+    reloadBtn.onclick = retryLoadQR;
+    qrBox.appendChild(reloadBtn);
+  }
+}
+
+// استدعاء إضافة الزر عند فتح الـ modal
+const originalOpenAddFunds = window.openAddFunds;
+window.openAddFunds = function() {
+  if (originalOpenAddFunds) originalOpenAddFunds();
+  setTimeout(addQRReloadButton, 500);
+};
 </script>
 </body>
 </html>
