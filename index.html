@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>زود | منصة الاتصالات والرقمية</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#F5C842;--gold-dark:#C9A227;--gold-light:#FFF3B0;
+  --dark:#0A0A12;--dark2:#12121E;--dark3:#1A1A2E;--dark4:#22223A;
+  --card:#16162A;--card2:#1E1E35;
+  --text:#F0EFFF;--text2:#9B9BCC;--text3:#5A5A8A;
+  --green:#00E09A;--red:#FF4D6D;--blue:#4D9FFF;--purple:#9B59FF;--orange:#FF9500;
+  --radius:16px;--radius-sm:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}body{font-family:'Cairo',sans-serif;background:var(--dark);color:var(--text);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--dark2);}::-webkit-scrollbar-thumb{background:var(--gold-dark);border-radius:3px;}
+.page{display:none;min-height:100vh;}.page.active{display:block;}
+
+/* NAVBAR */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(8,8,14,0.95);backdrop-filter:blur(24px);border-bottom:1px solid rgba(245,200,66,0.12);padding:0 2rem;height:70px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.logo{display:flex;align-items:center;gap:12px;cursor:pointer;}
+.logo-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:var(--dark);}
+.logo-text{font-family:'Tajawal',sans-serif;font-size:1.5rem;font-weight:800;color:var(--gold);}
+.nav-links{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.nav-btn{padding:8px 16px;border-radius:10px;border:none;cursor:pointer;font-family:'Cairo',sans-serif;font-size:0.88rem;font-weight:600;transition:all .2s;}
+.nav-btn.ghost{background:transparent;color:var(--text2);border:1px solid rgba(255,255,255,0.1);}
+.nav-btn.ghost:hover{background:var(--dark4);color:var(--text);}
+.nav-btn.gold{background:var(--gold);color:var(--dark);}
+.nav-btn.gold:hover{background:var(--gold-dark);}
+.wallet-badge{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--dark4);border-radius:10px;border:1px solid rgba(245,200,66,0.2);font-size:0.88rem;cursor:pointer;}
+.wallet-badge span{color:var(--gold);font-weight:700;}
+
+/* HERO */
+.hero{padding-top:70px;min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 30%,rgba(245,200,66,0.09) 0%,transparent 70%);}
+.hero-grid{position:absolute;inset:0;opacity:0.03;background-image:linear-gradient(var(--gold) 1px,transparent 1px),linear-gradient(90deg,var(--gold) 1px,transparent 1px);background-size:60px 60px;}
+.hero-content{position:relative;text-align:center;max-width:820px;padding:2rem;}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.3);border-radius:50px;font-size:0.85rem;color:var(--gold);margin-bottom:2rem;}
+.hero-title{font-family:'Tajawal',sans-serif;font-size:clamp(2.2rem,6vw,4.2rem);font-weight:900;line-height:1.2;margin-bottom:1.5rem;}
+.hero-title .hl{background:linear-gradient(135deg,var(--gold),#FF9500);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-sub{font-size:1.1rem;color:var(--text2);line-height:1.8;margin-bottom:3rem;max-width:620px;margin-left:auto;margin-right:auto;}
+.hero-actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+.btn-primary{padding:15px 38px;border-radius:var(--radius);border:none;cursor:pointer;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--dark);font-family:'Cairo',sans-serif;font-size:1rem;font-weight:700;transition:all .3s;box-shadow:0 8px 30px rgba(245,200,66,0.25);}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(245,200,66,0.35);}
+.btn-sec{padding:15px 38px;border-radius:var(--radius);cursor:pointer;background:transparent;border:1.5px solid rgba(245,200,66,0.35);color:var(--text);font-family:'Cairo',sans-serif;font-size:1rem;font-weight:600;transition:.3s;}
+.btn-sec:hover{background:rgba(245,200,66,0.07);border-color:var(--gold);}
+.stats-row{display:flex;gap:40px;justify-content:center;margin-top:4rem;flex-wrap:wrap;}
+.stat-item{text-align:center;}
+.stat-num{font-size:2rem;font-weight:800;color:var(--gold);}
+.stat-lbl{font-size:0.83rem;color:var(--text3);margin-top:4px;}
+
+/* SERVICES GRID */
+.section{padding:80px 2rem;max-width:1300px;margin:0 auto;}
+.sec-head{text-align:center;margin-bottom:50px;}
+.sec-tag{display:inline-block;padding:6px 18px;border-radius:50px;background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.25);color:var(--gold);font-size:0.8rem;font-weight:600;margin-bottom:1rem;}
+.sec-title{font-family:'Tajawal',sans-serif;font-size:2.1rem;font-weight:800;margin-bottom:8px;}
+.sec-sub{color:var(--text2);}
+.services-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+.svc-card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:var(--radius);padding:24px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+.svc-card:hover{border-color:rgba(245,200,66,0.4);transform:translateY(-5px);box-shadow:0 24px 60px rgba(0,0,0,0.5);}
+.svc-card::after{content:'→';position:absolute;bottom:20px;left:20px;font-size:1.1rem;opacity:0;transform:translateX(6px);transition:.3s;color:var(--gold);}
+.svc-card:hover::after{opacity:1;transform:translateX(0);}
+.svc-icon{width:54px;height:54px;border-radius:14px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;}
+.svc-name{font-size:1.05rem;font-weight:700;margin-bottom:5px;}
+.svc-desc{font-size:0.82rem;color:var(--text2);}
+.svc-badge{margin-top:12px;display:inline-block;padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;background:rgba(245,200,66,0.1);color:var(--gold);}
+
+/* PRODUCT HEADER */
+.prod-header{background:var(--dark2);border-bottom:1px solid rgba(255,255,255,0.06);padding:18px 2rem;display:flex;align-items:center;gap:16px;margin-top:70px;flex-wrap:wrap;}
+.back-btn{background:var(--dark4);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 16px;cursor:pointer;color:var(--text);font-family:'Cairo',sans-serif;font-size:0.88rem;transition:.2s;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.back-btn:hover{background:var(--card2);border-color:rgba(245,200,66,0.25);color:var(--gold);}
+.prod-title-area h2{font-size:1.3rem;font-weight:700;}
+.prod-title-area p{font-size:0.82rem;color:var(--text2);}
+.filter-bar{margin-right:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+
+/* PRODUCTS GRID */
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px;padding:32px 2rem;max-width:1300px;margin:0 auto;}
+.product-card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:var(--radius);padding:22px;transition:all .3s;position:relative;}
+.product-card:hover{border-color:rgba(245,200,66,0.4);transform:translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,0.4);}
+.pc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.pc-name{font-size:1rem;font-weight:700;}
+.pt{padding:4px 11px;border-radius:50px;font-size:0.73rem;font-weight:600;}
+.pt-avail{background:rgba(0,224,154,0.1);color:var(--green);border:1px solid rgba(0,224,154,0.2);}
+.pt-sold{background:rgba(255,77,109,0.1);color:var(--red);border:1px solid rgba(255,77,109,0.2);}
+.pc-num{font-family:'Courier New',monospace;font-size:1.15rem;color:var(--gold);font-weight:600;letter-spacing:2px;margin:10px 0;padding:11px;background:var(--dark3);border-radius:10px;text-align:center;}
+.pc-details{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.pc-det{padding:5px 11px;background:var(--dark4);border-radius:7px;font-size:0.78rem;color:var(--text2);}
+.pc-price{font-size:1.4rem;font-weight:800;color:var(--gold);margin-bottom:14px;}
+.pc-price span{font-size:0.82rem;color:var(--text3);font-weight:400;}
+.buy-btn{width:100%;padding:13px;border-radius:var(--radius-sm);border:none;cursor:pointer;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--dark);font-family:'Cairo',sans-serif;font-size:0.92rem;font-weight:700;transition:.25s;}
+.buy-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(245,200,66,0.35);}
+.buy-btn:active{transform:translateY(0);}
+.buy-btn:disabled{background:var(--dark4);color:var(--text3);cursor:not-allowed;}
+
+/* AUTH */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;padding-top:90px;background:radial-gradient(ellipse 60% 60% at 50% 40%,rgba(245,200,66,0.05) 0%,transparent 70%);}
+.auth-card{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:44px;width:100%;max-width:470px;box-shadow:0 40px 80px rgba(0,0,0,0.5);}
+.auth-logo{text-align:center;margin-bottom:36px;}
+.auth-logo .logo-icon{width:58px;height:58px;font-size:26px;margin:0 auto 10px;}
+.auth-logo .logo-text{font-size:1.8rem;}
+.auth-title{font-size:1.5rem;font-weight:700;margin-bottom:6px;text-align:center;}
+.auth-sub{color:var(--text2);text-align:center;margin-bottom:32px;font-size:0.92rem;}
+.fg{margin-bottom:18px;}
+.fl{display:block;font-size:0.88rem;color:var(--text2);margin-bottom:7px;font-weight:600;}
+.fi{width:100%;padding:13px 16px;border-radius:var(--radius-sm);background:var(--dark3);border:1.5px solid rgba(255,255,255,0.08);color:var(--text);font-family:'Cairo',sans-serif;font-size:0.96rem;outline:none;transition:.2s;direction:ltr;}
+.fi:focus{border-color:rgba(245,200,66,0.55);background:var(--dark4);}
+.fi::placeholder{color:var(--text3);}
+.fb{width:100%;padding:14px;border-radius:var(--radius-sm);border:none;cursor:pointer;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--dark);font-family:'Cairo',sans-serif;font-size:1rem;font-weight:700;transition:.2s;margin-top:6px;}
+.fb:hover{opacity:.9;}
+.auth-sw{text-align:center;margin-top:22px;color:var(--text2);font-size:0.88rem;}
+.auth-sw a{color:var(--gold);cursor:pointer;font-weight:600;}
+.err{color:var(--red);font-size:0.82rem;margin-top:5px;display:none;}
+
+/* WALLET */
+.wlt-hero{margin-top:70px;padding:40px 20px 32px;background:linear-gradient(160deg,var(--dark2) 0%,var(--dark3) 100%);border-bottom:1px solid rgba(255,255,255,0.05);}
+.wlt-inner{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:24px;}
+.wlt-card{position:relative;border-radius:24px;overflow:hidden;border:1.5px solid rgba(245,200,66,0.25);background:linear-gradient(135deg,var(--card) 0%,rgba(22,22,50,0.9) 100%);}
+.wlt-card-content{position:relative;padding:32px;}
+.wlt-top{display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+.wlt-icon-wrap{width:48px;height:48px;border-radius:14px;background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.2);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;}
+.wlt-label{font-size:0.9rem;color:var(--text2);font-weight:600;}
+.wlt-amount-row{display:flex;align-items:baseline;gap:10px;margin-bottom:28px;}
+.wlt-amount{font-family:'Tajawal',sans-serif;font-size:clamp(2.8rem,8vw,4rem);font-weight:900;color:var(--gold);line-height:1;}
+.wlt-currency{font-size:1rem;color:var(--text3);font-weight:600;}
+.wlt-btns{display:flex;gap:12px;flex-wrap:wrap;}
+.wlt-add-btn{flex:1;min-width:160px;padding:15px 24px;border-radius:14px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--dark);font-family:'Cairo',sans-serif;font-size:1rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .25s;}
+.wlt-add-btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(245,200,66,0.35);}
+.wlt-btn-icon{width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;}
+.wlt-hist-btn{padding:15px 22px;border-radius:14px;cursor:pointer;background:var(--dark4);border:1.5px solid rgba(255,255,255,0.1);color:var(--text);font-family:'Cairo',sans-serif;font-size:0.95rem;font-weight:600;display:flex;align-items:center;gap:8px;transition:.2s;}
+.wlt-hist-btn:hover{background:var(--card2);}
+.wlt-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.wlt-stat{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:18px;display:flex;align-items:center;gap:14px;}
+.wlt-stat-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;flex-shrink:0;}
+.wlt-stat-val{font-size:1.05rem;font-weight:800;margin-bottom:2px;}
+.wlt-stat-lbl{font-size:0.73rem;color:var(--text3);}
+.wlt-tx-section{max-width:900px;margin:0 auto;padding:36px 20px 60px;}
+.wlt-tx-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.wlt-tx-title{font-size:1.15rem;font-weight:700;}
+.wlt-tx-list{display:flex;flex-direction:column;gap:10px;}
+.tx-item{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:var(--card);border-radius:14px;border:1px solid rgba(255,255,255,0.05);}
+.tx-left{display:flex;align-items:center;gap:14px;}
+.tx-ico{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+.tx-ico.credit{background:rgba(0,224,154,0.12);}
+.tx-ico.debit{background:rgba(255,77,109,0.12);}
+.tx-desc{font-size:0.9rem;font-weight:600;}
+.tx-date{font-size:0.75rem;color:var(--text3);margin-top:3px;}
+.tx-amt{font-size:1rem;font-weight:800;white-space:nowrap;}
+.tx-amt.credit{color:var(--green);}
+.tx-amt.debit{color:var(--red);}
+.wlt-empty{text-align:center;padding:60px 20px;color:var(--text3);}
+.wlt-empty-icon{font-size:3rem;margin-bottom:12px;}
+
+/* DASHBOARD */
+.sidebar{width:255px;background:var(--dark2);border-left:1px solid rgba(255,255,255,0.06);padding:90px 0 20px;position:fixed;top:0;right:0;height:100vh;overflow-y:auto;z-index:500;}
+.sb-sec{margin-bottom:6px;}
+.sb-title{font-size:0.68rem;color:var(--text3);font-weight:700;padding:0 18px 7px;letter-spacing:1.5px;text-transform:uppercase;}
+.sb-link{display:flex;align-items:center;gap:11px;padding:11px 18px;cursor:pointer;transition:.2s;color:var(--text2);font-size:0.88rem;font-weight:600;border-right:3px solid transparent;}
+.sb-link:hover{background:var(--dark3);color:var(--text);}
+.sb-link.active{background:rgba(245,200,66,0.08);color:var(--gold);border-right-color:var(--gold);}
+.sb-link .si{font-size:1rem;width:18px;text-align:center;}
+.dash-main{margin-right:255px;padding:90px 36px 40px;flex:1;}
+.dash-sec{display:none;}
+.dash-sec.active{display:block;}
+.dash-title{font-size:1.7rem;font-weight:800;margin-bottom:6px;}
+.dash-sub{color:var(--text2);margin-bottom:30px;}
+.dash-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:30px;}
+.stat-card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:var(--radius);padding:22px;}
+.stat-card .sl{font-size:0.75rem;color:var(--text3);margin-bottom:7px;text-transform:uppercase;letter-spacing:1px;}
+.stat-card .sv{font-size:1.9rem;font-weight:800;}
+.stat-card .ss{font-size:0.78rem;color:var(--text2);margin-top:5px;}
+.sv.gold{color:var(--gold);}
+.sv.green{color:var(--green);}
+.sv.blue{color:var(--blue);}
+.sv.red{color:var(--red);}
+.sv.purple{color:var(--purple);}
+.dtw{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:var(--radius);overflow:hidden;margin-bottom:24px;}
+.dth{padding:18px 22px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;gap:10px;}
+.dth h3{font-size:0.98rem;font-weight:700;}
+.add-btn{padding:9px 18px;background:var(--gold);color:var(--dark);border:none;border-radius:10px;font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer;font-size:0.86rem;transition:.2s;display:flex;align-items:center;gap:7px;}
+.add-btn:hover{background:var(--gold-dark);}
+table{width:100%;border-collapse:collapse;}
+th{padding:11px 18px;text-align:right;font-size:0.76rem;color:var(--text3);font-weight:600;border-bottom:1px solid rgba(255,255,255,0.06);letter-spacing:.5px;text-transform:uppercase;}
+td{padding:13px 18px;font-size:0.87rem;border-bottom:1px solid rgba(255,255,255,0.04);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.del-btn{padding:5px 12px;background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.2);border-radius:7px;color:var(--red);font-family:'Cairo',sans-serif;cursor:pointer;font-size:0.78rem;}
+.del-btn:hover{background:rgba(255,77,109,0.2);}
+.edit-btn{padding:5px 12px;background:rgba(77,159,255,0.1);border:1px solid rgba(77,159,255,0.2);border-radius:7px;color:var(--blue);font-family:'Cairo',sans-serif;cursor:pointer;font-size:0.78rem;margin-left:5px;}
+.edit-btn:hover{background:rgba(77,159,255,0.2);}
+
+/* SOCIAL & GAMES */
+.social-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;}
+.soc-card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:var(--radius);padding:26px;transition:all .3s;}
+.soc-card:hover{border-color:rgba(245,200,66,0.4);transform:translateY(-4px);}
+.soc-hd{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+.soc-logo{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+.soc-plat{font-size:1.05rem;font-weight:700;}
+.soc-type{font-size:0.78rem;color:var(--text2);margin-top:2px;}
+.pkg-rows{display:flex;flex-direction:column;gap:9px;}
+.pkg-row{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--dark3);border-radius:10px;border:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:.2s;}
+.pkg-row:hover{border-color:rgba(245,200,66,0.35);background:var(--dark4);}
+.pkg-qty{font-weight:700;font-size:0.92rem;}
+.pkg-pr{color:var(--gold);font-weight:700;}
+.games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+.game-card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:var(--radius);padding:22px;cursor:pointer;transition:.3s;}
+.game-card:hover{border-color:rgba(245,200,66,0.3);transform:translateY(-3px);}
+.game-icon{font-size:2.5rem;margin-bottom:12px;}
+.game-name{font-size:1rem;font-weight:700;margin-bottom:6px;}
+.game-pkgs{margin-top:14px;display:flex;flex-direction:column;gap:7px;}
+.game-pkg-row{display:flex;justify-content:space-between;align-items:center;padding:9px 13px;background:var(--dark3);border-radius:8px;border:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:.2s;}
+.game-pkg-row:hover{border-color:rgba(245,200,66,0.3);}
+.gp-name{font-size:0.85rem;font-weight:600;}
+.gp-price{color:var(--gold);font-weight:700;font-size:0.88rem;}
+.rc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;}
+.rc-card{background:var(--card);border:2px solid rgba(255,255,255,0.06);border-radius:var(--radius);padding:22px;text-align:center;cursor:pointer;transition:all .3s;}
+.rc-card:hover,.rc-card.sel{border-color:var(--gold);background:rgba(245,200,66,0.06);}
+.rc-icon{font-size:1.8rem;margin-bottom:9px;}
+.rc-amt{font-size:1.5rem;font-weight:800;color:var(--gold);}
+.rc-lbl{font-size:0.82rem;color:var(--text2);margin-top:3px;}
+
+/* TABS */
+.tab-bar{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+.tab-btn{padding:9px 20px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:var(--text2);font-family:'Cairo',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;transition:.2s;}
+.tab-btn:hover{background:var(--dark4);}
+.tab-btn.active{background:rgba(245,200,66,0.12);border-color:rgba(245,200,66,0.3);color:var(--gold);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* MODAL */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:.3s;backdrop-filter:blur(8px);}
+.modal-ov.open{opacity:1;pointer-events:all;}
+.modal-box{background:var(--card);border:1px solid rgba(255,255,255,0.1);border-radius:22px;padding:36px;width:100%;max-width:520px;transform:scale(.95);transition:.3s;max-height:90vh;overflow-y:auto;}
+.modal-ov.open .modal-box{transform:scale(1);}
+.modal-title{font-size:1.35rem;font-weight:700;margin-bottom:5px;}
+.modal-sub{color:var(--text2);font-size:0.88rem;margin-bottom:28px;}
+.modal-foot{display:flex;gap:10px;margin-top:24px;justify-content:flex-end;}
+.m-cancel{padding:11px 22px;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--text2);cursor:pointer;}
+.m-cancel:hover{background:var(--dark4);}
+.m-confirm{padding:11px 22px;background:var(--gold);border:none;border-radius:10px;color:var(--dark);cursor:pointer;font-weight:700;}
+.m-confirm:hover{background:var(--gold-dark);}
+
+/* ADD FUNDS MODAL */
+.af-modal{padding:0;overflow:hidden;max-width:480px;width:100%;}
+.af-progress{display:flex;align-items:center;padding:16px 20px 14px;border-bottom:1px solid rgba(255,255,255,0.06);background:var(--dark3);}
+.af-prog-step{display:flex;align-items:center;gap:6px;font-size:0.76rem;color:var(--text3);white-space:nowrap;}
+.af-prog-step.done{color:var(--green);}
+.af-prog-step.active{color:var(--gold);font-weight:700;}
+.af-prog-dot{width:22px;height:22px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-weight:800;flex-shrink:0;}
+.af-prog-dot.done-dot{background:var(--green);border-color:var(--green);color:var(--dark);}
+.af-prog-dot.active-dot{background:var(--gold);border-color:var(--gold);color:var(--dark);}
+.af-prog-line{flex:1;height:2px;background:rgba(255,255,255,0.08);margin:0 8px;}
+.af-prog-line.done-line{background:var(--green);}
+.af-step{padding:24px 26px;}
+.af-step-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:22px;}
+.af-step-num{width:36px;height:36px;border-radius:50%;background:var(--gold);color:var(--dark);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:900;flex-shrink:0;}
+.af-step-title{font-size:1.15rem;font-weight:700;margin-bottom:3px;}
+.af-step-sub{font-size:0.83rem;color:var(--text2);}
+.af-amt-presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.af-preset{padding:9px 16px;border-radius:10px;border:1.5px solid rgba(245,200,66,0.25);background:transparent;color:var(--gold);font-weight:700;cursor:pointer;}
+.af-preset:hover,.af-preset.af-active{background:rgba(245,200,66,0.12);border-color:var(--gold);}
+.af-input-row{display:flex;align-items:center;background:var(--dark3);border:1.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:4px 18px;margin-bottom:24px;}
+.af-input-row:focus-within{border-color:rgba(245,200,66,0.5);background:var(--dark4);}
+.af-dollar{font-size:1.5rem;color:var(--gold);font-weight:700;margin-left:10px;}
+.af-amt-input{flex:1;background:transparent;border:none;outline:none;font-size:1.8rem;font-weight:700;color:var(--text);padding:14px 0;direction:ltr;}
+.af-step-footer{display:flex;gap:10px;justify-content:flex-end;}
+.af-account-box{background:var(--dark3);border-radius:14px;overflow:hidden;margin-bottom:20px;}
+.af-account-row{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,0.05);}
+.af-account-row:last-child{border-bottom:none;}
+.af-account-total{background:rgba(245,200,66,0.04);}
+.af-account-lbl{font-size:0.82rem;color:var(--text2);}
+.af-account-val{font-size:0.9rem;font-weight:700;direction:ltr;}
+.af-wa-btn{width:100%;padding:16px;border-radius:14px;border:none;cursor:pointer;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;}
+.af-wa-btn:hover{transform:translateY(-2px);}
+.af-success-msg{text-align:center;padding:20px;background:rgba(0,224,154,0.05);border:1px solid rgba(0,224,154,0.15);border-radius:16px;margin-bottom:20px;}
+.af-success-icon{font-size:2.5rem;margin-bottom:8px;}
+.af-success-text{font-size:1rem;font-weight:700;color:var(--green);}
+.af-wa-instructions{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.af-wa-step{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--dark3);border-radius:12px;font-size:0.85rem;line-height:1.5;}
+.af-wa-step-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;flex-shrink:0;margin-top:1px;}
+
+/* MOBILE MENU */
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;border-radius:8px;background:var(--dark4);border:1px solid rgba(255,255,255,0.08);}
+.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:.3s;}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.open span:nth-child(2){opacity:0;}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+.mobile-menu{display:none;position:fixed;top:70px;left:0;right:0;bottom:0;background:rgba(8,8,16,0.97);backdrop-filter:blur(24px);z-index:999;flex-direction:column;gap:0;overflow-y:auto;transform:translateY(-12px);opacity:0;transition:transform .28s,opacity .25s;padding:0 0 80px 0;}
+.mobile-menu.open{display:flex;transform:translateY(0);opacity:1;}
+.mm-section-title{font-size:0.68rem;color:var(--text3);font-weight:700;padding:18px 20px 8px;letter-spacing:1.5px;text-transform:uppercase;}
+.mobile-menu .m-nav-btn{padding:14px 20px;border-radius:0;border:none;border-bottom:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);font-size:1rem;font-weight:600;cursor:pointer;text-align:right;width:100%;display:flex;align-items:center;gap:12px;}
+.mobile-menu .m-nav-btn:hover{background:rgba(245,200,66,0.07);color:var(--gold);}
+.mobile-menu .m-nav-btn.gold{margin:12px 16px;width:calc(100% - 32px);border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--dark);justify-content:center;padding:15px;}
+.mm-divider{height:1px;background:rgba(255,255,255,0.07);margin:4px 0;}
+.mm-wallet-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;}
+.mm-balance-chip{background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.25);border-radius:20px;padding:4px 12px;font-size:0.82rem;color:var(--gold);font-weight:700;}
+
+/* RESPONSIVE */
+@media(max-width:900px){.sidebar{display:none;}.dash-main{margin-right:0;padding:90px 20px 40px;}}
+@media(max-width:768px){.nav-links{display:none;}.hamburger{display:flex;}.hero-title{font-size:1.9rem;}.products-grid{grid-template-columns:1fr;}.services-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:480px){.hero-title{font-size:1.65rem;}.services-grid{grid-template-columns:1fr;}.games-grid{grid-template-columns:1fr;}}
+
+/* UTILITIES */
+.copy-btn{background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.25);border-radius:7px;padding:5px 11px;font-size:0.78rem;color:var(--gold);cursor:pointer;}
+.copy-btn:hover{background:rgba(245,200,66,0.22);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(120px);background:rgba(22,22,40,0.96);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:14px 24px;font-size:0.92rem;font-weight:600;z-index:9999;transition:transform .4s;box-shadow:0 24px 60px rgba(0,0,0,0.6);display:flex;align-items:center;gap:10px;backdrop-filter:blur(16px);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{border-color:rgba(0,224,154,0.3);color:var(--green);}
+.toast.error{border-color:rgba(255,77,109,0.3);color:var(--red);}
+.loader{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-radius:50%;border-top-color:var(--gold);animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#globalLoader{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:15px}
+#globalLoader .loader{width:50px;height:50px;border-width:3px}
+#globalLoader div{color:var(--gold);font-size:1rem}
+</style>
+</head>
+<body>
+
+<div id="globalLoader"><div class="loader"></div><div>جاري التحميل...</div></div>
+
+<nav class="navbar" id="mainNav">
+  <div class="logo" onclick="navigateToPage('home')">
+    <div class="logo-icon">ز</div>
+    <div class="logo-text">زود</div>
+  </div>
+  <div class="nav-links" id="navLinks">
+    <button class="nav-btn ghost" onclick="navigateToPage('home')">الرئيسية</button>
+    <button class="nav-btn ghost" onclick="checkLoginAndNavigate('numbers')">الخطوط</button>
+    <button class="nav-btn ghost" onclick="checkLoginAndNavigate('recharge')">شحن الرصيد</button>
+    <button class="nav-btn ghost" onclick="checkLoginAndNavigate('social')">سوشيال</button>
+    <button class="nav-btn ghost" onclick="checkLoginAndNavigate('games')">الألعاب</button>
+    <div class="wallet-badge" id="walletBadge" onclick="checkLoginAndNavigate('wallet')" style="display:none">💰 <span id="walletBalNav">0</span> $</div>
+    <div id="navAuthButtons" style="display:flex;gap:6px;align-items:center">
+      <button class="nav-btn ghost" onclick="navigateToPage('register')">إنشاء حساب</button>
+      <button class="nav-btn gold" onclick="navigateToPage('login')">تسجيل الدخول</button>
+    </div>
+    <div id="navUserButtons" style="gap:8px;align-items:center;display:none">
+      <span id="navUserName" style="font-size:0.85rem;color:var(--text2)"></span>
+      <button class="nav-btn ghost" onclick="performLogout()">خروج</button>
+      <button class="nav-btn gold" id="dashNavBtn" style="display:none" onclick="navigateToPage('dashboard')">لوحة التحكم</button>
+    </div>
+  </div>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <div id="mmWallet" style="display:none;background:rgba(245,200,66,0.05);border-bottom:1px solid rgba(245,200,66,0.12);padding:16px 20px;cursor:pointer" onclick="closeMobileMenu();checkLoginAndNavigate('wallet')">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(245,200,66,0.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem">💰</div>
+        <div><div id="mmUserNameDisplay" style="font-size:0.88rem;font-weight:700;color:var(--text)">مرحباً</div><div style="font-size:0.75rem;color:var(--text3)">رصيدك</div></div>
+      </div>
+      <div class="mm-balance-chip">$<span id="mmBalance">0.00</span></div>
+    </div>
+  </div>
+  <div class="mm-section-title">القائمة الرئيسية</div>
+  <button class="m-nav-btn" onclick="closeMobileMenu();navigateToPage('home')"><span>🏠</span> الرئيسية</button>
+  <div class="mm-section-title">الخطوط والأرقام</div>
+  <button class="m-nav-btn" onclick="closeMobileMenu();checkLoginAndNavigate('numbers')"><span>📱</span> خطوط هاتفية</button>
+  <button class="m-nav-btn" onclick="closeMobileMenu();checkLoginAndNavigate('whatsapp')"><span>💬</span> أرقام واتساب</button>
+  <button class="m-nav-btn" onclick="closeMobileMenu();checkLoginAndNavigate('telegram-nums')"><span>✈️</span> أرقام تلغرام</button>
+  <div class="mm-section-title">الخدمات الرقمية</div>
+  <button class="m-nav-btn" onclick="closeMobileMenu();checkLoginAndNavigate('recharge')"><span>⚡</span> شحن الرصيد</button>
+  <button class="m-nav-btn" onclick="closeMobileMenu();checkLoginAndNavigate('social')"><span>👥</span> متابعين سوشيال</button>
+  <button class="m-nav-btn" onclick="closeMobileMenu();checkLoginAndNavigate('telegram-verify')"><span>✅</span> توثيق تلغرام</button>
+  <button class="m-nav-btn" onclick="closeMobileMenu();checkLoginAndNavigate('games')"><span>🎮</span> شحن الألعاب</button>
+  <div class="mm-divider"></div>
+  <div id="mmAuthSection">
+    <button class="m-nav-btn gold" onclick="closeMobileMenu();navigateToPage('register')">إنشاء حساب مجاني ✨</button>
+    <button class="m-nav-btn" onclick="closeMobileMenu();navigateToPage('login')" style="justify-content:center;color:var(--gold);font-weight:700">تسجيل الدخول</button>
+  </div>
+  <div id="mmUserSection" style="display:none">
+    <button class="m-nav-btn gold" id="mmDashBtn" style="display:none" onclick="closeMobileMenu();navigateToPage('dashboard')"><span>📊</span> لوحة التحكم</button>
+    <button class="m-nav-btn" onclick="closeMobileMenu();performLogout()" style="color:var(--red);justify-content:center"><span>🚪</span> تسجيل الخروج</button>
+  </div>
+</div>
+
+<!-- الصفحات -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="hero-bg"></div><div class="hero-grid"></div>
+    <div class="hero-content">
+      <div class="hero-badge">⚡ منصة الاتصالات الرقمية الأولى</div>
+      <h1 class="hero-title">كل ما تحتاجه من<br><span class="hl">اتصالات وخدمات رقمية</span><br>في مكان واحد</h1>
+      <p class="hero-sub">خطوط هاتفية، شحن رصيد، متابعين سوشيال، توثيق تلغرام، شحن ألعاب — كل ذلك بسرعة وأمان وبأفضل الأسعار.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="checkLoginAndNavigate('numbers')">ابدأ الآن ←</button>
+        <button class="btn-sec" onclick="navigateToPage('register')">إنشاء حساب مجاني</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-item"><div class="stat-num">+5000</div><div class="stat-lbl">رقم متاح</div></div>
+        <div class="stat-item"><div class="stat-num">+12</div><div class="stat-lbl">دولة</div></div>
+        <div class="stat-item"><div class="stat-num">99%</div><div class="stat-lbl">رضا العملاء</div></div>
+        <div class="stat-item"><div class="stat-num">24/7</div><div class="stat-lbl">دعم مستمر</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="sec-head"><div class="sec-tag">خدماتنا</div><h2 class="sec-title">ماذا يقدم زود؟</h2><p class="sec-sub">منصة متكاملة تجمع كل احتياجاتك الرقمية</p></div>
+    <div class="services-grid">
+      <div class="svc-card" onclick="checkLoginAndNavigate('numbers')"><div class="svc-icon">📱</div><div class="svc-name">خطوط هاتفية</div><div class="svc-desc">أرقام عادية من سوريا، السعودية، الإمارات وأكثر</div><div class="svc-badge">📞 هاتف</div></div>
+      <div class="svc-card" onclick="checkLoginAndNavigate('whatsapp')"><div class="svc-icon">💬</div><div class="svc-name">أرقام واتساب</div><div class="svc-desc">أرقام مخصصة لواتساب من دول متعددة</div><div class="svc-badge">🟢 واتساب</div></div>
+      <div class="svc-card" onclick="checkLoginAndNavigate('telegram-nums')"><div class="svc-icon">✈️</div><div class="svc-name">أرقام تلغرام</div><div class="svc-desc">أرقام لتسجيل حسابات تلغرام جديدة</div><div class="svc-badge">🔵 تلغرام</div></div>
+      <div class="svc-card" onclick="checkLoginAndNavigate('recharge')"><div class="svc-icon">⚡</div><div class="svc-name">شحن الرصيد</div><div class="svc-desc">سيريتل، MTN، شبكات سورية وعراقية وخليجية</div><div class="svc-badge">💳 شحن</div></div>
+      <div class="svc-card" onclick="checkLoginAndNavigate('social')"><div class="svc-icon">👥</div><div class="svc-name">متابعين سوشيال</div><div class="svc-desc">إنستاغرام، تيك توك، فيسبوك، يوتيوب</div><div class="svc-badge">📣 سوشيال</div></div>
+      <div class="svc-card" onclick="checkLoginAndNavigate('telegram-verify')"><div class="svc-icon">✅</div><div class="svc-name">توثيق تلغرام</div><div class="svc-desc">توثيق حسابات ومجموعات تلغرام بعلامة التحقق</div><div class="svc-badge">✅ توثيق</div></div>
+      <div class="svc-card" onclick="checkLoginAndNavigate('games')"><div class="svc-icon">🎮</div><div class="svc-name">شحن ألعاب وبرامج</div><div class="svc-desc">PUBG، Free Fire، Clash، iTunes وأكثر</div><div class="svc-badge">🎯 ألعاب</div></div>
+      <div class="svc-card" onclick="checkLoginAndNavigate('wallet')"><div class="svc-icon">💰</div><div class="svc-name">محفظة رقمية</div><div class="svc-desc">شحن وإدارة رصيدك بأمان تام</div><div class="svc-badge">🔐 آمن</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="page-login" class="page">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo"><div class="logo-icon">ز</div><div class="logo-text">زود</div></div>
+      <h2 class="auth-title">أهلاً بعودتك!</h2>
+      <p class="auth-sub">سجّل دخولك للوصول إلى خدماتك</p>
+      <div class="fg"><label class="fl">البريد الإلكتروني</label><input type="email" class="fi" id="loginEmail" placeholder="example@email.com"></div>
+      <div class="fg"><label class="fl">كلمة المرور</label><input type="password" class="fi" id="loginPass" placeholder="••••••••"><div class="err" id="loginErr">البيانات غير صحيحة.</div></div>
+      <button class="fb" onclick="processLogin()">تسجيل الدخول</button>
+      <p class="auth-sw">ليس لديك حساب؟ <a onclick="navigateToPage('register')">إنشاء حساب</a></p>
+    </div>
+  </div>
+</div>
+
+<div id="page-register" class="page">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo"><div class="logo-icon">ز</div><div class="logo-text">زود</div></div>
+      <h2 class="auth-title">إنشاء حساب جديد</h2>
+      <p class="auth-sub">انضم لآلاف المستخدمين على زود</p>
+      <div class="fg"><label class="fl">الاسم الكامل</label><input type="text" class="fi" id="regName" placeholder="محمد أحمد"></div>
+      <div class="fg"><label class="fl">البريد الإلكتروني</label><input type="email" class="fi" id="regEmail" placeholder="example@email.com"></div>
+      <div class="fg"><label class="fl">كلمة المرور</label><input type="password" class="fi" id="regPass" placeholder="6 أحرف على الأقل"><div class="err" id="regErr">هذا البريد مسجل مسبقاً.</div></div>
+      <button class="fb" onclick="processRegister()">إنشاء الحساب</button>
+      <p class="auth-sw">لديك حساب؟ <a onclick="navigateToPage('login')">تسجيل الدخول</a></p>
+    </div>
+  </div>
+</div>
+
+<div id="page-numbers" class="page"><div class="prod-header"><button class="back-btn" onclick="navigateToPage('home')">← رجوع</button><div class="prod-title-area"><h2>📱 الخطوط الهاتفية</h2><p>أرقام هاتفية من دول عديدة</p></div><div class="filter-bar"><select class="fi" id="numCountryF" style="width:150px;padding:9px 13px" onchange="renderNumbersList('phone')"><option value="">كل الدول</option><option value="سوريا">🇸🇾 سوريا</option><option value="السعودية">🇸🇦 السعودية</option><option value="الإمارات">🇦🇪 الإمارات</option><option value="تركيا">🇹🇷 تركيا</option><option value="مصر">🇪🇬 مصر</option><option value="العراق">🇮🇶 العراق</option></select><select class="fi" id="numOpF" style="width:150px;padding:9px 13px" onchange="renderNumbersList('phone')"><option value="">كل الشبكات</option><option value="سيريتل">سيريتل</option><option value="MTN">MTN</option><option value="STC">STC</option><option value="Etisalat">Etisalat</option><option value="Turkcell">Turkcell</option><option value="Zain">Zain</option></select></div></div><div class="products-grid" id="numbersGrid"><div class="loader" style="margin:60px auto"></div></div></div>
+
+<div id="page-whatsapp" class="page"><div class="prod-header"><button class="back-btn" onclick="navigateToPage('home')">← رجوع</button><div class="prod-title-area"><h2>💬 أرقام واتساب</h2><p>أرقام مخصصة لتسجيل واتساب</p></div><div class="filter-bar"><select class="fi" id="waCountryF" style="width:150px;padding:9px 13px" onchange="renderNumbersList('whatsapp')"><option value="">كل الدول</option><option value="سوريا">🇸🇾 سوريا</option><option value="السعودية">🇸🇦 السعودية</option><option value="الإمارات">🇦🇪 الإمارات</option><option value="تركيا">🇹🇷 تركيا</option><option value="مصر">🇪🇬 مصر</option><option value="العراق">🇮🇶 العراق</option></select></div></div><div class="products-grid" id="waGrid"><div class="loader"></div></div></div>
+
+<div id="page-telegram-nums" class="page"><div class="prod-header"><button class="back-btn" onclick="navigateToPage('home')">← رجوع</button><div class="prod-title-area"><h2>✈️ أرقام تلغرام</h2><p>أرقام لتسجيل حسابات تلغرام</p></div><div class="filter-bar"><select class="fi" id="tgCountryF" style="width:150px;padding:9px 13px" onchange="renderNumbersList('telegram')"><option value="">كل الدول</option><option value="سوريا">🇸🇾 سوريا</option><option value="السعودية">🇸🇦 السعودية</option><option value="الإمارات">🇦🇪 الإمارات</option><option value="روسيا">🇷🇺 روسيا</option><option value="تركيا">🇹🇷 تركيا</option><option value="العراق">🇮🇶 العراق</option></select></div></div><div class="products-grid" id="tgGrid"><div class="loader"></div></div></div>
+
+<div id="page-recharge" class="page"><div class="prod-header"><button class="back-btn" onclick="navigateToPage('home')">← رجوع</button><div class="prod-title-area"><h2>⚡ شحن الرصيد</h2><p>اشحن رصيدك بسرعة فائقة</p></div></div><div style="padding:32px 2rem;max-width:950px;margin:0 auto"><div class="tab-bar"><button class="tab-btn active" onclick="switchRechargeTab('syria',this)">🇸🇾 سوريا</button><button class="tab-btn" onclick="switchRechargeTab('iraq',this)">🇮🇶 العراق</button><button class="tab-btn" onclick="switchRechargeTab('gulf',this)">🌍 الخليج</button></div><div class="tab-content active" id="rc-syria"><h3>اختر الشبكة السورية</h3><div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px"><button class="rc-card" style="flex:1;min-width:120px" onclick="selectRechargeOperator('سيريتل','syria')"><div class="rc-icon">📡</div><div>سيريتل</div></button><button class="rc-card" style="flex:1;min-width:120px" onclick="selectRechargeOperator('MTN سوريا','syria')"><div class="rc-icon">📶</div><div>MTN سوريا</div></button></div><div id="rcPkgsSyria" style="display:none"><div class="rc-grid" id="rcGridSyria"></div><div style="margin-top:24px"><label class="fl">رقم الهاتف السوري</label><input type="text" class="fi" id="rcNumSyria" placeholder="+963 9XX XXX XXX" style="max-width:340px;direction:ltr"></div><button class="btn-primary" style="margin-top:18px" onclick="processRecharge('syria')">تأكيد الشحن</button></div></div><div class="tab-content" id="rc-iraq"><h3>اختر الشبكة العراقية</h3><div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px"><button class="rc-card" style="flex:1;min-width:120px" onclick="selectRechargeOperator('Zain العراق','iraq')"><div class="rc-icon">📱</div><div>Zain</div></button><button class="rc-card" style="flex:1;min-width:120px" onclick="selectRechargeOperator('Asiacell','iraq')"><div class="rc-icon">🌐</div><div>Asiacell</div></button><button class="rc-card" style="flex:1;min-width:120px" onclick="selectRechargeOperator('Korek','iraq')"><div class="rc-icon">📡</div><div>Korek</div></button></div><div id="rcPkgsIraq" style="display:none"><div class="rc-grid" id="rcGridIraq"></div><div style="margin-top:24px"><label class="fl">رقم الهاتف العراقي</label><input type="text" class="fi" id="rcNumIraq" placeholder="+964 7XX XXX XXXX" style="max-width:340px;direction:ltr"></div><button class="btn-primary" style="margin-top:18px" onclick="processRecharge('iraq')">تأكيد الشحن</button></div></div><div class="tab-content" id="rc-gulf"><div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px"><button class="rc-card" style="flex:1;min-width:120px" onclick="selectRechargeOperator('STC','gulf')"><div class="rc-icon">🇸🇦</div><div>STC</div></button><button class="rc-card" style="flex:1;min-width:120px" onclick="selectRechargeOperator('Etisalat','gulf')"><div class="rc-icon">🇦🇪</div><div>Etisalat</div></button><button class="rc-card" style="flex:1;min-width:120px" onclick="selectRechargeOperator('Ooredoo','gulf')"><div class="rc-icon">🌍</div><div>Ooredoo</div></button></div><div id="rcPkgsGulf" style="display:none"><div class="rc-grid" id="rcGridGulf"></div><div style="margin-top:24px"><label class="fl">رقم الهاتف</label><input type="text" class="fi" id="rcNumGulf" placeholder="+966 5XX XXX XXXX" style="max-width:340px;direction:ltr"></div><button class="btn-primary" style="margin-top:18px" onclick="processRecharge('gulf')">تأكيد الشحن</button></div></div></div></div>
+
+<div id="page-social" class="page"><div class="prod-header"><button class="back-btn" onclick="navigateToPage('home')">← رجوع</button><div class="prod-title-area"><h2>👥 متابعين وتفاعل</h2><p>رفع تفاعلك على منصات التواصل</p></div></div><div style="padding:32px 2rem;max-width:1200px;margin:0 auto"><div class="social-grid" id="socialGrid"><div class="loader"></div></div></div></div>
+
+<div id="page-telegram-verify" class="page"><div class="prod-header"><button class="back-btn" onclick="navigateToPage('home')">← رجوع</button><div class="prod-title-area"><h2>✅ توثيق تلغرام</h2><p>توثيق الحسابات والمجموعات</p></div></div><div style="padding:32px 2rem;max-width:900px;margin:0 auto"><div class="social-grid" id="tgVerifyGrid"><div class="loader"></div></div></div></div>
+
+<div id="page-games" class="page"><div class="prod-header"><button class="back-btn" onclick="navigateToPage('home')">← رجوع</button><div class="prod-title-area"><h2>🎮 شحن الألعاب والبرامج</h2><p>شحن سريع لأشهر الألعاب والبرامج</p></div></div><div style="padding:32px 2rem;max-width:1200px;margin:0 auto"><div class="games-grid" id="gamesGrid"><div class="loader"></div></div></div></div>
+
+<div id="page-wallet" class="page"><div class="wlt-hero"><div class="wlt-inner"><div class="wlt-card"><div class="wlt-card-content"><div class="wlt-top"><div class="wlt-icon-wrap">💰</div><div class="wlt-label">رصيدك الحالي</div></div><div class="wlt-amount-row"><span class="wlt-amount" id="walletAmt">0.00</span><span class="wlt-currency">USD</span></div><div class="wlt-btns"><button class="wlt-add-btn" onclick="openAddFundsModal()"><span class="wlt-btn-icon">+</span><span>إضافة رصيد</span></button><button class="wlt-hist-btn" onclick="document.getElementById('txSec').scrollIntoView({behavior:'smooth'})"><span>📋</span><span>السجل</span></button></div></div></div><div class="wlt-stats"><div class="wlt-stat"><div class="wlt-stat-icon" style="background:rgba(0,224,154,0.1);color:var(--green)">↑</div><div><div class="wlt-stat-val" id="wltTotalIn">$0.00</div><div class="wlt-stat-lbl">إجمالي الشحن</div></div></div><div class="wlt-stat"><div class="wlt-stat-icon" style="background:rgba(255,77,109,0.1);color:var(--red)">↓</div><div><div class="wlt-stat-val" id="wltTotalOut">$0.00</div><div class="wlt-stat-lbl">إجمالي المصروف</div></div></div><div class="wlt-stat"><div class="wlt-stat-icon" style="background:rgba(77,159,255,0.1);color:var(--blue)">🧾</div><div><div class="wlt-stat-val" id="wltTxCount">0</div><div class="wlt-stat-lbl">عدد العمليات</div></div></div></div></div></div><div class="wlt-tx-section" id="txSec"><div class="wlt-tx-header"><h3 class="wlt-tx-title">سجل المعاملات</h3><div id="txFilterBtns" style="display:flex;gap:8px;flex-wrap:wrap"><button class="tab-btn active" onclick="filterTransactions('all',this)">الكل</button><button class="tab-btn" onclick="filterTransactions('credit',this)">شحن</button><button class="tab-btn" onclick="filterTransactions('debit',this)">مصروف</button></div></div><div id="txList" class="wlt-tx-list"></div></div></div>
+
+<div id="page-dashboard" class="page"><div class="sidebar" id="dashSidebar"><div class="sb-sec"><div class="sb-title">الرئيسية</div><div class="sb-link active" onclick="switchDashboardSection('overview',this)"><span class="si">📊</span> نظرة عامة</div></div><div class="sb-sec"><div class="sb-title">الأرقام</div><div class="sb-link" onclick="switchDashboardSection('numbers',this)"><span class="si">📱</span> خطوط هاتفية</div><div class="sb-link" onclick="switchDashboardSection('whatsapp-nums',this)"><span class="si">💬</span> أرقام واتساب</div><div class="sb-link" onclick="switchDashboardSection('tg-nums',this)"><span class="si">✈️</span> أرقام تلغرام</div></div><div class="sb-sec"><div class="sb-title">الخدمات</div><div class="sb-link" onclick="switchDashboardSection('social-pkgs',this)"><span class="si">📣</span> باقات سوشيال</div><div class="sb-link" onclick="switchDashboardSection('tg-verify',this)"><span class="si">✅</span> توثيق تلغرام</div><div class="sb-link" onclick="switchDashboardSection('games-pkgs',this)"><span class="si">🎮</span> باقات الألعاب</div><div class="sb-link" onclick="switchDashboardSection('recharge-pkgs',this)"><span class="si">⚡</span> باقات الشحن</div></div><div class="sb-sec"><div class="sb-title">الإدارة</div><div class="sb-link" onclick="switchDashboardSection('users',this)"><span class="si">👤</span> المستخدمون <span id="pendingBadge" style="display:none;background:var(--red);color:#fff;font-size:0.7rem;padding:2px 7px;border-radius:50px;margin-right:auto">0</span></div><div class="sb-link" onclick="switchDashboardSection('orders',this)"><span class="si">🧾</span> الطلبات</div><div class="sb-link" onclick="switchDashboardSection('payment-methods',this)"><span class="si">💳</span> طرق الدفع</div></div></div><div class="dash-main"><div class="dash-sec active" id="dash-overview"><div class="dash-title">نظرة عامة</div><div class="dash-sub">مرحباً بك في لوحة تحكم زود</div><div class="dash-stats"><div class="stat-card"><div class="sl">الأرقام المتاحة</div><div class="sv gold" id="ov-avail">0</div><div class="ss">رقم متاح</div></div><div class="stat-card"><div class="sl">الأرقام المباعة</div><div class="sv red" id="ov-sold">0</div><div class="ss">رقم</div></div><div class="stat-card"><div class="sl">المستخدمون</div><div class="sv blue" id="ov-users">0</div><div class="ss">مسجل</div></div><div class="stat-card"><div class="sl">إجمالي الطلبات</div><div class="sv green" id="ov-orders">0</div><div class="ss">طلب</div></div><div class="stat-card"><div class="sl">طلبات شحن معلقة</div><div class="sv red" id="ov-pending">0</div><div class="ss">تحتاج موافقة</div></div><div class="stat-card"><div class="sl">إيرادات اليوم</div><div class="sv purple" id="ov-revenue">$0</div><div class="ss">دولار</div></div></div><div class="dtw"><div class="dth"><h3>آخر الطلبات</h3></div></table><thead><tr><th>المستخدم</th><th>الخدمة</th><th>التفاصيل</th><th>المبلغ</th><th>الوقت</th></tr></thead><tbody id="ovOrdersBody"></tbody></table></div></div><div class="dash-sec" id="dash-numbers"><div class="dash-title">الخطوط الهاتفية</div><div class="dash-sub">إدارة أرقام الخطوط العادية</div><div class="dtw"><div class="dth"><h3>الأرقام (<span id="dNumCount">0</span>)</h3><button class="add-btn" onclick="openAddNumberModal('phone')">+ إضافة رقم</button></div><table><thead><tr><th>الرقم</th><th>النوع</th><th>الدولة</th><th>الشبكة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="dNumBody"></tbody></table></div></div><div class="dash-sec" id="dash-whatsapp-nums"><div class="dash-title">أرقام واتساب</div><div class="dash-sub">إدارة أرقام واتساب</div><div class="dtw"><div class="dth"><h3>الأرقام</h3><button class="add-btn" onclick="openAddNumberModal('whatsapp')">+ إضافة رقم</button></div><table><thead><tr><th>الرقم</th><th>الدولة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="dWaBody"></tbody></table></div></div><div class="dash-sec" id="dash-tg-nums"><div class="dash-title">أرقام تلغرام</div><div class="dash-sub">إدارة أرقام تلغرام</div><div class="dtw"><div class="dth"><h3>الأرقام</h3><button class="add-btn" onclick="openAddNumberModal('telegram')">+ إضافة رقم</button></div><tr><thead><tr><th>الرقم</th><th>الدولة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="dTgBody"></tbody></table></div></div><div class="dash-sec" id="dash-social-pkgs"><div class="dash-title">باقات السوشيال</div><div class="dash-sub">إدارة باقات المتابعين والتفاعل</div><div class="dtw"><div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddSocialPackageModal()">+ إضافة باقة</button></div></table><thead><tr><th>المنصة</th><th>النوع</th><th>الكمية</th><th>السعر</th><th>إجراء</th></tr></thead><tbody id="dSocBody"></tbody></table></div></div><div class="dash-sec" id="dash-tg-verify"><div class="dash-title">باقات توثيق تلغرام</div><div class="dash-sub">إدارة خدمات توثيق تلغرام</div><div class="dtw"><div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddTgVerifyModal()">+ إضافة باقة</button></div></table><thead><tr><th>النوع</th><th>الوصف</th><th>السعر</th><th>إجراء</th></tr></thead><tbody id="dTgVerifyBody"></tbody></table></div></div><div class="dash-sec" id="dash-games-pkgs"><div class="dash-title">باقات الألعاب والبرامج</div><div class="dash-sub">إدارة باقات شحن الألعاب</div><div class="dtw"><div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddGamePackageModal()">+ إضافة باقة</button></div></table><thead><tr><th>اللعبة</th><th>الباقة</th><th>السعر</th><th>إجراء</th></tr></thead><tbody id="dGamesBody"></tbody><tr></div></div><div class="dash-sec" id="dash-recharge-pkgs"><div class="dash-title">باقات شحن الرصيد</div><div class="dash-sub">إدارة فئات الشحن</div><div class="dtw"><div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddRechargePackageModal()">+ إضافة فئة</button></div><tr><thead><tr><th>الشبكة</th><th>الدولة</th><th>الكمية</th><th>السعر</th><th>إجراء</th></tr></thead><tbody id="dRcBody"></tbody></table></div></div><div class="dash-sec" id="dash-users"><div class="dash-title">المستخدمون</div><div class="dash-sub">قائمة جميع المسجلين وإدارة أرصدتهم</div><div style="margin-bottom:16px"><button class="add-btn" onclick="openAdminAddBalanceModal()">💰 إضافة رصيد لمستخدم</button></div><div class="dtw"><div class="dth"><h3>المستخدمون</h3></div><table><thead><tr><th>الاسم</th><th>البريد</th><th>الرصيد</th><th>الدور</th><th>تاريخ التسجيل</th><th>إجراء</th></tr></thead><tbody id="dUsersBody"></tbody></table></div><div class="dtw" style="margin-top:20px"><div class="dth"><h3>🔔 طلبات شحن المحفظة المعلقة</h3></div></table><thead><tr><th>المستخدم</th><th>المبلغ المطلوب</th><th>الوقت</th><th>إجراء</th></tr></thead><tbody id="dPendingBody"></tbody></table></div></div><div class="dash-sec" id="dash-orders"><div class="dash-title">الطلبات</div><div class="dash-sub">جميع العمليات المنفذة</div><div class="dtw"><div class="dth"><h3>سجل الطلبات</h3></div><table><thead><tr><th>المستخدم</th><th>النوع</th><th>التفاصيل</th><th>المبلغ</th><th>الوقت</th></tr></thead><tbody id="dOrdersBody"></tbody></table></div></div><div class="dash-sec" id="dash-payment-methods"><div class="dash-title">💳 طرق الدفع</div><div class="dash-sub">إدارة طرق الدفع المتاحة للمستخدمين</div><div class="pm-grid" id="pmGrid"></div><button class="add-btn" onclick="openPaymentMethodsModal()">⚙️ تعديل إعدادات الدفع</button></div></div></div>
+
+<!-- MODALS -->
+<div class="modal-ov" id="addFundsModal"><div class="modal-box af-modal"><div class="af-progress"><div class="af-prog-step active" id="afProgStep1"><div class="af-prog-dot active-dot" id="afDot1">1</div><span>المبلغ</span></div><div class="af-prog-line" id="afLine1"></div><div class="af-prog-step" id="afProgStep2"><div class="af-prog-dot" id="afDot2">2</div><span>الدفع</span></div><div class="af-prog-line" id="afLine2"></div><div class="af-prog-step" id="afProgStep3"><div class="af-prog-dot" id="afDot3">3</div><span>الإشعار</span></div></div><div class="af-step" id="afStep1"><div class="af-step-header"><div class="af-step-num">1</div><div><div class="af-step-title">أدخل المبلغ</div><div class="af-step-sub">كم تريد إضافة؟</div></div></div><div class="af-amt-presets"><button class="af-preset" onclick="setAddFundsAmount(5)">$5</button><button class="af-preset" onclick="setAddFundsAmount(10)">$10</button><button class="af-preset" onclick="setAddFundsAmount(20)">$20</button><button class="af-preset" onclick="setAddFundsAmount(50)">$50</button><button class="af-preset" onclick="setAddFundsAmount(100)">$100</button></div><div class="af-input-row"><span class="af-dollar">$</span><input type="number" class="fi af-amt-input" id="addFundsAmt" placeholder="0.00" min="1" step="0.5"></div><div class="af-step-footer"><button class="m-cancel" onclick="closeModal('addFundsModal')">إلغاء</button><button class="m-confirm" onclick="goToAddFundsStep2()">التالي ←</button></div></div><div class="af-step" id="afStep2" style="display:none"><div class="af-step-header"><div class="af-step-num">2</div><div><div class="af-step-title">ادفع عبر شام كاش</div><div class="af-step-sub">أرسل <strong id="afAmtDisplay" style="color:var(--gold)"></strong> للحساب التالي</div></div></div><div class="af-qr-wrap"><div class="af-qr-label">امسح الباركود بتطبيق شام كاش</div><div class="af-qr-box"><img id="afQrImg" src="" alt="QR" style="max-width:100%;border-radius:12px;display:none"><div id="afQrFallback" class="af-qr-fallback"><div style="font-size:3rem;margin-bottom:12px">📱</div><div>لم يتم رفع الباركود بعد</div><div style="font-size:0.78rem;margin-top:6px">يرجى إرسال المبلغ يدوياً</div></div></div></div><div class="af-account-box"><div class="af-account-row"><span class="af-account-lbl">💳 رقم المحفظة</span><div style="display:flex;align-items:center;gap:8px"><span id="afShamNum" class="af-account-val"></span><button class="copy-btn" onclick="copyToClipboard(document.getElementById('afShamNum').textContent)">📋 نسخ</button></div></div><div class="af-account-row"><span class="af-account-lbl">👤 اسم الحساب</span><span id="afShamName" class="af-account-val"></span></div><div class="af-account-row af-account-total"><span class="af-account-lbl">💵 المبلغ المطلوب</span><span id="afShamAmt" class="af-account-val" style="color:var(--gold);font-size:1.1rem"></span></div></div><div class="af-step-footer" style="flex-direction:column;gap:10px"><button class="af-wa-btn" onclick="goToAddFundsStep3()"><span>✅</span><span>أرسلت المبلغ — التالي</span></button><button class="m-cancel" style="width:100%;text-align:center" onclick="goToAddFundsStep1()">← رجوع</button></div></div><div class="af-step" id="afStep3" style="display:none"><div class="af-step-header"><div class="af-step-num" style="background:var(--green)">3</div><div><div class="af-step-title">أرسل إشعار التحويل</div><div class="af-step-sub">أعلمنا لنضيف رصيدك فوراً</div></div></div><div class="af-success-msg"><div class="af-success-icon">🎉</div><div class="af-success-text">أرسل لنا صورة الإيصال عبر واتساب</div><div class="af-success-sub">سيتم مراجعة تحويلك وإضافة الرصيد خلال دقائق</div></div><div class="af-wa-instructions"><div class="af-wa-step"><div class="af-wa-step-num">١</div><div>افتح واتساب وأرسل للرقم <strong>0949277889</strong></div></div><div class="af-wa-step"><div class="af-wa-step-num">٢</div><div>أرسل صورة إيصال التحويل من تطبيق شام كاش</div></div><div class="af-wa-step"><div class="af-wa-step-num">٣</div><div>اذكر بريدك الإلكتروني أو اسمك في الرسالة</div></div></div><div class="fg"><label class="fl">رقم الإيصال (اختياري)</label><input type="text" class="fi" id="txProof" placeholder="أدخل رقم العملية"></div><div class="af-step-footer" style="flex-direction:column;gap:10px;margin-top:20px"><a id="afWaLink" href="#" target="_blank" class="af-wa-btn" onclick="confirmAddFundsRequest()"><span>💬</span><span>فتح واتساب الآن</span></a><button class="m-cancel" style="width:100%;text-align:center" onclick="closeModal('addFundsModal')">إغلاق</button></div></div></div></div>
+
+<div class="modal-ov" id="adminAddBalModal"><div class="modal-box"><div class="modal-title">💰 إضافة رصيد لمستخدم</div><div class="modal-sub">إضافة رصيد مباشرة من الأدمن</div><div class="fg"><label class="fl">اختر المستخدم</label><select class="fi" id="adminBalUser"></select></div><div class="fg"><label class="fl">المبلغ (USD)</label><input type="number" class="fi" id="adminBalAmt" placeholder="10" min="0.5" step="0.5"></div><div class="fg"><label class="fl">ملاحظة</label><input type="text" class="fi" id="adminBalNote" placeholder="سبب الإضافة"></div><div class="modal-foot"><button class="m-cancel" onclick="closeModal('adminAddBalModal')">إلغاء</button><button class="m-confirm" onclick="confirmAdminAddBalance()">إضافة الرصيد</button></div></div></div>
+
+<div class="modal-ov" id="editPMModal"><div class="modal-box"><div class="modal-title">⚙️ إعدادات طرق الدفع</div><div class="modal-sub">تعديل معلومات كل طريقة دفع</div><div class="tab-bar"><button class="tab-btn active" onclick="switchPaymentMethodTab('binance',this)">Binance</button><button class="tab-btn" onclick="switchPaymentMethodTab('shamcash',this)">شام كاش</button><button class="tab-btn" onclick="switchPaymentMethodTab('western',this)">Western Union</button></div><div id="pmt-binance" class="tab-content active"><div class="fg"><label class="fl">رقم محفظة USDT</label><input type="text" class="fi" id="pm-binance-addr" placeholder="T..."></div><div class="fg"><label class="fl">UID Binance Pay</label><input type="text" class="fi" id="pm-binance-uid" placeholder="123456789"></div><div class="fg"><label class="fl">رابط QR</label><input type="text" class="fi" id="pm-binance-qr" placeholder="https://..."></div><div class="fg" style="display:flex;align-items:center;gap:12px"><label class="fl" style="margin:0">تفعيل</label><input type="checkbox" id="pm-binance-active" style="width:18px;height:18px"></div></div><div id="pmt-shamcash" class="tab-content"><div class="fg"><label class="fl">رقم المحفظة</label><input type="text" class="fi" id="pm-sham-num" placeholder="09XX XXX XXX"></div><div class="fg"><label class="fl">اسم صاحب المحفظة</label><input type="text" class="fi" id="pm-sham-name" placeholder="محمد أحمد"></div><div class="fg"><label class="fl">صورة الباركود</label><div><div style="display:flex;gap:10px;align-items:center"><label style="flex:1;padding:12px;background:var(--dark4);border:1.5px dashed rgba(245,200,66,0.3);border-radius:10px;cursor:pointer;text-align:center">📁 رفع صورة<input type="file" accept="image/*" style="display:none" onchange="handleQrUpload(event,'shamcash')"></label></div><div id="shamQrPreview" style="display:none;text-align:center;margin-top:10px"><img id="shamQrPreviewImg" src="" style="max-width:100px;border-radius:10px"><br><small>معاينة</small></div><input type="text" class="fi" id="pm-sham-qr" placeholder="أو رابط الصورة" style="margin-top:8px" oninput="previewQrUrl('shamcash')"></div></div><div class="fg" style="display:flex;align-items:center;gap:12px"><label class="fl" style="margin:0">تفعيل</label><input type="checkbox" id="pm-sham-active" style="width:18px;height:18px"></div></div><div id="pmt-western" class="tab-content"><div class="fg"><label class="fl">الاسم الكامل</label><input type="text" class="fi" id="pm-wu-name" placeholder="Full Name"></div><div class="fg"><label class="fl">الدولة</label><input type="text" class="fi" id="pm-wu-country" placeholder="Syria"></div><div class="fg" style="display:flex;align-items:center;gap:12px"><label class="fl" style="margin:0">تفعيل</label><input type="checkbox" id="pm-wu-active" style="width:18px;height:18px"></div></div><div class="modal-foot"><button class="m-cancel" onclick="closeModal('editPMModal')">إلغاء</button><button class="m-confirm" onclick="savePaymentMethods()">حفظ</button></div></div></div>
+
+<div class="modal-ov" id="addNumModal"><div class="modal-box"><div class="modal-title" id="addNumTitle">📱 إضافة رقم</div><div class="modal-sub">أضف رقماً جديداً للقائمة</div><input type="hidden" id="addNumType"><div class="fg"><label class="fl">رقم الهاتف</label><input type="text" class="fi" id="newNumPhone" placeholder="+963 944 123 456"></div><div class="grid2"><div class="fg"><label class="fl">الدولة</label><select class="fi" id="newNumCountry"><option value="سوريا">🇸🇾 سوريا</option><option value="السعودية">🇸🇦 السعودية</option><option value="الإمارات">🇦🇪 الإمارات</option><option value="تركيا">🇹🇷 تركيا</option><option value="مصر">🇪🇬 مصر</option><option value="العراق">🇮🇶 العراق</option></select></div><div class="fg" id="newNumOpGroup"><label class="fl">الشبكة</label><select class="fi" id="newNumOp"><option value="سيريتل">سيريتل</option><option value="MTN">MTN</option><option value="STC">STC</option><option value="Etisalat">Etisalat</option><option value="Turkcell">Turkcell</option><option value="Zain">Zain</option></select></div></div><div class="fg"><label class="fl">السعر (USD)</label><input type="number" class="fi" id="newNumPrice" placeholder="5.99" min="0.1" step="0.01"></div><div class="modal-foot"><button class="m-cancel" onclick="closeModal('addNumModal')">إلغاء</button><button class="m-confirm" onclick="confirmAddNumber()">إضافة</button></div></div></div>
+
+<div class="modal-ov" id="addSocialModal"><div class="modal-box"><div class="modal-title">📣 إضافة باقة سوشيال</div><div class="modal-sub">أضف باقة متابعين أو تفاعل</div><div class="grid2"><div class="fg"><label class="fl">المنصة</label><select class="fi" id="nSocPlat"><option value="Instagram">إنستاغرام</option><option value="TikTok">تيك توك</option><option value="Facebook">فيسبوك</option><option value="YouTube">يوتيوب</option></select></div><div class="fg"><label class="fl">النوع</label><select class="fi" id="nSocType"><option value="متابعين">متابعين</option><option value="إعجابات">إعجابات</option><option value="مشاهدات">مشاهدات</option></select></div></div><div class="grid2"><div class="fg"><label class="fl">الكمية</label><input type="number" class="fi" id="nSocQty" placeholder="1000"></div><div class="fg"><label class="fl">السعر</label><input type="number" class="fi" id="nSocPrice" placeholder="2.99" step="0.01"></div></div><div class="modal-foot"><button class="m-cancel" onclick="closeModal('addSocialModal')">إلغاء</button><button class="m-confirm" onclick="confirmAddSocialPackage()">إضافة</button></div></div></div>
+
+<div class="modal-ov" id="addTgVerifyModal"><div class="modal-box"><div class="modal-title">✅ إضافة باقة توثيق تلغرام</div><div class="modal-sub">أضف خدمة توثيق جديدة</div><div class="fg"><label class="fl">نوع التوثيق</label><select class="fi" id="nTgVType"><option value="توثيق حساب شخصي">توثيق حساب شخصي</option><option value="توثيق مجموعة">توثيق مجموعة</option><option value="توثيق قناة">توثيق قناة</option></select></div><div class="fg"><label class="fl">الوصف</label><input type="text" class="fi" id="nTgVDesc" placeholder="وصف الخدمة"></div><div class="fg"><label class="fl">السعر (USD)</label><input type="number" class="fi" id="nTgVPrice" placeholder="29.99" step="0.01"></div><div class="modal-foot"><button class="m-cancel" onclick="closeModal('addTgVerifyModal')">إلغاء</button><button class="m-confirm" onclick="confirmAddTgVerifyPackage()">إضافة</button></div></div></div>
+
+<div class="modal-ov" id="addGameModal"><div class="modal-box"><div class="modal-title">🎮 إضافة باقة لعبة</div><div class="modal-sub">أضف باقة شحن جديدة</div><div class="fg"><label class="fl">اسم اللعبة</label><input type="text" class="fi" id="nGameName" placeholder="PUBG Mobile, Free Fire..." list="gamesSuggestions"><datalist id="gamesSuggestions"><option value="PUBG Mobile"><option value="Free Fire"><option value="Clash of Clans"><option value="Mobile Legends"><option value="iTunes"><option value="Google Play"><option value="Steam"></datalist></div><div class="fg"><label class="fl">رمز اللعبة</label><input type="text" class="fi" id="nGameIcon" placeholder="🎮" maxlength="4" style="font-size:1.4rem"></div><div class="grid2"><div class="fg"><label class="fl">اسم الباقة</label><input type="text" class="fi" id="nGamePkg" placeholder="60 UC"></div><div class="fg"><label class="fl">السعر (USD)</label><input type="number" class="fi" id="nGamePrice" placeholder="2.99" step="0.01"></div></div><div class="modal-foot"><button class="m-cancel" onclick="closeModal('addGameModal')">إلغاء</button><button class="m-confirm" onclick="confirmAddGamePackage()">إضافة</button></div></div></div>
+
+<div class="modal-ov" id="addRcPkgModal"><div class="modal-box"><div class="modal-title">⚡ إضافة فئة شحن</div><div class="modal-sub">أضف فئة شحن جديدة</div><div class="grid2"><div class="fg"><label class="fl">الدولة</label><select class="fi" id="nRcCountry"><option value="سوريا">سوريا</option><option value="العراق">العراق</option><option value="السعودية">السعودية</option><option value="الإمارات">الإمارات</option><option value="تركيا">تركيا</option></select></div><div class="fg"><label class="fl">الشبكة</label><input type="text" class="fi" id="nRcOp" placeholder="سيريتل"></div></div><div class="grid2"><div class="fg"><label class="fl">الكمية</label><input type="number" class="fi" id="nRcQty" placeholder="1000"></div><div class="fg"><label class="fl">السعر (USD)</label><input type="number" class="fi" id="nRcPrice" placeholder="3.99" step="0.01"></div></div><div class="modal-foot"><button class="m-cancel" onclick="closeModal('addRcPkgModal')">إلغاء</button><button class="m-confirm" onclick="confirmAddRechargePackage()">إضافة</button></div></div></div>
+
+<div class="modal-ov" id="buyModal"><div class="modal-box"><div class="modal-title">🛒 تأكيد الشراء</div><div class="modal-sub" id="buyModalDesc"></div><div style="padding:18px;background:var(--dark3);border-radius:12px;margin:14px 0"><div style="display:flex;justify-content:space-between;margin-bottom:10px"><span>رصيدك الحالي</span><span id="bm-balance" style="color:var(--green);font-weight:700"></span></div><div style="display:flex;justify-content:space-between;margin-bottom:10px"><span>سعر الخدمة</span><span id="bm-price" style="color:var(--gold);font-weight:700"></span></div><div style="height:1px;background:rgba(255,255,255,0.06);margin:6px 0"></div><div style="display:flex;justify-content:space-between"><span>الرصيد بعد الشراء</span><span id="bm-after" style="font-weight:700"></span></div></div><div class="modal-foot"><button class="m-cancel" onclick="closeModal('buyModal')">إلغاء</button><button class="m-confirm" onclick="executePurchase()">تأكيد الشراء</button></div></div></div>
+
+<div class="toast" id="toastMsg"></div>
+<a href="https://wa.me/963949277889" target="_blank" id="waFloat" style="position:fixed;bottom:28px;right:28px;z-index:998;width:54px;height:54px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;font-size:1.6rem;box-shadow:0 4px 20px rgba(37,211,102,0.45);text-decoration:none;display:none">💬</a>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ============================================================
+// SUPABASE CONFIGURATION
+// ============================================================
+const ZOOD_SUPABASE_URL = "https://clqekuhmpaesuauhxpam.supabase.co";
+const ZOOD_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNscWVrdWhtcGFlc3VhdWh4cGFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjEwOTksImV4cCI6MjA5MjA5NzA5OX0.gPKYh__MGh0sNEA_F-0bBPKZiyCtmC3wPmJlXyo5Jt0";
+
+const zoodSupabase = window.supabase.createClient(ZOOD_SUPABASE_URL, ZOOD_SUPABASE_KEY);
+
+// ============================================================
+// المتغيرات العامة
+// ============================================================
+let zoodCurrentUser = null;
+let zoodPendingBuy = null;
+let zoodRcState = {};
+let zoodTxFilter = 'all';
+let zoodDB = {
+  users: [], numbers: [], socialPackages: [], tgVerifyPackages: [],
+  gamePackages: [], rechargePkgs: [], orders: [], transactions: [], paymentMethods: {}
+};
+
+// ============================================================
+// دوال الجلسة
+// ============================================================
+function zoodSaveSession(user) {
+  if (!user) return;
+  localStorage.setItem('zood_session', JSON.stringify({
+    id: user.id, email: user.email, name: user.name, role: user.role, balance: user.balance, timestamp: Date.now()
+  }));
+}
+
+function zoodLoadSession() {
+  try {
+    const saved = localStorage.getItem('zood_session');
+    if (!saved) return null;
+    const session = JSON.parse(saved);
+    if (Date.now() - session.timestamp > 30 * 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('zood_session');
+      return null;
+    }
+    return session;
+  } catch(e) { return null; }
+}
+
+function zoodClearSession() { localStorage.removeItem('zood_session'); }
+
+// ============================================================
+// دوال التنقل
+// ============================================================
+function navigateToPage(pageName) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const targetPage = document.getElementById('page-' + pageName);
+  if (targetPage) targetPage.classList.add('active');
+  window.scrollTo(0, 0);
+  
+  if (pageName === 'numbers') renderNumbersList('phone');
+  else if (pageName === 'whatsapp') renderNumbersList('whatsapp');
+  else if (pageName === 'telegram-nums') renderNumbersList('telegram');
+  else if (pageName === 'wallet') renderWalletPage();
+  else if (pageName === 'social') renderSocialPackages();
+  else if (pageName === 'telegram-verify') renderTgVerifyPackages();
+  else if (pageName === 'games') renderGamePackages();
+  else if (pageName === 'dashboard') renderDashboardPage();
+}
+
+function checkLoginAndNavigate(pageName) {
+  if (!zoodCurrentUser) navigateToPage('login');
+  else navigateToPage(pageName);
+}
+
+// ============================================================
+// تحميل البيانات
+// ============================================================
+async function zoodLoadFromDB(table) {
+  const { data, error } = await zoodSupabase.from(table).select('*');
+  if (error) { console.error(`Error loading ${table}:`, error); return []; }
+  return data || [];
+}
+
+async function zoodInsertToDB(table, item) {
+  const { data, error } = await zoodSupabase.from(table).insert(item).select();
+  if (error) console.error(`Error inserting to ${table}:`, error);
+  return data ? data[0] : null;
+}
+
+async function zoodUpdateInDB(table, id, updates) {
+  const { error } = await zoodSupabase.from(table).update(updates).eq('id', id);
+  return !error;
+}
+
+async function zoodDeleteFromDB(table, id) {
+  const { error } = await zoodSupabase.from(table).delete().eq('id', id);
+  return !error;
+}
+
+async function zoodRefreshAllData() {
+  zoodShowLoading(true);
+  try {
+    const [users, numbers, social, tgVerify, games, recharge, orders, transactions, pmData] = await Promise.all([
+      zoodLoadFromDB('users'), zoodLoadFromDB('numbers'), zoodLoadFromDB('social_packages'),
+      zoodLoadFromDB('tg_verify_packages'), zoodLoadFromDB('game_packages'), zoodLoadFromDB('recharge_packages'),
+      zoodLoadFromDB('orders'), zoodLoadFromDB('transactions'), zoodLoadFromDB('payment_methods')
+    ]);
+    
+    zoodDB.users = users;
+    zoodDB.numbers = numbers;
+    zoodDB.socialPackages = social;
+    zoodDB.tgVerifyPackages = tgVerify;
+    zoodDB.gamePackages = games;
+    zoodDB.rechargePkgs = recharge;
+    zoodDB.orders = orders;
+    zoodDB.transactions = transactions;
+    zoodDB.paymentMethods = {};
+    pmData.forEach(m => { zoodDB.paymentMethods[m.method] = m.data; zoodDB.paymentMethods[m.method].active = m.active; });
+  } catch(e) { console.error(e); }
+  finally { zoodShowLoading(false); }
+}
+
+// ============================================================
+// المصادقة
+// ============================================================
+async function processLogin() {
+  zoodShowLoading(true);
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  
+  const user = zoodDB.users.find(u => u.email === email && u.pass === pass);
+  if (!user) { 
+    document.getElementById('loginErr').style.display = 'block';
+    zoodShowLoading(false);
+    return; 
+  }
+  
+  document.getElementById('loginErr').style.display = 'none';
+  zoodCurrentUser = user;
+  zoodSaveSession(zoodCurrentUser);
+  zoodUpdateUI();
+  zoodShowToast('مرحباً ' + user.name + ' 👋');
+  zoodShowLoading(false);
+  navigateToPage('home');
+}
+
+async function processRegister() {
+  zoodShowLoading(true);
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPass').value;
+  
+  if (!name || !email || !pass || pass.length < 6) { 
+    zoodShowToast('املأ جميع الحقول بشكل صحيح', 'error'); 
+    zoodShowLoading(false);
+    return; 
+  }
+  if (zoodDB.users.find(u => u.email === email)) { 
+    document.getElementById('regErr').style.display = 'block'; 
+    zoodShowLoading(false);
+    return; 
+  }
+  
+  document.getElementById('regErr').style.display = 'none';
+  const newUser = { id: Date.now(), name, email, pass, role: 'user', balance: 0, created_at: new Date().toISOString() };
+  await zoodSupabase.from('users').insert(newUser);
+  await zoodRefreshAllData();
+  zoodCurrentUser = newUser;
+  zoodSaveSession(zoodCurrentUser);
+  zoodUpdateUI();
+  zoodShowToast('تم إنشاء الحساب بنجاح 🎉');
+  zoodShowLoading(false);
+  navigateToPage('home');
+}
+
+async function performLogout() {
+  zoodCurrentUser = null;
+  zoodClearSession();
+  zoodUpdateUI();
+  navigateToPage('home');
+  zoodShowToast('تم تسجيل الخروج');
+}
+
+// ============================================================
+// عرض البيانات
+// ============================================================
+const zoodCountryFlags = { سوريا: '🇸🇾', السعودية: '🇸🇦', الإمارات: '🇦🇪', تركيا: '🇹🇷', مصر: '🇪🇬', العراق: '🇮🇶', روسيا: '🇷🇺' };
+const zoodSocialEmojis = { Instagram: '📸', TikTok: '🎵', Facebook: '👍', YouTube: '▶️', Twitter: '🐦', Snapchat: '👻' };
+const zoodSocialColors = { Instagram: '#E1306C', TikTok: '#69C9D0', Facebook: '#1877F2', YouTube: '#FF0000', Twitter: '#1DA1F2', Snapchat: '#FFFC00' };
+
+function renderNumbersList(type) {
+  let gridId, countryFilterId;
+  if (type === 'phone') { gridId = 'numbersGrid'; countryFilterId = 'numCountryF'; }
+  else if (type === 'whatsapp') { gridId = 'waGrid'; countryFilterId = 'waCountryF'; }
+  else { gridId = 'tgGrid'; countryFilterId = 'tgCountryF'; }
+  
+  const cf = document.getElementById(countryFilterId)?.value || '';
+  const ofEl = document.getElementById('numOpF');
+  const of2 = ofEl ? ofEl.value : '';
+  
+  let nums = zoodDB.numbers.filter(n => n.type === type && n.status === 'available' && (!cf || n.country === cf) && (!of2 || n.operator === of2));
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  
+  if (!nums.length) {
+    grid.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text3)">لا توجد أرقام متاحة</div>';
+    return;
+  }
+  
+  const icons = { phone: '📱', whatsapp: '💬', telegram: '✈️' };
+  grid.innerHTML = nums.map(n => `
+    <div class="product-card">
+      <div style="margin-bottom:8px">${zoodCountryFlags[n.country] || ''} ${n.country}</div>
+      <div class="pc-header">
+        <div><div class="pc-name">${icons[n.type]} ${n.operator || ''}</div><div style="font-size:0.78rem;color:var(--text3)">${n.type === 'whatsapp' ? 'واتساب' : n.type === 'telegram' ? 'تلغرام' : 'هاتف'}</div></div>
+        <span class="pt pt-avail">✅ متاح</span>
+      </div>
+      <div class="pc-num">${n.phone}</div>
+      <div class="pc-price">$${n.price.toFixed(2)}</div>
+      <button class="buy-btn" onclick="openBuyNumber(${n.id})">🛒 شراء الآن</button>
+    </div>
+  `).join('');
+}
+
+function renderSocialPackages() {
+  const platforms = [...new Set(zoodDB.socialPackages.map(p => p.platform))];
+  const grid = document.getElementById('socialGrid');
+  if (!grid) return;
+  
+  grid.innerHTML = platforms.map(platform => {
+    const pkgs = zoodDB.socialPackages.filter(p => p.platform === platform);
+    return `
+      <div class="soc-card">
+        <div class="soc-hd">
+          <div class="soc-logo" style="background:${zoodSocialColors[platform] || '#444'}22;color:${zoodSocialColors[platform] || '#fff'}">${zoodSocialEmojis[platform] || '📱'}</div>
+          <div><div class="soc-plat">${platform}</div></div>
+        </div>
+        <div class="pkg-rows">
+          ${pkgs.map(pkg => `
+            <div class="pkg-row" onclick="openBuyService('${pkg.qty.toLocaleString()} ${pkg.type} ${platform}', ${pkg.price})">
+              <div class="pkg-qty">🔢 ${pkg.qty.toLocaleString()} ${pkg.type}</div>
+              <div class="pkg-pr">$${pkg.price}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTgVerifyPackages() {
+  const grid = document.getElementById('tgVerifyGrid');
+  if (!grid) return;
+  
+  grid.innerHTML = zoodDB.tgVerifyPackages.map(p => `
+    <div class="soc-card">
+      <div class="soc-hd">
+        <div class="soc-logo" style="background:rgba(77,159,255,0.12);color:#4D9FFF">✅</div>
+        <div><div class="soc-plat">${p.type}</div><div class="soc-type">توثيق تلغرام</div></div>
+      </div>
+      <div style="font-size:0.85rem;color:var(--text2);margin-bottom:16px">${p.description}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:1.5rem;font-weight:800;color:var(--gold)">$${p.price}</div>
+        <button class="buy-btn" style="width:auto;padding:11px 22px" onclick="openBuyService('${p.type} تلغرام', ${p.price})">طلب الخدمة</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderGamePackages() {
+  const games = [...new Set(zoodDB.gamePackages.map(p => p.game))];
+  const grid = document.getElementById('gamesGrid');
+  if (!grid) return;
+  
+  grid.innerHTML = games.map(game => {
+    const pkgs = zoodDB.gamePackages.filter(p => p.game === game);
+    const icon = pkgs[0]?.icon || '🎮';
+    return `
+      <div class="game-card">
+        <div class="game-icon">${icon}</div>
+        <div class="game-name">${game}</div>
+        <div class="game-pkgs">
+          ${pkgs.map(p => `
+            <div class="game-pkg-row" onclick="openBuyService('${p.package_name} - ${game}', ${p.price})">
+              <div class="gp-name">${p.package_name}</div>
+              <div class="gp-price">$${p.price}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// شحن الرصيد
+// ============================================================
+function switchRechargeTab(tab, el) {
+  document.querySelectorAll('#rcTabs .tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#page-recharge .tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('rc-' + tab).classList.add('active');
+}
+
+function selectRechargeOperator(op, region) {
+  zoodRcState[region] = { op, pkg: null };
+  const pkgs = zoodDB.rechargePkgs.filter(p => p.operator === op);
+  const gridId = 'rcGrid' + region.charAt(0).toUpperCase() + region.slice(1);
+  const pkgDivId = 'rcPkgs' + region.charAt(0).toUpperCase() + region.slice(1);
+  
+  const g = document.getElementById(gridId);
+  if (g) {
+    g.innerHTML = pkgs.map(p => `
+      <div class="rc-card" onclick="selectRechargePackage('${region}', ${p.id}, this)">
+        <div class="rc-icon">⚡</div>
+        <div class="rc-amt">${p.quantity.toLocaleString()}</div>
+        <div class="rc-lbl">وحدة</div>
+        <div style="margin-top:7px;font-weight:700;color:var(--gold)">$${p.price}</div>
+      </div>
+    `).join('');
+  }
+  
+  const d = document.getElementById(pkgDivId);
+  if (d) d.style.display = 'block';
+}
+
+function selectRechargePackage(region, pkgId, el) {
+  const pkg = zoodDB.rechargePkgs.find(p => p.id === pkgId);
+  if (!zoodRcState[region]) zoodRcState[region] = {};
+  zoodRcState[region].pkg = pkg;
+  
+  const gridId = 'rcGrid' + region.charAt(0).toUpperCase() + region.slice(1);
+  document.querySelectorAll('#' + gridId + ' .rc-card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+async function processRecharge(region) {
+  const st = zoodRcState[region];
+  if (!st || !st.op || !st.pkg) { zoodShowToast('اختر الشبكة والفئة أولاً', 'error'); return; }
+  
+  const numId = 'rcNum' + region.charAt(0).toUpperCase() + region.slice(1);
+  const num = document.getElementById(numId)?.value.trim();
+  if (!num) { zoodShowToast('أدخل رقم الهاتف', 'error'); return; }
+  
+  openBuyService(`شحن ${st.pkg.quantity.toLocaleString()} وحدة - ${st.op} - ${num}`, st.pkg.price, async () => {
+    await zoodInsertToDB('orders', {
+      id: Date.now(),
+      user_name: zoodCurrentUser.name,
+      user_id: zoodCurrentUser.id,
+      type: 'شحن رصيد',
+      detail: `${st.op} | ${num} | ${st.pkg.quantity.toLocaleString()} وحدة`,
+      amount: st.pkg.price,
+      status: 'done',
+      order_time: new Date().toLocaleString('ar')
+    });
+    await zoodRefreshAllData();
+    zoodShowToast(`تم الشحن ✅`, 'success');
+    zoodRcState[region] = {};
+  });
+}
+
+// ============================================================
+// المحفظة
+// ============================================================
+async function renderWalletPage() {
+  if (!zoodCurrentUser) return;
+  
+  const { data } = await zoodSupabase.from('users').select('*').eq('id', zoodCurrentUser.id).single();
+  if (data) zoodCurrentUser = data;
+  
+  document.getElementById('walletAmt').textContent = zoodCurrentUser.balance.toFixed(2);
+  if (document.getElementById('walletBalNav')) {
+    document.getElementById('walletBalNav').textContent = zoodCurrentUser.balance.toFixed(2);
+  }
+  
+  const txs = zoodDB.transactions.filter(t => t.user_id === zoodCurrentUser.id);
+  const totalIn = txs.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0);
+  const totalOut = txs.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0);
+  
+  if (document.getElementById('wltTotalIn')) document.getElementById('wltTotalIn').textContent = '$' + totalIn.toFixed(2);
+  if (document.getElementById('wltTotalOut')) document.getElementById('wltTotalOut').textContent = '$' + totalOut.toFixed(2);
+  if (document.getElementById('wltTxCount')) document.getElementById('wltTxCount').textContent = txs.length;
+  
+  renderTransactionsList('all');
+}
+
+function filterTransactions(type, el) {
+  zoodTxFilter = type;
+  document.querySelectorAll('#txFilterBtns .tab-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderTransactionsList(type);
+}
+
+function renderTransactionsList(type) {
+  if (!zoodCurrentUser) return;
+  
+  let txs = zoodDB.transactions.filter(t => t.user_id === zoodCurrentUser.id);
+  if (type !== 'all') txs = txs.filter(t => t.type === type);
+  txs = [...txs].reverse();
+  
+  const list = document.getElementById('txList');
+  if (!list) return;
+  if (!txs.length) { list.innerHTML = '<div class="wlt-empty"><div class="wlt-empty-icon">📋</div><div>لا توجد معاملات</div></div>'; return; }
+  list.innerHTML = txs.map(t => `
+    <div class="tx-item">
+      <div class="tx-left">
+        <div class="tx-ico ${t.type}">${t.type === 'credit' ? '💚' : '🔴'}</div>
+        <div><div class="tx-desc">${t.description}</div><div class="tx-date">${t.transaction_date}</div></div>
+      </div>
+      <div class="tx-amt ${t.type}">${t.type === 'credit' ? '+' : '-'}$${t.amount.toFixed(2)}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// إضافة رصيد
+// ============================================================
+function setAddFundsAmount(val) {
+  document.getElementById('addFundsAmt').value = val;
+  document.querySelectorAll('.af-preset').forEach(b => b.classList.toggle('af-active', parseFloat(b.textContent.replace('$', '')) === val));
+}
+
+function updateAddFundsProgress(step) {
+  [1,2,3].forEach(s => {
+    const dot = document.getElementById('afDot' + s);
+    const progStep = document.getElementById('afProgStep' + s);
+    const line = document.getElementById('afLine' + s);
+    if (!dot) return;
+    if (s < step) { dot.className = 'af-prog-dot done-dot'; dot.textContent = '✓'; if(progStep) progStep.className = 'af-prog-step done'; }
+    else if (s === step) { dot.className = 'af-prog-dot active-dot'; dot.textContent = s; if(progStep) progStep.className = 'af-prog-step active'; }
+    else { dot.className = 'af-prog-dot'; dot.textContent = s; if(progStep) progStep.className = 'af-prog-step'; }
+    if (line) line.className = 'af-prog-line ' + (s < step ? 'done-line' : '');
+  });
+}
+
+function goToAddFundsStep1() {
+  document.getElementById('afStep1').style.display = 'block';
+  document.getElementById('afStep2').style.display = 'none';
+  document.getElementById('afStep3').style.display = 'none';
+  updateAddFundsProgress(1);
+}
+
+function goToAddFundsStep2() {
+  const amt = parseFloat(document.getElementById('addFundsAmt').value);
+  if (!amt || amt < 1) { zoodShowToast('أدخل مبلغاً صحيحاً', 'error'); return; }
+  const pm = zoodDB.paymentMethods.shamcash || { num: '0949277889', ownerName: 'عبدالحميد محمد الحسين' };
+  document.getElementById('afAmtDisplay').textContent = '$' + amt.toFixed(2);
+  document.getElementById('afShamNum').textContent = pm.num;
+  document.getElementById('afShamName').textContent = pm.ownerName;
+  document.getElementById('afShamAmt').textContent = '$' + amt.toFixed(2);
+  document.getElementById('afStep1').style.display = 'none';
+  document.getElementById('afStep2').style.display = 'block';
+  updateAddFundsProgress(2);
+}
+
+function goToAddFundsStep3() {
+  const amt = parseFloat(document.getElementById('addFundsAmt').value) || 0;
+  document.getElementById('afWaLink').href = 'https://wa.me/963949277889?text=' + encodeURIComponent(`مرحباً زود\nأريد إضافة رصيد $${amt}\nالحساب: ${zoodCurrentUser.email}`);
+  document.getElementById('afStep1').style.display = 'none';
+  document.getElementById('afStep2').style.display = 'none';
+  document.getElementById('afStep3').style.display = 'block';
+  updateAddFundsProgress(3);
+}
+
+function openAddFundsModal() {
+  if (!zoodCurrentUser) { navigateToPage('login'); return; }
+  document.getElementById('addFundsAmt').value = '';
+  goToAddFundsStep1();
+  openModal('addFundsModal');
+}
+
+async function confirmAddFundsRequest() {
+  const amt = parseFloat(document.getElementById('addFundsAmt').value) || 0;
+  await zoodInsertToDB('orders', {
+    id: Date.now(), user_name: zoodCurrentUser.name, user_id: zoodCurrentUser.id,
+    type: 'طلب شحن محفظة', detail: '$' + amt.toFixed(2),
+    amount: 0, requested_amt: amt, status: 'pending',
+    order_time: new Date().toLocaleString('ar')
+  });
+  closeModal('addFundsModal');
+  zoodShowToast('تم إرسال طلبك ✅');
+}
+
+// ============================================================
+// الشراء
+// ============================================================
+function openBuyNumber(id) {
+  if (!zoodCurrentUser) { navigateToPage('login'); return; }
+  const n = zoodDB.numbers.find(x => x.id === id);
+  if (!n || n.status !== 'available') { zoodShowToast('هذا الرقم غير متاح', 'error'); return; }
+  zoodPendingBuy = { type: 'number', id, price: n.price, data: n };
+  showBuyModal(`شراء رقم ${n.phone} (${n.country})`, n.price, async () => {
+    await zoodUpdateInDB('numbers', id, { status: 'sold' });
+    await zoodInsertToDB('orders', {
+      id: Date.now(), user_name: zoodCurrentUser.name, user_id: zoodCurrentUser.id,
+      type: 'شراء رقم', detail: n.phone, amount: n.price, status: 'done',
+      order_time: new Date().toLocaleString('ar')
+    });
+    await zoodRefreshAllData();
+    renderNumbersList(n.type);
+    zoodShowToast(`تم الشراء 🎉`, 'success');
+  });
+}
+
+function openBuyService(desc, price, cb) {
+  if (!zoodCurrentUser) { navigateToPage('login'); return; }
+  zoodPendingBuy = { desc, price, cb };
+  showBuyModal(desc, price, async () => {
+    await zoodInsertToDB('orders', {
+      id: Date.now(), user_name: zoodCurrentUser.name, user_id: zoodCurrentUser.id,
+      type: 'شراء خدمة', detail: desc, amount: price, status: 'done',
+      order_time: new Date().toLocaleString('ar')
+    });
+    if (cb) await cb();
+    zoodShowToast('تم الشراء ✅', 'success');
+  });
+}
+
+function showBuyModal(desc, price, onConfirm) {
+  if (zoodCurrentUser.balance < price) { zoodShowToast('رصيدك غير كافٍ!', 'error'); return; }
+  if (confirm(`تأكيد شراء: ${desc}\nالسعر: $${price}\nالرصيد بعد الشراء: $${(zoodCurrentUser.balance - price).toFixed(2)}`)) {
+    executePurchase(onConfirm);
+  }
+}
+
+async function executePurchase(onConfirm) {
+  if (!zoodPendingBuy) return;
+  const { price } = zoodPendingBuy;
+  const newBalance = zoodCurrentUser.balance - price;
+  await zoodUpdateInDB('users', zoodCurrentUser.id, { balance: newBalance });
+  zoodCurrentUser.balance = newBalance;
+  await zoodInsertToDB('transactions', {
+    id: Date.now(), user_id: zoodCurrentUser.id, type: 'debit',
+    description: zoodPendingBuy.desc, amount: price,
+    transaction_date: new Date().toLocaleString('ar')
+  });
+  await zoodRefreshAllData();
+  zoodUpdateUI();
+  if (onConfirm) await onConfirm();
+  zoodPendingBuy = null;
+  navigateToPage('wallet');
+}
+
+// ============================================================
+// لوحة التحكم
+// ============================================================
+async function renderDashboardPage() {
+  if (!zoodCurrentUser || zoodCurrentUser.role !== 'admin') return;
+  
+  const avail = zoodDB.numbers.filter(n => n.status === 'available').length;
+  const sold = zoodDB.numbers.filter(n => n.status === 'sold').length;
+  const usersCount = zoodDB.users.filter(u => u.role !== 'admin').length;
+  const pendingOrders = zoodDB.orders.filter(o => o.status === 'pending').length;
+  
+  document.getElementById('ov-avail').textContent = avail;
+  document.getElementById('ov-sold').textContent = sold;
+  document.getElementById('ov-users').textContent = usersCount;
+  document.getElementById('ov-orders').textContent = zoodDB.orders.length;
+  document.getElementById('ov-pending').textContent = pendingOrders;
+  
+  const badge = document.getElementById('pendingBadge');
+  if (badge) { badge.style.display = pendingOrders > 0 ? '' : 'none'; badge.textContent = pendingOrders; }
+  
+  document.getElementById('ovOrdersBody').innerHTML = [...zoodDB.orders].reverse().slice(0, 8).map(o => `
+    <tr><td style="font-weight:600">${o.user_name}</td><td style="font-size:0.75rem">${o.type}</td><td style="color:var(--text2);font-size:0.82rem">${o.detail || ''}</td><td style="color:var(--gold);font-weight:700">$${(o.amount || 0).toFixed(2)}</td><td style="color:var(--text3);font-size:0.78rem">${o.order_time}</td></tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center">لا توجد طلبات</td>';
+  
+  await renderUsersTable();
+  renderDashboardNumbers();
+  renderDashboardWhatsapp();
+  renderDashboardTelegram();
+  renderDashboardSocial();
+  renderDashboardTgVerify();
+  renderDashboardGames();
+  renderDashboardRecharge();
+  renderDashboardOrders();
+}
+
+async function renderUsersTable() {
+  const users = zoodDB.users.filter(u => u.role !== 'admin');
+  const tbody = document.getElementById('dUsersBody');
+  if (!tbody) return;
+  tbody.innerHTML = users.map(user => `
+    <tr><td style="font-weight:600">${user.name}</td><td style="color:var(--text2)">${user.email}</td><td style="color:var(--gold);font-weight:700">$${(user.balance || 0).toFixed(2)}</td><td><span class="pt pt-avail">مستخدم</span></td><td>${user.created_at ? user.created_at.split('T')[0] : '-'}</td><td><button class="edit-btn" onclick="addBalanceToUser(${user.id}, '${user.name}')">💰 إضافة رصيد</button><button class="del-btn" onclick="deleteUser(${user.id})">🗑️ حذف</button></td></tr>
+  `).join('');
+  
+  const pending = zoodDB.orders.filter(o => o.type === 'طلب شحن محفظة' && o.status === 'pending');
+  const pendingBody = document.getElementById('dPendingBody');
+  if (pendingBody) {
+    if (pending.length === 0) {
+      pendingBody.innerHTML = '<tr><td colspan="4" style="text-align:center">لا توجد طلبات معلقة<td></tr>';
+    } else {
+      pendingBody.innerHTML = pending.map(o => `
+        <tr><td style="font-weight:600">${o.user_name}</td><td style="color:var(--gold);font-weight:700">$${(o.requested_amt || 0).toFixed(2)}</td><td style="color:var(--text3);font-size:0.8rem">${o.order_time}</td><td><button class="edit-btn" onclick="approveWalletRequest(${o.id})">✅ موافقة</button><button class="del-btn" onclick="rejectWalletRequest(${o.id})">❌ رفض</button></td></tr>
+      `).join('');
+    }
+  }
+}
+
+async function addBalanceToUser(userId, userName) {
+  const amount = prompt(`أدخل المبلغ لإضافته لـ ${userName} ($):`);
+  if (!amount || isNaN(amount) || amount <= 0) return;
+  const user = zoodDB.users.find(u => u.id === userId);
+  await zoodUpdateInDB('users', userId, { balance: (user.balance || 0) + parseFloat(amount) });
+  await zoodInsertToDB('transactions', {
+    id: Date.now(), user_id: userId, type: 'credit',
+    description: `إضافة رصيد من الإدارة: $${amount}`,
+    amount: parseFloat(amount), transaction_date: new Date().toLocaleString('ar')
+  });
+  await zoodRefreshAllData();
+  await renderUsersTable();
+  zoodShowToast(`تمت إضافة $${amount} لـ ${userName} ✅`);
+}
+
+async function deleteUser(userId) {
+  if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+  await zoodDeleteFromDB('users', userId);
+  await zoodRefreshAllData();
+  await renderUsersTable();
+  zoodShowToast('تم حذف المستخدم');
+}
+
+async function approveWalletRequest(orderId) {
+  const order = zoodDB.orders.find(o => o.id === orderId);
+  if (!order) return;
+  const user = zoodDB.users.find(u => u.id === order.user_id);
+  if (!user) return;
+  await zoodUpdateInDB('users', user.id, { balance: (user.balance || 0) + (order.requested_amt || 0) });
+  await zoodUpdateInDB('orders', orderId, { status: 'approved', amount: order.requested_amt });
+  await zoodInsertToDB('transactions', {
+    id: Date.now(), user_id: user.id, type: 'credit',
+    description: 'إضافة رصيد — تمت الموافقة',
+    amount: order.requested_amt, transaction_date: new Date().toLocaleString('ar')
+  });
+  await zoodRefreshAllData();
+  renderDashboardPage();
+  zoodShowToast('تمت الموافقة ✅');
+}
+
+async function rejectWalletRequest(orderId) {
+  await zoodUpdateInDB('orders', orderId, { status: 'rejected' });
+  await zoodRefreshAllData();
+  renderDashboardPage();
+  zoodShowToast('تم رفض الطلب');
+}
+
+function renderDashboardNumbers() {
+  const nums = zoodDB.numbers.filter(n => n.type === 'phone');
+  document.getElementById('dNumCount').textContent = nums.length;
+  document.getElementById('dNumBody').innerHTML = nums.map(n => `
+    <tr><td><div class="pc-num" style="font-size:0.82rem;padding:5px 9px">${n.phone}</div></td><td>📱 هاتفي</td><td>${zoodCountryFlags[n.country] || ''} ${n.country}</td><td>${n.operator}</td><td style="color:var(--gold)">$${n.price.toFixed(2)}</td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td><td><button class="del-btn" onclick="deleteNumber(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumberStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td></tr>
+  `).join('');
+}
+
+function renderDashboardWhatsapp() {
+  const nums = zoodDB.numbers.filter(n => n.type === 'whatsapp');
+  document.getElementById('dWaBody').innerHTML = nums.map(n => `
+    <tr><td><div class="pc-num" style="font-size:0.82rem;padding:5px 9px">${n.phone}</div></td><td>${zoodCountryFlags[n.country] || ''} ${n.country}</td><td style="color:var(--gold)">$${n.price.toFixed(2)}</td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><td><button class="del-btn" onclick="deleteNumber(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumberStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td></tr>
+  `).join('');
+}
+
+function renderDashboardTelegram() {
+  const nums = zoodDB.numbers.filter(n => n.type === 'telegram');
+  document.getElementById('dTgBody').innerHTML = nums.map(n => `
+    <tr><td><div class="pc-num" style="font-size:0.82rem;padding:5px 9px">${n.phone}</div></td><td>${zoodCountryFlags[n.country] || ''} ${n.country}</td><td style="color:var(--gold)">$${n.price.toFixed(2)}</td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>}<button class="del-btn" onclick="deleteNumber(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumberStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td></tr>
+  `).join('');
+}
+
+function renderDashboardSocial() {
+  document.getElementById('dSocBody').innerHTML = zoodDB.socialPackages.map(p => `
+    <tr><td>${zoodSocialEmojis[p.platform] || '📱'} ${p.platform}</td><td>${p.type}</td><td>${p.qty.toLocaleString()}</td><td style="color:var(--gold)">$${p.price.toFixed(2)}</td><td><button class="del-btn" onclick="deleteSocialPackage(${p.id})">حذف</button></td></tr>
+  `).join('');
+}
+
+function renderDashboardTgVerify() {
+  document.getElementById('dTgVerifyBody').innerHTML = zoodDB.tgVerifyPackages.map(p => `
+    <tr><td>${p.type}</td><td style="color:var(--text2);font-size:0.82rem">${p.description}</td><td style="color:var(--gold)">$${p.price.toFixed(2)}</td><td><button class="del-btn" onclick="deleteTgVerifyPackage(${p.id})">حذف</button></td></tr>
+  `).join('');
+}
+
+function renderDashboardGames() {
+  document.getElementById('dGamesBody').innerHTML = zoodDB.gamePackages.map(p => `
+    <tr><td>${p.icon || '🎮'} ${p.game}</td><td>${p.package_name}</td><td style="color:var(--gold)">$${p.price.toFixed(2)}</td><td><button class="del-btn" onclick="deleteGamePackage(${p.id})">حذف</button></td></tr>
+  `).join('');
+}
+
+function renderDashboardRecharge() {
+  document.getElementById('dRcBody').innerHTML = zoodDB.rechargePkgs.map(p => `
+    <tr><td>${p.operator}</td><td>${zoodCountryFlags[p.country] || ''} ${p.country}</td><td>${p.quantity.toLocaleString()} وحدة</td><td style="color:var(--gold)">$${p.price.toFixed(2)}</td><td><button class="del-btn" onclick="deleteRechargePackage(${p.id})">حذف</button></td></tr>
+  `).join('');
+}
+
+function renderDashboardOrders() {
+  document.getElementById('dOrdersBody').innerHTML = [...zoodDB.orders].reverse().map(o => `
+    <tr><td style="font-weight:600">${o.user_name}</td><td><span class="pt pt-avail" style="font-size:0.75rem">${o.type}</span></td><td style="color:var(--text2);font-size:0.82rem">${o.detail || ''}</td><td style="color:var(--gold);font-weight:700">$${(o.amount || 0).toFixed(2)}</td><td style="color:var(--text3);font-size:0.78rem">${o.order_time}</td></tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></table>';
+}
+
+// ============================================================
+// دوال مساعدة للإدارة
+// ============================================================
+async function deleteNumber(id) { await zoodDeleteFromDB('numbers', id); await zoodRefreshAllData(); renderDashboardPage(); zoodShowToast('تم الحذف'); }
+async function toggleNumberStatus(id) { const num = zoodDB.numbers.find(n => n.id === id); await zoodUpdateInDB('numbers', id, { status: num.status === 'available' ? 'sold' : 'available' }); await zoodRefreshAllData(); renderDashboardPage(); zoodShowToast('تم التحديث'); }
+async function deleteSocialPackage(id) { await zoodDeleteFromDB('social_packages', id); await zoodRefreshAllData(); renderDashboardPage(); zoodShowToast('تم الحذف'); }
+async function deleteTgVerifyPackage(id) { await zoodDeleteFromDB('tg_verify_packages', id); await zoodRefreshAllData(); renderDashboardPage(); zoodShowToast('تم الحذف'); }
+async function deleteGamePackage(id) { await zoodDeleteFromDB('game_packages', id); await zoodRefreshAllData(); renderDashboardPage(); zoodShowToast('تم الحذف'); }
+async function deleteRechargePackage(id) { await zoodDeleteFromDB('recharge_packages', id); await zoodRefreshAllData(); renderDashboardPage(); zoodShowToast('تم الحذف'); }
+
+function openAdminAddBalanceModal() {
+  const sel = document.getElementById('adminBalUser');
+  sel.innerHTML = zoodDB.users.filter(u => u.role !== 'admin').map(u => `<option value="${u.id}">${u.name} — ${u.email} ($${(u.balance || 0).toFixed(2)})</option>`).join('');
+  openModal('adminAddBalModal');
+}
+
+async function confirmAdminAddBalance() {
+  const uid = parseInt(document.getElementById('adminBalUser').value);
+  const amt = parseFloat(document.getElementById('adminBalAmt').value);
+  const note = document.getElementById('adminBalNote').value.trim() || 'إضافة من الإدارة';
+  if (!uid || !amt || amt <= 0) { zoodShowToast('أدخل البيانات بشكل صحيح', 'error'); return; }
+  const user = zoodDB.users.find(u => u.id === uid);
+  if (!user) return;
+  await zoodUpdateInDB('users', uid, { balance: (user.balance || 0) + amt });
+  await zoodInsertToDB('transactions', { id: Date.now(), user_id: uid, type: 'credit', description: 'إضافة رصيد من الإدارة — ' + note, amount: amt, transaction_date: new Date().toLocaleString('ar') });
+  await zoodRefreshAllData();
+  closeModal('adminAddBalModal');
+  renderDashboardPage();
+  zoodShowToast('تمت الإضافة ✅');
+}
+
+function openAddNumberModal(type) {
+  document.getElementById('addNumType').value = type;
+  document.getElementById('addNumTitle').textContent = type === 'whatsapp' ? '💬 إضافة رقم واتساب' : type === 'telegram' ? '✈️ إضافة رقم تلغرام' : '📱 إضافة رقم هاتفي';
+  document.getElementById('newNumOpGroup').style.display = type === 'phone' ? '' : 'none';
+  openModal('addNumModal');
+}
+
+async function confirmAddNumber() {
+  const type = document.getElementById('addNumType').value;
+  const phone = document.getElementById('newNumPhone').value.trim();
+  const country = document.getElementById('newNumCountry').value;
+  const op = document.getElementById('newNumOp').value;
+  const price = parseFloat(document.getElementById('newNumPrice').value);
+  if (!phone || !price) { zoodShowToast('أدخل جميع البيانات', 'error'); return; }
+  await zoodInsertToDB('numbers', { id: Date.now(), type, phone, country, operator: op, price, status: 'available' });
+  await zoodRefreshAllData();
+  closeModal('addNumModal');
+  renderDashboardPage();
+  zoodShowToast('تمت الإضافة ✅');
+}
+
+function openAddSocialPackageModal() { openModal('addSocialModal'); }
+async function confirmAddSocialPackage() {
+  const qty = parseInt(document.getElementById('nSocQty').value);
+  const price = parseFloat(document.getElementById('nSocPrice').value);
+  if (!qty || !price) { zoodShowToast('أدخل الكمية والسعر', 'error'); return; }
+  await zoodInsertToDB('social_packages', { id: Date.now(), platform: document.getElementById('nSocPlat').value, type: document.getElementById('nSocType').value, qty, price });
+  await zoodRefreshAllData();
+  closeModal('addSocialModal');
+  renderDashboardPage();
+  zoodShowToast('تمت الإضافة ✅');
+}
+
+function openAddTgVerifyModal() { openModal('addTgVerifyModal'); }
+async function confirmAddTgVerifyPackage() {
+  const price = parseFloat(document.getElementById('nTgVPrice').value);
+  if (!price) { zoodShowToast('أدخل السعر', 'error'); return; }
+  await zoodInsertToDB('tg_verify_packages', { id: Date.now(), type: document.getElementById('nTgVType').value, description: document.getElementById('nTgVDesc').value, price });
+  await zoodRefreshAllData();
+  closeModal('addTgVerifyModal');
+  renderDashboardPage();
+  zoodShowToast('تمت الإضافة ✅');
+}
+
+function openAddGamePackageModal() { openModal('addGameModal'); }
+async function confirmAddGamePackage() {
+  const gameName = document.getElementById('nGameName').value.trim();
+  const gameIcon = document.getElementById('nGameIcon').value.trim() || '🎮';
+  const price = parseFloat(document.getElementById('nGamePrice').value);
+  const pkg = document.getElementById('nGamePkg').value.trim();
+  if (!gameName || !price || !pkg) { zoodShowToast('أدخل جميع البيانات', 'error'); return; }
+  await zoodInsertToDB('game_packages', { id: Date.now(), game: gameName, icon: gameIcon, package_name: pkg, price });
+  await zoodRefreshAllData();
+  closeModal('addGameModal');
+  renderDashboardPage();
+  zoodShowToast('تمت الإضافة ✅');
+}
+
+function openAddRechargePackageModal() { openModal('addRcPkgModal'); }
+async function confirmAddRechargePackage() {
+  const qty = parseInt(document.getElementById('nRcQty').value);
+  const price = parseFloat(document.getElementById('nRcPrice').value);
+  if (!qty || !price) { zoodShowToast('أدخل البيانات', 'error'); return; }
+  await zoodInsertToDB('recharge_packages', { id: Date.now(), country: document.getElementById('nRcCountry').value, operator: document.getElementById('nRcOp').value, quantity: qty, price });
+  await zoodRefreshAllData();
+  closeModal('addRcPkgModal');
+  renderDashboardPage();
+  zoodShowToast('تمت الإضافة ✅');
+}
+
+function openPaymentMethodsModal() {
+  const pm = zoodDB.paymentMethods;
+  document.getElementById('pm-binance-addr').value = pm.binance?.addr || '';
+  document.getElementById('pm-binance-uid').value = pm.binance?.uid || '';
+  document.getElementById('pm-binance-qr').value = pm.binance?.qr || '';
+  document.getElementById('pm-binance-active').checked = pm.binance?.active || false;
+  document.getElementById('pm-sham-num').value = pm.shamcash?.num || '';
+  document.getElementById('pm-sham-name').value = pm.shamcash?.ownerName || '';
+  document.getElementById('pm-sham-qr').value = pm.shamcash?.qr || '';
+  document.getElementById('pm-sham-active').checked = pm.shamcash?.active || false;
+  document.getElementById('pm-wu-name').value = pm.western?.ownerName || '';
+  document.getElementById('pm-wu-country').value = pm.western?.country || '';
+  document.getElementById('pm-wu-active').checked = pm.western?.active || false;
+  openModal('editPMModal');
+}
+
+function handleQrUpload(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    if (type === 'shamcash') {
+      document.getElementById('pm-sham-qr').value = e.target.result;
+      document.getElementById('shamQrPreviewImg').src = e.target.result;
+      document.getElementById('shamQrPreview').style.display = 'block';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function previewQrUrl(type) {
+  if (type === 'shamcash') {
+    const url = document.getElementById('pm-sham-qr').value;
+    if (url) {
+      document.getElementById('shamQrPreviewImg').src = url;
+      document.getElementById('shamQrPreview').style.display = 'block';
+    }
+  }
+}
+
+async function savePaymentMethods() {
+  const methods = [
+    { method: 'binance', data: { addr: document.getElementById('pm-binance-addr').value, uid: document.getElementById('pm-binance-uid').value, qr: document.getElementById('pm-binance-qr').value }, active: document.getElementById('pm-binance-active').checked },
+    { method: 'shamcash', data: { num: document.getElementById('pm-sham-num').value, ownerName: document.getElementById('pm-sham-name').value, qr: document.getElementById('pm-sham-qr').value }, active: document.getElementById('pm-sham-active').checked },
+    { method: 'western', data: { ownerName: document.getElementById('pm-wu-name').value, country: document.getElementById('pm-wu-country').value }, active: document.getElementById('pm-wu-active').checked }
+  ];
+  for (const m of methods) { await zoodSupabase.from('payment_methods').upsert({ method: m.method, data: m.data, active: m.active }, { onConflict: 'method' }); }
+  await zoodRefreshAllData();
+  closeModal('editPMModal');
+  renderDashboardPage();
+  zoodShowToast('تم الحفظ ✅');
+}
+
+function switchPaymentMethodTab(key, el) {
+  document.querySelectorAll('#editPMModal .tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#editPMModal .tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('pmt-' + key).classList.add('active');
+}
+
+function switchDashboardSection(name, el) {
+  document.querySelectorAll('.dash-sec').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('dash-' + name).classList.add('active');
+  el.classList.add('active');
+  renderDashboardPage();
+}
+
+// ============================================================
+// دوال عامة
+// ============================================================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-ov').forEach(m => { m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }); });
+
+let zoodToastTimer;
+function zoodShowToast(msg, type = 'success') {
+  const t = document.getElementById('toastMsg');
+  t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+  t.className = 'toast ' + type + ' show';
+  clearTimeout(zoodToastTimer);
+  zoodToastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function copyToClipboard(text) {
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => zoodShowToast('تم النسخ ✅'));
+}
+
+function zoodShowLoading(show) {
+  const loader = document.getElementById('globalLoader');
+  if (loader) loader.style.display = show ? 'flex' : 'none';
+}
+
+function zoodUpdateUI() {
+  const ok = !!zoodCurrentUser;
+  const admin = ok && zoodCurrentUser.role === 'admin';
+  
+  const authBtns = document.getElementById('navAuthButtons');
+  const userBtns = document.getElementById('navUserButtons');
+  if (authBtns) authBtns.style.display = ok ? 'none' : 'flex';
+  if (userBtns) userBtns.style.display = ok ? 'flex' : 'none';
+  
+  const walletBadge = document.getElementById('walletBadge');
+  if (walletBadge) walletBadge.style.display = ok ? 'flex' : 'none';
+  
+  const dashBtn = document.getElementById('dashNavBtn');
+  if (dashBtn) dashBtn.style.display = admin ? '' : 'none';
+  
+  const waFloat = document.getElementById('waFloat');
+  if (waFloat) waFloat.style.display = ok ? 'flex' : 'none';
+  
+  if (ok && document.getElementById('walletBalNav')) {
+    document.getElementById('walletBalNav').textContent = zoodCurrentUser.balance.toFixed(2);
+  }
+  if (ok && document.getElementById('navUserName')) {
+    document.getElementById('navUserName').textContent = '👤 ' + zoodCurrentUser.name;
+  }
+  
+  const mmWallet = document.getElementById('mmWallet');
+  const mmBalance = document.getElementById('mmBalance');
+  const mmName = document.getElementById('mmUserNameDisplay');
+  const mmAuthSec = document.getElementById('mmAuthSection');
+  const mmUserSec = document.getElementById('mmUserSection');
+  const mmDashBtn = document.getElementById('mmDashBtn');
+  
+  if (mmWallet) mmWallet.style.display = ok ? '' : 'none';
+  if (mmBalance && ok) mmBalance.textContent = zoodCurrentUser.balance.toFixed(2);
+  if (mmName && ok) mmName.textContent = zoodCurrentUser.name;
+  if (mmAuthSec) mmAuthSec.style.display = ok ? 'none' : '';
+  if (mmUserSec) mmUserSec.style.display = ok ? '' : 'none';
+  if (mmDashBtn) mmDashBtn.style.display = admin ? '' : 'none';
+}
+
+function toggleMobileMenu() {
+  const hb = document.getElementById('hamburger');
+  const mm = document.getElementById('mobileMenu');
+  if (!hb || !mm) return;
+  const isOpen = mm.classList.contains('open');
+  hb.classList.toggle('open');
+  mm.classList.toggle('open');
+  document.body.style.overflow = isOpen ? '' : 'hidden';
+}
+
+function closeMobileMenu() {
+  const hb = document.getElementById('hamburger');
+  const mm = document.getElementById('mobileMenu');
+  if (hb) hb.classList.remove('open');
+  if (mm) mm.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ============================================================
+// تهيئة الموقع
+// ============================================================
+async function initializeZood() {
+  zoodShowLoading(true);
+  try {
+    await zoodRefreshAllData();
+    const session = zoodLoadSession();
+    if (session) {
+      const user = zoodDB.users.find(u => u.id === session.id);
+      if (user) { zoodCurrentUser = user; zoodSaveSession(zoodCurrentUser); }
+    }
+    zoodUpdateUI();
+    renderSocialPackages();
+    renderGamePackages();
+    renderTgVerifyPackages();
+    if (zoodCurrentUser?.role === 'admin') await renderDashboardPage();
+  } catch(e) { console.error(e); zoodShowToast('حدث خطأ', 'error'); }
+  finally { zoodShowLoading(false); }
+  
+  document.getElementById('hamburger').addEventListener('click', (e) => { e.stopPropagation(); toggleMobileMenu(); });
+  document.addEventListener('click', (e) => {
+    const mm = document.getElementById('mobileMenu');
+    const hb = document.getElementById('hamburger');
+    if (mm && hb && !mm.contains(e.target) && !hb.contains(e.target)) closeMobileMenu();
+  });
+}
+
+initializeZood();
+</script>
+</body>
+</html>
