@@ -1072,7 +1072,103 @@ function renderDUsers() {
         `).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
     }
 }
-
+// خصم رصيد من مستخدم
+async function quickDeductBal(uid, name) {
+    const amt = parseFloat(prompt('💰 أدخل المبلغ لخصمه من رصيد ' + name + ' ($):'));
+    if (!amt || amt <= 0 || isNaN(amt)) {
+        showToast('الرجاء إدخال مبلغ صحيح', 'error');
+        return;
+    }
+    
+    // البحث عن المستخدم وجلب رصيده الحالي
+    let currentBalance = 0;
+    let userIndex = -1;
+    
+    if (useSupabase && supabase) {
+        const { data: user } = await supabase.from('users').select('balance').eq('id', uid).single();
+        if (!user) {
+            showToast('المستخدم غير موجود', 'error');
+            return;
+        }
+        currentBalance = user.balance || 0;
+    } else {
+        userIndex = DB.users.findIndex(u => u.id === uid);
+        if (userIndex === -1) {
+            showToast('المستخدم غير موجود', 'error');
+            return;
+        }
+        currentBalance = DB.users[userIndex].balance || 0;
+    }
+    
+    // التحقق من كفاية الرصيد
+    if (currentBalance < amt) {
+        showToast(`❌ رصيد المستخدم غير كافٍ! الرصيد الحالي: $${currentBalance.toFixed(2)}`, 'error');
+        return;
+    }
+    
+    // تأكيد العملية
+    if (!confirm(`⚠️ هل أنت متأكد من خصم $${amt.toFixed(2)} من رصيد ${name}؟\n\n📊 الرصيد الحالي: $${currentBalance.toFixed(2)}\n📉 الرصيد بعد الخصم: $${(currentBalance - amt).toFixed(2)}`)) {
+        return;
+    }
+    
+    const newBalance = currentBalance - amt;
+    
+    if (useSupabase && supabase) {
+        const { error } = await supabase.from('users').update({ balance: newBalance }).eq('id', uid);
+        if (error) {
+            console.error('Error deducting balance:', error);
+            showToast('حدث خطأ أثناء خصم الرصيد', 'error');
+            return;
+        }
+        
+        // تسجيل المعاملة
+        await supabase.from('transactions').insert({
+            user_id: uid,
+            type: 'debit',
+            description: `💸 خصم رصيد من الإدارة - مبلغ: $${amt.toFixed(2)}`,
+            amount: amt,
+            transaction_date: new Date().toLocaleString('ar')
+        });
+        
+        // تسجيل الأمر
+        await supabase.from('orders').insert({
+            user: name,
+            user_id: uid,
+            type: 'خصم رصيد (أدمن)',
+            detail: `💸 تم خصم $${amt.toFixed(2)} من الرصيد`,
+            amount: amt,
+            status: 'done',
+            order_time: new Date().toLocaleString('ar')
+        });
+    } else {
+        DB.users[userIndex].balance = newBalance;
+        
+        DB.transactions.push({
+            id: Date.now(),
+            user_id: uid,
+            type: 'debit',
+            description: `💸 خصم رصيد من الإدارة - مبلغ: $${amt.toFixed(2)}`,
+            amount: amt,
+            date: new Date().toLocaleString('ar')
+        });
+        
+        DB.orders.push({
+            id: Date.now(),
+            user: name,
+            user_id: uid,
+            type: 'خصم رصيد (أدمن)',
+            detail: `💸 تم خصم $${amt.toFixed(2)} من الرصيد`,
+            amount: amt,
+            status: 'done',
+            time: new Date().toLocaleString('ar')
+        });
+        saveDB();
+    }
+    
+    await refreshAllData();
+    renderDashboard();
+    showToast(`✅ تم خصم $${amt.toFixed(2)} من رصيد ${name}`, 'success');
+}
 function renderDOrders() {
   const tb = document.getElementById('dOrdersBody'); if (!tb) return;
   tb.innerHTML = [...DB.orders].reverse().map(o => `<tr>
