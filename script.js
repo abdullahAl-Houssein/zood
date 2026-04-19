@@ -98,6 +98,17 @@ function closeModal(id) {
   if (modal) modal.classList.remove('open');
 }
 
+// Helper function to safely format numbers
+function safeFormatNumber(value) {
+  if (value === undefined || value === null) return '0';
+  return Number(value).toLocaleString();
+}
+
+function safeToFixed(value, decimals = 2) {
+  if (value === undefined || value === null) return '0.00';
+  return Number(value).toFixed(decimals);
+}
+
 // ============================================================
 // SUPABASE FUNCTIONS
 // ============================================================
@@ -156,7 +167,14 @@ async function loadAllDataFromSupabase() {
     if (socialRes.data) DB.socialPackages = socialRes.data;
     if (tgVerifyRes.data) DB.tgVerifyPackages = tgVerifyRes.data;
     if (gamesRes.data) DB.gamePackages = gamesRes.data;
-    if (rechargeRes.data) DB.rechargePkgs = rechargeRes.data;
+    if (rechargeRes.data) {
+      // Ensure all recharge packages have valid qty and price
+      DB.rechargePkgs = rechargeRes.data.map(pkg => ({
+        ...pkg,
+        qty: pkg.qty || 0,
+        price: pkg.price || 0
+      }));
+    }
     if (ordersRes.data) DB.orders = ordersRes.data;
     if (transactionsRes.data) DB.transactions = transactionsRes.data;
     
@@ -207,11 +225,12 @@ function ensureDBSchema() {
   if (!DB.gamePackages) DB.gamePackages = DEFAULT_DB.gamePackages;
   if (!DB.rechargePkgs) DB.rechargePkgs = DEFAULT_DB.rechargePkgs;
   
-  // Ensure all recharge packages have valid qty
-  DB.rechargePkgs.forEach(pkg => {
-    if (!pkg.qty) pkg.qty = 0;
-    if (!pkg.price) pkg.price = 0;
-  });
+  // Ensure all recharge packages have valid qty and price
+  DB.rechargePkgs = DB.rechargePkgs.map(pkg => ({
+    ...pkg,
+    qty: pkg.qty || 0,
+    price: pkg.price || 0
+  }));
 }
 
 // ============================================================
@@ -328,9 +347,9 @@ function updateNav() {
   if (nameEl && ok) nameEl.textContent = '👤 ' + currentUser.name;
   if (ok) {
     const wb = document.getElementById('walletBalNav');
-    if (wb) wb.textContent = currentUser.balance.toFixed(2);
+    if (wb) wb.textContent = safeToFixed(currentUser.balance);
     const wa = document.getElementById('walletAmt');
-    if (wa) wa.textContent = currentUser.balance.toFixed(2);
+    if (wa) wa.textContent = safeToFixed(currentUser.balance);
   }
   const waFloat = document.getElementById('waFloat');
   if (waFloat) waFloat.style.display = ok ? 'flex' : 'none';
@@ -342,7 +361,7 @@ function updateNav() {
   const mmUserSec = document.getElementById('mmUserSection');
   const mmDashBtn2 = document.getElementById('mmDashBtn');
   if (mmWalletRow) mmWalletRow.style.display = ok ? '' : 'none';
-  if (mmBalEl && ok) mmBalEl.textContent = currentUser.balance.toFixed(2);
+  if (mmBalEl && ok) mmBalEl.textContent = safeToFixed(currentUser.balance);
   if (mmNameEl && ok) mmNameEl.textContent = currentUser.name;
   if (mmAuthSec) mmAuthSec.style.display = ok ? 'none' : '';
   if (mmUserSec) mmUserSec.style.display = ok ? '' : 'none';
@@ -390,13 +409,13 @@ function renderNumbersByType(type) {
   const icons = { phone: '📱', whatsapp: '💬', telegram: '✈️' };
   grid.innerHTML = nums.map(n => `
     <div class="product-card">
-      <div class="flag-badge">${countryFlags[n.country] || ''} ${n.country}</div>
+      <div class="flag-badge">${countryFlags[n.country] || ''} ${n.country || ''}</div>
       <div class="pc-header">
         <div><div class="pc-name">${icons[n.type]} ${n.operator || ''}</div></div>
         <span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? '✅ متاح' : '❌ مباع'}</span>
       </div>
-      <div class="pc-num">${n.phone}</div>
-      <div class="pc-price">$${(n.price || 0).toFixed(2)} <span>/ رقم واحد</span></div>
+      <div class="pc-num">${n.phone || ''}</div>
+      <div class="pc-price">$${safeToFixed(n.price)} <span>/ رقم واحد</span></div>
       <button class="buy-btn" ${n.status !== 'available' ? 'disabled' : ''} onclick="openBuyNum(${n.id})">
         ${n.status === 'available' ? '🛒 شراء الآن' : 'تم البيع'}
       </button>
@@ -416,9 +435,9 @@ function renderSocialPage() {
       </div>
       <div class="pkg-rows">
         ${pkgs.map(pkg => `
-        <div class="pkg-row" onclick="openBuyDirect('${(pkg.qty || 0).toLocaleString()} ${pkg.type} ${platform}',${pkg.price || 0},null,'social',${pkg.id})">
-          <div class="pkg-qty">🔢 ${(pkg.qty || 0).toLocaleString()} ${pkg.type}</div>
-          <div class="pkg-pr">$${(pkg.price || 0).toFixed(2)}</div>
+        <div class="pkg-row" onclick="openBuyDirect('${safeFormatNumber(pkg.qty)} ${pkg.type} ${platform}',${safeToFixed(pkg.price)},null,'social',${pkg.id})">
+          <div class="pkg-qty">🔢 ${safeFormatNumber(pkg.qty)} ${pkg.type}</div>
+          <div class="pkg-pr">$${safeToFixed(pkg.price)}</div>
         </div>`).join('')}
       </div>
     </div>`;
@@ -436,7 +455,7 @@ function renderTgVerify() {
       </div>
       <div style="font-size:0.85rem;color:var(--text2);margin-bottom:16px;line-height:1.6">${p.desc || ''}</div>
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-size:1.5rem;font-weight:800;color:var(--gold)">$${(p.price || 0).toFixed(2)}</div>
+        <div style="font-size:1.5rem;font-weight:800;color:var(--gold)">$${safeToFixed(p.price)}</div>
         <button class="buy-btn" style="width:auto;padding:11px 22px" onclick="openBuyDirect('${p.type || 'خدمة'} تلغرام',${p.price || 0},null,'tgverify',${p.id})">طلب الخدمة</button>
       </div>
     </div>`).join('');
@@ -456,7 +475,7 @@ function renderGames() {
         ${pkgs.map(p => `
         <div class="game-pkg-row" onclick="openBuyDirect('${p.package || ''} - ${game}',${p.price || 0},null,'game',${p.id})">
           <div class="gp-name">${p.package || ''}</div>
-          <div class="gp-price">$${(p.price || 0).toFixed(2)}</div>
+          <div class="gp-price">$${safeToFixed(p.price)}</div>
         </div>`).join('')}
       </div>
     </div>`;
@@ -468,11 +487,11 @@ function renderWallet() {
   const fresh = DB.users.find(u => u.id === currentUser.id);
   if (fresh) currentUser = fresh;
   const walletAmtEl = document.getElementById('walletAmt');
-  if (walletAmtEl) walletAmtEl.textContent = (currentUser.balance || 0).toFixed(2);
+  if (walletAmtEl) walletAmtEl.textContent = safeToFixed(currentUser.balance);
   const wb = document.getElementById('walletBalNav');
-  if (wb) wb.textContent = (currentUser.balance || 0).toFixed(2);
+  if (wb) wb.textContent = safeToFixed(currentUser.balance);
   const mmBal = document.getElementById('mmBalance');
-  if (mmBal) mmBal.textContent = (currentUser.balance || 0).toFixed(2);
+  if (mmBal) mmBal.textContent = safeToFixed(currentUser.balance);
   
   const txs = DB.transactions.filter(t => t.user_id === currentUser.id);
   const totalIn = txs.filter(t => t.type === 'credit').reduce((s, t) => s + (t.amount || 0), 0);
@@ -480,8 +499,8 @@ function renderWallet() {
   const elIn = document.getElementById('wltTotalIn');
   const elOut = document.getElementById('wltTotalOut');
   const elCnt = document.getElementById('wltTxCount');
-  if (elIn) elIn.textContent = '$' + totalIn.toFixed(2);
-  if (elOut) elOut.textContent = '$' + totalOut.toFixed(2);
+  if (elIn) elIn.textContent = '$' + safeToFixed(totalIn);
+  if (elOut) elOut.textContent = '$' + safeToFixed(totalOut);
   if (elCnt) elCnt.textContent = txs.length;
   renderTxList('all');
 }
@@ -511,7 +530,7 @@ function renderTxList(type) {
         <div class="tx-ico ${t.type}">${t.type === 'credit' ? '💚' : '🔴'}</div>
         <div><div class="tx-desc">${t.description || ''}</div><div class="tx-date">${t.date || t.transaction_date || new Date().toLocaleString('ar')}</div></div>
       </div>
-      <div class="tx-amt ${t.type}">${t.type === 'credit' ? '+' : '-'}$${(t.amount || 0).toFixed(2)}</div>
+      <div class="tx-amt ${t.type}">${t.type === 'credit' ? '+' : '-'}$${safeToFixed(t.amount)}</div>
     </div>`).join('');
 }
 
@@ -555,10 +574,10 @@ function afGoStep2() {
   
   const pm = DB.paymentMethods.shamcash || { num: '0949277889', ownerName: 'عبدالحميد محمد الحسين', qr: '', active: true };
   
-  document.getElementById('afAmtDisplay').textContent = '$' + amt.toFixed(2);
+  document.getElementById('afAmtDisplay').textContent = '$' + safeToFixed(amt);
   document.getElementById('afShamNum').textContent = pm.num;
   document.getElementById('afShamName').textContent = pm.ownerName;
-  document.getElementById('afShamAmt').textContent = '$' + amt.toFixed(2) + ' USD';
+  document.getElementById('afShamAmt').textContent = '$' + safeToFixed(amt) + ' USD';
   
   const imgEl = document.getElementById('afQrImg');
   const fallbackEl = document.getElementById('afQrFallback');
@@ -580,7 +599,7 @@ function afGoStep2() {
           <div style="font-weight:bold;margin-bottom:8px">رقم محفظة شام كاش:</div>
           <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px">${pm.num}</div>
           <div>👤 اسم الحساب: ${pm.ownerName}</div>
-          <div>💵 المبلغ: $${amt.toFixed(2)}</div>
+          <div>💵 المبلغ: $${safeToFixed(amt)}</div>
           <button class="copy-btn" onclick="copyText('${pm.num}')" style="margin-top:15px;padding:8px 16px">📋 نسخ الرقم</button>
         `;
       };
@@ -593,7 +612,7 @@ function afGoStep2() {
         <div style="font-weight:bold;margin-bottom:8px">رقم محفظة شام كاش:</div>
         <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px">${pm.num}</div>
         <div>👤 اسم الحساب: ${pm.ownerName}</div>
-        <div>💵 المبلغ: $${amt.toFixed(2)}</div>
+        <div>💵 المبلغ: $${safeToFixed(amt)}</div>
         <button class="copy-btn" onclick="copyText('${pm.num}')" style="margin-top:15px;padding:8px 16px">📋 نسخ الرقم</button>
       `;
     }
@@ -608,7 +627,7 @@ function afGoStep2() {
 function afGoStep3() {
   const amt = currentAddFundsAmount;
   const user = currentUser;
-  const msg = 'مرحباً زود 👋\nأريد إضافة رصيد $' + amt.toFixed(2) + '\nالحساب: ' + user.email + '\nالاسم: ' + user.name;
+  const msg = 'مرحباً زود 👋\nأريد إضافة رصيد $' + safeToFixed(amt) + '\nالحساب: ' + user.email + '\nالاسم: ' + user.name;
   const waLink = document.getElementById('afWaLink');
   if (waLink) waLink.href = 'https://wa.me/963949277889?text=' + encodeURIComponent(msg);
   document.getElementById('afStep1').style.display = 'none';
@@ -633,7 +652,7 @@ async function confirmAddFundsRequest() {
     user: currentUser.name,
     user_id: currentUser.id,
     type: 'طلب شحن محفظة',
-    detail: '$' + amt.toFixed(2) + (proof ? ' — إيصال: ' + proof : ''),
+    detail: '$' + safeToFixed(amt) + (proof ? ' — إيصال: ' + proof : ''),
     amount: 0,
     requested_amt: amt,
     status: 'pending',
@@ -663,7 +682,7 @@ function openBuyNum(id) {
   pendingBuy = { type: 'number', id, price: n.price, data: n };
   showBuyModal('شراء رقم ' + n.phone + ' (' + n.country + ')', n.price, async () => {
     const idx = DB.numbers.findIndex(x => x.id === id);
-    DB.numbers[idx].status = 'sold';
+    if (idx !== -1) DB.numbers[idx].status = 'sold';
     if (useSupabase && supabase) {
       await supabase.from('numbers').update({ status: 'sold' }).eq('id', id);
     }
@@ -696,10 +715,10 @@ function openBuyDirect(desc, price, cb, category, pkgId) {
 
 function showBuyModal(desc, price, onConfirm) {
   document.getElementById('buyModalDesc').textContent = desc;
-  document.getElementById('bm-balance').textContent = '$' + (currentUser.balance || 0).toFixed(2);
-  document.getElementById('bm-price').textContent = '$' + price.toFixed(2);
+  document.getElementById('bm-balance').textContent = '$' + safeToFixed(currentUser.balance);
+  document.getElementById('bm-price').textContent = '$' + safeToFixed(price);
   const after = (currentUser.balance || 0) - price;
-  document.getElementById('bm-after').textContent = '$' + after.toFixed(2);
+  document.getElementById('bm-after').textContent = '$' + safeToFixed(after);
   document.getElementById('bm-after').style.color = after >= 0 ? 'var(--green)' : 'var(--red)';
   pendingBuy._onConfirm = onConfirm;
   openModal('buyModal');
@@ -710,12 +729,12 @@ async function executeBuy() {
   const { price, _onConfirm } = pendingBuy;
   if ((currentUser.balance || 0) < price) { showToast('رصيدك غير كافٍ! يرجى شحن المحفظة أولاً', 'error'); closeModal('buyModal'); return; }
   
-  currentUser.balance -= price;
+  currentUser.balance = (currentUser.balance || 0) - price;
   if (useSupabase && supabase) {
     await supabase.from('users').update({ balance: currentUser.balance }).eq('id', currentUser.id);
   } else {
     const ui = DB.users.findIndex(u => u.id === currentUser.id);
-    DB.users[ui].balance = currentUser.balance;
+    if (ui !== -1) DB.users[ui].balance = currentUser.balance;
     saveDB();
   }
   
@@ -752,9 +771,9 @@ function selectRcOp(op, region) {
   if (g) g.innerHTML = pkgs.map(p => `
     <div class="rc-card" onclick="selectRcPkg('${region}',${p.id},this)">
       <div class="rc-icon">⚡</div>
-      <div class="rc-amt">${(p.qty || 0).toLocaleString()}</div>
+      <div class="rc-amt">${safeFormatNumber(p.qty)}</div>
       <div class="rc-lbl">وحدة</div>
-      <div style="margin-top:7px;font-weight:700;color:var(--gold)">$${(p.price || 0).toFixed(2)}</div>
+      <div style="margin-top:7px;font-weight:700;color:var(--gold)">$${safeToFixed(p.price)}</div>
     </div>`).join('');
   const d = document.getElementById('rcPkgs' + cap);
   if (d) d.style.display = 'block';
@@ -773,15 +792,15 @@ function doRecharge(region) {
   const cap = region.charAt(0).toUpperCase() + region.slice(1);
   const num = document.getElementById('rcNum' + cap)?.value.trim();
   if (!num) { showToast('أدخل رقم الهاتف', 'error'); return; }
-  openBuyDirect('شحن ' + (st.pkg.qty || 0).toLocaleString() + ' وحدة - ' + st.op + ' - ' + num, st.pkg.price, async () => {
-    const order = { user: currentUser.name, user_id: currentUser.id, type: 'شحن رصيد', detail: st.op + ' | ' + num + ' | ' + (st.pkg.qty || 0).toLocaleString() + ' وحدة', amount: st.pkg.price, status: 'done', order_time: new Date().toLocaleString('ar') };
+  openBuyDirect('شحن ' + safeFormatNumber(st.pkg.qty) + ' وحدة - ' + st.op + ' - ' + num, st.pkg.price, async () => {
+    const order = { user: currentUser.name, user_id: currentUser.id, type: 'شحن رصيد', detail: st.op + ' | ' + num + ' | ' + safeFormatNumber(st.pkg.qty) + ' وحدة', amount: st.pkg.price, status: 'done', order_time: new Date().toLocaleString('ar') };
     if (useSupabase && supabase) {
       await supabase.from('orders').insert(order);
     } else {
       DB.orders.push({ ...order, id: Date.now() });
       saveDB();
     }
-    showToast('تم شحن ' + (st.pkg.qty || 0).toLocaleString() + ' وحدة ✅', 'success');
+    showToast('تم شحن ' + safeFormatNumber(st.pkg.qty) + ' وحدة ✅', 'success');
     rcState[region] = {};
   });
 }
@@ -802,7 +821,7 @@ function renderDashboard() {
   const pending = DB.orders.filter(o => o.status === 'pending').length;
   if (elP) elP.textContent = pending;
   const rev = DB.orders.filter(o => o.status === 'done').reduce((s, o) => s + (o.amount || 0), 0);
-  if (elR) elR.textContent = '$' + rev.toFixed(2);
+  if (elR) elR.textContent = '$' + safeToFixed(rev);
   const badge = document.getElementById('pendingBadge');
   if (badge) { badge.style.display = pending > 0 ? '' : 'none'; badge.textContent = pending; }
   
@@ -811,9 +830,9 @@ function renderDashboard() {
   
   const rb = document.getElementById('ovOrdersBody');
   if (rb) rb.innerHTML = [...DB.orders].reverse().slice(0, 8).map(o => `
-    <tr><td style="font-weight:600">${o.user || ''}</td><td><span class="pt pt-avail" style="font-size:.75rem">${o.type || ''}</span></td>
+    <tr><td style="font-weight:600">${o.user || ''}</td><td style="color:var(--text2);font-size:.75rem">${o.type || ''}</span></td>
     <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${(o.amount || 0).toFixed(2)}</td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
     <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
   </tr>`).join('') ||
     '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
@@ -826,7 +845,7 @@ function renderDNum() {
   tb.innerHTML = nums.map(n => `<tr>
     <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td>
     <td>📱 هاتفي</td><td>${countryFlags[n.country] || ''} ${n.country || ''}</td><td>${n.operator || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${(n.price || 0).toFixed(2)}</td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td>
     <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>
     <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
     <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td>
@@ -839,7 +858,7 @@ function renderDWa() {
   tb.innerHTML = nums.map(n => `<tr>
     <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td>
     <td>${countryFlags[n.country] || ''} ${n.country || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${(n.price || 0).toFixed(2)}</td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td>
     <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>
     <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
     <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td>
@@ -852,7 +871,7 @@ function renderDTg() {
   tb.innerHTML = nums.map(n => `<tr>
     <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td>
     <td>${countryFlags[n.country] || ''} ${n.country || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${(n.price || 0).toFixed(2)}</td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td>
     <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>
     <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
     <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td>
@@ -863,8 +882,8 @@ function renderDSoc() {
   const tb = document.getElementById('dSocBody'); if (!tb) return;
   tb.innerHTML = DB.socialPackages.map(p => `<tr>
     <td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}</td>
-    <td>${p.type || ''}</td><td style="font-weight:700">${(p.qty || 0).toLocaleString()}</td>
-    <td style="color:var(--gold);font-weight:700">$${(p.price || 0).toFixed(2)}</td>
+    <td>${p.type || ''}</td><td style="font-weight:700">${safeFormatNumber(p.qty)}</td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
     <td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف</button></td>
   </tr>`).join('');
 }
@@ -874,7 +893,7 @@ function renderDTgV() {
   tb.innerHTML = DB.tgVerifyPackages.map(p => `<tr>
     <td style="font-weight:600">${p.type || ''}</td>
     <td style="color:var(--text2);font-size:.82rem">${p.desc || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${(p.price || 0).toFixed(2)}</td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
     <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف</button></td>
   </tr>`).join('');
 }
@@ -884,27 +903,44 @@ function renderDGames() {
   tb.innerHTML = DB.gamePackages.map(p => `<tr>
     <td>${p.icon || '🎮'} ${p.game || ''}</td>
     <td style="font-weight:600">${p.package || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${(p.price || 0).toFixed(2)}</td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
     <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
-  </tr>`).join('');
+  <tr>`).join('');
 }
 
 function renderDRc() {
-  const tb = document.getElementById('dRcBody'); if (!tb) return;
-  tb.innerHTML = DB.rechargePkgs.map(p => `<tr>
-    <td style="font-weight:600">${p.operator || ''}</td>
-    <td>${countryFlags[p.country] || ''} ${p.country || ''}</td>
-    <td>${(p.qty || 0).toLocaleString()} وحدة</td>
-    <td style="color:var(--gold);font-weight:700">$${(p.price || 0).toFixed(2)}</td>
-    <td><button class="del-btn" onclick="deleteRcPkg(${p.id})">حذف</button></td>
-  </tr>`).join('');
+  const tb = document.getElementById('dRcBody'); 
+  if (!tb) return;
+  
+  // Ensure all recharge packages have valid data
+  const validPackages = DB.rechargePkgs.filter(p => p && (p.qty !== undefined || p.price !== undefined));
+  
+  if (validPackages.length === 0) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن</td></tr>';
+    return;
+  }
+  
+  tb.innerHTML = validPackages.map(p => {
+    const qtyValue = (p.qty !== undefined && p.qty !== null) ? p.qty : 0;
+    const priceValue = (p.price !== undefined && p.price !== null) ? p.price : 0;
+    const operatorValue = p.operator || '';
+    const countryValue = p.country || '';
+    
+    return `<tr>
+      <td style="font-weight:600">${operatorValue}</td>
+      <td>${countryFlags[countryValue] || ''} ${countryValue}</td>
+      <td>${safeFormatNumber(qtyValue)} وحدة</td>
+      <td style="color:var(--gold);font-weight:700">$${safeToFixed(priceValue)}</td>
+      <td><button class="del-btn" onclick="deleteRcPkg(${p.id})">حذف</button></td>
+    </tr>`;
+  }).join('');
 }
 
 function renderDUsers() {
   const tb = document.getElementById('dUsersBody'); if (!tb) return;
   tb.innerHTML = DB.users.map(u => `<tr>
     <td style="font-weight:600">${u.name || ''}</td><td style="color:var(--text2)">${u.email || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${(u.balance || 0).toFixed(2)}</td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(u.balance)}</td>
     <td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td>
     <td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}</td>
     <td>${u.role !== 'admin' ? `<button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')">+ رصيد</button>` : '—'}</td>
@@ -914,12 +950,12 @@ function renderDUsers() {
   const pb = document.getElementById('dPendingBody');
   if (pb) pb.innerHTML = pending.length ? pending.map((o, idx) => `<tr>
     <td style="font-weight:600">${o.user || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${(o.requested_amt || 0).toFixed(2)}</td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}</td>
     <td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}</td>
     <td>
       <button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button>
       <button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button>
-     </td>
+      </td>
   </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة</td></tr>';
 }
 
@@ -929,7 +965,7 @@ function renderDOrders() {
     <td>${o.user || ''}</td>
     <td><span class="pt pt-avail" style="font-size:.75rem">${o.type || ''}</span></td>
     <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${(o.amount || 0).toFixed(2)}</td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
     <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
   </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
 }
@@ -985,7 +1021,7 @@ async function quickAddBal(uid, name) {
   
   await refreshAllData();
   renderDashboard();
-  showToast('تم إضافة $' + amt.toFixed(2) + ' لـ ' + name + ' ✅', 'success');
+  showToast('تم إضافة $' + safeToFixed(amt) + ' لـ ' + name + ' ✅', 'success');
 }
 
 async function approveWalletRequest(orderId) {
@@ -1011,7 +1047,7 @@ async function approveWalletRequest(orderId) {
   
   await refreshAllData();
   renderDashboard();
-  showToast('تمت الموافقة وإضافة $' + amt.toFixed(2) + ' لـ ' + order.user + ' ✅', 'success');
+  showToast('تمت الموافقة وإضافة $' + safeToFixed(amt) + ' لـ ' + order.user + ' ✅', 'success');
 }
 
 function rejectWalletRequest(orderId) {
@@ -1095,7 +1131,7 @@ async function deleteRcPkg(id) {
   }
   await refreshAllData();
   renderDashboard();
-  showToast('تم الحذف', 'success');
+  showToast('تم حذف الباقة', 'success');
 }
 
 // Modal Open Functions
@@ -1229,7 +1265,7 @@ async function confirmAddRcPkg() {
 
 function openAdminAddBal() {
   const sel = document.getElementById('adminBalUser');
-  sel.innerHTML = DB.users.filter(u => u.role !== 'admin').map(u => `<option value="${u.id}">${u.name || ''} — ${u.email || ''} ($${(u.balance || 0).toFixed(2)})</option>`).join('');
+  sel.innerHTML = DB.users.filter(u => u.role !== 'admin').map(u => `<option value="${u.id}">${u.name || ''} — ${u.email || ''} ($${safeToFixed(u.balance)})</option>`).join('');
   document.getElementById('adminBalAmt').value = '';
   document.getElementById('adminBalNote').value = '';
   openModal('adminAddBalModal');
@@ -1245,13 +1281,13 @@ async function confirmAdminAddBal() {
     const { data: user } = await supabase.from('users').select('balance, name').eq('id', uid).single();
     await supabase.from('users').update({ balance: (user?.balance || 0) + amt }).eq('id', uid);
     await supabase.from('transactions').insert({ user_id: uid, type: 'credit', description: 'إضافة رصيد من الإدارة — ' + note, amount: amt, transaction_date: new Date().toLocaleString('ar') });
-    await supabase.from('orders').insert({ user: user?.name, user_id: uid, type: 'إضافة رصيد (أدمن)', detail: '$' + amt.toFixed(2) + ' — ' + note, amount: amt, status: 'done', order_time: new Date().toLocaleString('ar') });
+    await supabase.from('orders').insert({ user: user?.name, user_id: uid, type: 'إضافة رصيد (أدمن)', detail: '$' + safeToFixed(amt) + ' — ' + note, amount: amt, status: 'done', order_time: new Date().toLocaleString('ar') });
   } else {
     const ui = DB.users.findIndex(u => u.id === uid);
     if (ui !== -1) {
       DB.users[ui].balance = (DB.users[ui].balance || 0) + amt;
       DB.transactions.push({ id: Date.now(), user_id: uid, type: 'credit', description: 'إضافة رصيد من الإدارة — ' + note, amount: amt, date: new Date().toLocaleString('ar') });
-      DB.orders.push({ id: Date.now(), user: DB.users[ui].name, user_id: uid, type: 'إضافة رصيد (أدمن)', detail: '$' + amt.toFixed(2) + ' — ' + note, amount: amt, status: 'done', time: new Date().toLocaleString('ar') });
+      DB.orders.push({ id: Date.now(), user: DB.users[ui].name, user_id: uid, type: 'إضافة رصيد (أدمن)', detail: '$' + safeToFixed(amt) + ' — ' + note, amount: amt, status: 'done', time: new Date().toLocaleString('ar') });
       saveDB();
     }
   }
@@ -1259,7 +1295,7 @@ async function confirmAdminAddBal() {
   closeModal('adminAddBalModal');
   await refreshAllData();
   renderDashboard();
-  showToast('تم إضافة $' + amt.toFixed(2) + ' للحساب ✅', 'success');
+  showToast('تم إضافة $' + safeToFixed(amt) + ' للحساب ✅', 'success');
 }
 
 // Payment Methods Management
@@ -1309,8 +1345,12 @@ async function savePaymentMethods() {
     for (const m of methods) {
       DB.paymentMethods[m.method] = { ...m.data, active: m.active };
       if (useSupabase && supabase) {
-        const { error } = await supabase.from('payment_methods').upsert({ method: m.method, data: m.data, active: m.active }, { onConflict: 'method' });
-        if (error) console.error('Error saving', m.method, error);
+        try {
+          const { error } = await supabase.from('payment_methods').upsert({ method: m.method, data: m.data, active: m.active }, { onConflict: 'method' });
+          if (error) console.error('Error saving', m.method, error);
+        } catch (err) {
+          console.error('Supabase error for', m.method, err);
+        }
       }
     }
     saveDB();
