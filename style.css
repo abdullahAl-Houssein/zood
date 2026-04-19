@@ -2879,3 +2879,39 @@ button {
     font-size: 0.75rem;
   }
 }
+/* Fix scroll issues */
+html, body {
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    height: auto !important;
+    position: relative !important;
+}
+
+.modal-ov {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+.modal-box {
+    overflow-y: auto !important;
+    max-height: 90vh !important;
+}
+
+.af-step {
+    overflow-y: visible !important;
+}
+
+/* Fix for mobile scrolling */
+@media (max-width: 768px) {
+    .modal-box {
+        max-height: 85vh !important;
+        overflow-y: auto !important;
+    }
+    
+    .af-progress {
+        position: sticky;
+        top: 0;
+        background: var(--dark3);
+        z-index: 10;
+    }
+}
