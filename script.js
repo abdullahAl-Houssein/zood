@@ -1,0 +1,1384 @@
+// ============================================================
+// SUPABASE CONFIG
+// ============================================================
+const SUPA_URL = 'https://clqekuhmpaesuauhxpam.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNscWVrdWhtcGFlc3VhdWh4cGFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjEwOTksImV4cCI6MjA5MjA5NzA5OX0.gPKYh__MGh0sNEA_F-0bBPKZiyCtmC3wPmJlXyo5Jt0';
+
+let supabase = null;
+let useSupabase = false;
+
+// ============================================================
+// FALLBACK LOCAL DB
+// ============================================================
+const DEFAULT_DB = {
+  users: [{ id: 1, name: 'مدير النظام', email: 'admin@zood.com', pass: 'admin123', role: 'admin', balance: 500, createdAt: '2024-01-01' }],
+  numbers: [
+    { id: 1, type: 'phone', phone: '+963 944 123 456', country: 'سوريا', operator: 'سيريتل', price: 3.99, status: 'available' },
+    { id: 2, type: 'phone', phone: '+963 988 654 321', country: 'سوريا', operator: 'MTN', price: 2.99, status: 'available' },
+    { id: 3, type: 'phone', phone: '+966 50 123 4567', country: 'السعودية', operator: 'STC', price: 8.99, status: 'available' },
+    { id: 4, type: 'whatsapp', phone: '+963 933 111 200', country: 'سوريا', operator: 'سيريتل', price: 4.99, status: 'available' },
+    { id: 5, type: 'telegram', phone: '+90 532 123 4567', country: 'تركيا', operator: 'Turkcell', price: 5.99, status: 'available' },
+  ],
+  socialPackages: [
+    { id: 1, platform: 'Instagram', type: 'متابعين', qty: 1000, price: 4.99 },
+    { id: 2, platform: 'TikTok', type: 'متابعين', qty: 1000, price: 3.99 },
+  ],
+  tgVerifyPackages: [
+    { id: 1, type: 'توثيق حساب شخصي', desc: 'إضافة علامة التحقق للحساب الشخصي', price: 49.99 },
+  ],
+  gamePackages: [
+    { id: 1, game: 'PUBG Mobile', icon: '🎯', package: '60 UC', price: 0.99 },
+  ],
+  rechargePkgs: [
+    { id: 1, country: 'سوريا', operator: 'سيريتل', qty: 500, price: 1.99 },
+  ],
+  orders: [],
+  transactions: [],
+  paymentMethods: {
+    binance: { name: 'Binance Pay / USDT', addr: '', uid: '', qr: '', active: false },
+    shamcash: { name: 'شام كاش', num: '0949277889', ownerName: 'عبدالحميد محمد الحسين', qr: '', active: true },
+    western: { name: 'Western Union', ownerName: 'Zood Services', country: 'Syria', active: false }
+  }
+};
+
+let DB = JSON.parse(JSON.stringify(DEFAULT_DB));
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function showLoadingOverlay(msg) {
+  let ov = document.getElementById('loadingOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'loadingOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(8,8,14,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;backdrop-filter:blur(8px);';
+    ov.innerHTML = `<div class="loading-spinner"></div><div style="color:var(--text2);font-size:0.9rem">${msg || ''}</div>`;
+    document.body.appendChild(ov);
+  } else {
+    ov.style.display = 'flex';
+    ov.querySelector('div+div').textContent = msg || '';
+  }
+}
+
+function hideLoadingOverlay() {
+  const ov = document.getElementById('loadingOverlay');
+  if (ov) ov.style.display = 'none';
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+function copyText(text) {
+  if (!text || text === '—') return;
+  navigator.clipboard?.writeText(text).then(() => showToast('تم النسخ', 'success')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('تم النسخ', 'success');
+  });
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ============================================================
+// SUPABASE FUNCTIONS
+// ============================================================
+async function initSupabase() {
+  try {
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    supabase = createClient(SUPA_URL, SUPA_KEY);
+    
+    // Test connection
+    const { data, error } = await supabase.from('users').select('count', { count: 'exact', head: true });
+    if (!error) {
+      useSupabase = true;
+      await loadAllDataFromSupabase();
+      const dbSt = document.getElementById('dbStatus');
+      if (dbSt) { dbSt.style.display = ''; dbSt.className = 'db-status connected'; dbSt.textContent = '🟢 Supabase'; setTimeout(() => dbSt.style.display = 'none', 4000); }
+    } else {
+      throw new Error('Supabase connection failed');
+    }
+  } catch (e) {
+    console.warn('Supabase init failed, using localStorage:', e);
+    useSupabase = false;
+    loadDB();
+    ensureDBSchema();
+    const dbSt = document.getElementById('dbStatus');
+    if (dbSt) { dbSt.style.display = ''; dbSt.className = 'db-status local'; dbSt.textContent = '💾 محلي'; setTimeout(() => dbSt.style.display = 'none', 4000); }
+  }
+}
+
+async function loadAllDataFromSupabase() {
+  showLoadingOverlay('جارٍ تحميل البيانات...');
+  try {
+    const [usersRes, numbersRes, socialRes, tgVerifyRes, gamesRes, rechargeRes, ordersRes, transactionsRes, pmRes] = await Promise.all([
+      supabase.from('users').select('*'),
+      supabase.from('numbers').select('*'),
+      supabase.from('social_packages').select('*'),
+      supabase.from('tg_verify_packages').select('*'),
+      supabase.from('game_packages').select('*'),
+      supabase.from('recharge_packages').select('*'),
+      supabase.from('orders').select('*'),
+      supabase.from('transactions').select('*'),
+      supabase.from('payment_methods').select('*')
+    ]);
+
+    if (usersRes.data) DB.users = usersRes.data;
+    if (numbersRes.data) DB.numbers = numbersRes.data;
+    if (socialRes.data) DB.socialPackages = socialRes.data;
+    if (tgVerifyRes.data) DB.tgVerifyPackages = tgVerifyRes.data;
+    if (gamesRes.data) DB.gamePackages = gamesRes.data;
+    if (rechargeRes.data) DB.rechargePkgs = rechargeRes.data;
+    if (ordersRes.data) DB.orders = ordersRes.data;
+    if (transactionsRes.data) DB.transactions = transactionsRes.data;
+    
+    if (pmRes.data && pmRes.data.length > 0) {
+      pmRes.data.forEach(pm => {
+        if (pm.method && pm.data) DB.paymentMethods[pm.method] = { ...pm.data, active: pm.active };
+      });
+    }
+    
+    saveDB();
+  } catch (e) {
+    console.error('Error loading data from Supabase:', e);
+  } finally {
+    hideLoadingOverlay();
+  }
+}
+
+async function refreshAllData() {
+  if (useSupabase) {
+    await loadAllDataFromSupabase();
+  } else {
+    loadDB();
+  }
+  if (currentUser) {
+    const fresh = DB.users.find(u => u.id === currentUser.id);
+    if (fresh) currentUser = fresh;
+    updateNav();
+  }
+}
+
+function saveDB() {
+  try { localStorage.setItem('zoodDB_v3', JSON.stringify(DB)); } catch (e) { }
+}
+
+function loadDB() {
+  try {
+    const s = localStorage.getItem('zoodDB_v3');
+    if (s) { const d = JSON.parse(s); if (d.users) DB = d; }
+  } catch (e) { }
+}
+
+function ensureDBSchema() {
+  if (!DB.paymentMethods) DB.paymentMethods = DEFAULT_DB.paymentMethods;
+  if (!DB.paymentMethods.shamcash) DB.paymentMethods.shamcash = DEFAULT_DB.paymentMethods.shamcash;
+  if (!DB.tgVerifyPackages) DB.tgVerifyPackages = DEFAULT_DB.tgVerifyPackages;
+  if (!DB.gamePackages) DB.gamePackages = DEFAULT_DB.gamePackages;
+  if (!DB.rechargePkgs) DB.rechargePkgs = DEFAULT_DB.rechargePkgs;
+}
+
+// ============================================================
+// SESSION
+// ============================================================
+let currentUser = null;
+
+function saveSession(user) {
+  try { localStorage.setItem('zoodSession_v2', JSON.stringify({ id: user.id, email: user.email })); } catch (e) { }
+}
+
+function loadSession() {
+  try {
+    const s = localStorage.getItem('zoodSession_v2');
+    if (!s) return;
+    const { id } = JSON.parse(s);
+    const user = DB.users.find(u => u.id === id);
+    if (user) currentUser = user;
+  } catch (e) { }
+}
+
+function clearSession() {
+  try { localStorage.removeItem('zoodSession_v2'); } catch (e) { }
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginErr');
+  if (!email || !pass) { errEl.style.display = 'block'; errEl.textContent = 'يرجى ملء جميع الحقول'; return; }
+  
+  if (useSupabase && supabase) {
+    const { data, error } = await supabase.from('users').select('*').eq('email', email).eq('pass', pass);
+    if (error || !data || data.length === 0) {
+      errEl.style.display = 'block';
+      errEl.textContent = 'البريد أو كلمة المرور غير صحيحة';
+      return;
+    }
+    currentUser = data[0];
+  } else {
+    const user = DB.users.find(u => u.email.toLowerCase() === email && u.pass === pass);
+    if (!user) { errEl.style.display = 'block'; errEl.textContent = 'البريد أو كلمة المرور غير صحيحة'; return; }
+    currentUser = user;
+  }
+  
+  errEl.style.display = 'none';
+  saveSession(currentUser);
+  updateNav();
+  showToast('مرحباً ' + currentUser.name + ' 👋', 'success');
+  if (currentUser.role === 'admin') showPage('dashboard');
+  else showPage('home');
+}
+
+async function doRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim().toLowerCase();
+  const pass = document.getElementById('regPass').value;
+  const errEl = document.getElementById('regErr');
+  if (!name || !email || !pass || pass.length < 6) { showToast('يرجى ملء جميع الحقول (6 أحرف للمرور على الأقل)', 'error'); return; }
+  
+  if (useSupabase && supabase) {
+    const { data: existing } = await supabase.from('users').select('id').eq('email', email);
+    if (existing && existing.length > 0) { errEl.style.display = 'block'; errEl.textContent = 'هذا البريد مسجل مسبقاً'; return; }
+    errEl.style.display = 'none';
+    const newUser = { id: Date.now(), name, email, pass, role: 'user', balance: 0, created_at: new Date().toISOString() };
+    const { error } = await supabase.from('users').insert(newUser);
+    if (error) { showToast('حدث خطأ أثناء التسجيل', 'error'); return; }
+    currentUser = newUser;
+  } else {
+    if (DB.users.find(u => u.email.toLowerCase() === email)) { errEl.style.display = 'block'; errEl.textContent = 'هذا البريد مسجل مسبقاً'; return; }
+    errEl.style.display = 'none';
+    currentUser = { id: Date.now(), name, email, pass, role: 'user', balance: 0, createdAt: new Date().toLocaleDateString('ar') };
+    DB.users.push(currentUser);
+    saveDB();
+  }
+  
+  saveSession(currentUser);
+  updateNav();
+  showToast('تم إنشاء حسابك بنجاح 🎉', 'success');
+  showPage('home');
+}
+
+function logout() {
+  currentUser = null;
+  clearSession();
+  updateNav();
+  showPage('home');
+  showToast('تم تسجيل الخروج بنجاح', 'success');
+}
+
+function requireLogin(page) {
+  if (!currentUser) { showPage('login'); return; }
+  showPage(page);
+}
+
+function updateNav() {
+  const ok = !!currentUser, admin = ok && currentUser.role === 'admin';
+  const authBtns = document.getElementById('navAuthButtons');
+  const userBtns = document.getElementById('navUserButtons');
+  if (authBtns) authBtns.style.display = ok ? 'none' : 'flex';
+  if (userBtns) userBtns.style.display = ok ? 'flex' : 'none';
+  const wbadge = document.getElementById('walletBadge');
+  if (wbadge) wbadge.style.display = ok ? 'flex' : 'none';
+  const dashBtn = document.getElementById('dashNavBtn');
+  if (dashBtn) dashBtn.style.display = admin ? '' : 'none';
+  const heroReg = document.getElementById('heroRegBtn');
+  const heroServ = document.getElementById('heroServBtn');
+  if (heroReg) heroReg.style.display = ok ? 'none' : '';
+  if (heroServ) heroServ.style.display = ok ? '' : 'none';
+  const nameEl = document.getElementById('navUserName');
+  if (nameEl && ok) nameEl.textContent = '👤 ' + currentUser.name;
+  if (ok) {
+    const wb = document.getElementById('walletBalNav');
+    if (wb) wb.textContent = currentUser.balance.toFixed(2);
+    const wa = document.getElementById('walletAmt');
+    if (wa) wa.textContent = currentUser.balance.toFixed(2);
+  }
+  const waFloat = document.getElementById('waFloat');
+  if (waFloat) waFloat.style.display = ok ? 'flex' : 'none';
+  
+  const mmWalletRow = document.getElementById('mmWallet');
+  const mmBalEl = document.getElementById('mmBalance');
+  const mmNameEl = document.getElementById('mmUserNameDisplay');
+  const mmAuthSec = document.getElementById('mmAuthSection');
+  const mmUserSec = document.getElementById('mmUserSection');
+  const mmDashBtn2 = document.getElementById('mmDashBtn');
+  if (mmWalletRow) mmWalletRow.style.display = ok ? '' : 'none';
+  if (mmBalEl && ok) mmBalEl.textContent = currentUser.balance.toFixed(2);
+  if (mmNameEl && ok) mmNameEl.textContent = currentUser.name;
+  if (mmAuthSec) mmAuthSec.style.display = ok ? 'none' : '';
+  if (mmUserSec) mmUserSec.style.display = ok ? '' : 'none';
+  if (mmDashBtn2) mmDashBtn2.style.display = admin ? '' : 'none';
+}
+
+// ============================================================
+// PAGE ROUTING
+// ============================================================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById('page-' + name);
+  if (pg) pg.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  if (name === 'numbers') renderNumbersByType('phone');
+  if (name === 'whatsapp') renderNumbersByType('whatsapp');
+  if (name === 'telegram-nums') renderNumbersByType('telegram');
+  if (name === 'wallet') renderWallet();
+  if (name === 'social') renderSocialPage();
+  if (name === 'telegram-verify') renderTgVerify();
+  if (name === 'games') renderGames();
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'recharge') resetRecharge();
+}
+
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+const countryFlags = { سوريا: '🇸🇾', السعودية: '🇸🇦', الإمارات: '🇦🇪', تركيا: '🇹🇷', مصر: '🇪🇬', العراق: '🇮🇶', روسيا: '🇷🇺' };
+const socialEmojis = { Instagram: '📸', TikTok: '🎵', Facebook: '👍', YouTube: '▶️', Twitter: '🐦', Snapchat: '👻' };
+const socialColors = { Instagram: '#E1306C', TikTok: '#69C9D0', Facebook: '#1877F2', YouTube: '#FF0000', Twitter: '#1DA1F2', Snapchat: '#FFFC00' };
+
+function renderNumbersByType(type) {
+  let gridId, countryFilterId;
+  if (type === 'phone') { gridId = 'numbersGrid'; countryFilterId = 'numCountryF'; }
+  else if (type === 'whatsapp') { gridId = 'waGrid'; countryFilterId = 'waCountryF'; }
+  else { gridId = 'tgGrid'; countryFilterId = 'tgCountryF'; }
+  const cf = document.getElementById(countryFilterId)?.value || '';
+  const ofEl = document.getElementById('numOpF');
+  const of2 = ofEl && type === 'phone' ? ofEl.value : '';
+  let nums = DB.numbers.filter(n => n.type === type && (!cf || n.country === cf) && (!of2 || n.operator === of2));
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  if (!nums.length) { grid.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text3);grid-column:1/-1">لا توجد أرقام متاحة</div>'; return; }
+  const icons = { phone: '📱', whatsapp: '💬', telegram: '✈️' };
+  grid.innerHTML = nums.map(n => `
+    <div class="product-card">
+      <div class="flag-badge">${countryFlags[n.country] || ''} ${n.country}</div>
+      <div class="pc-header">
+        <div><div class="pc-name">${icons[n.type]} ${n.operator || ''}</div></div>
+        <span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? '✅ متاح' : '❌ مباع'}</span>
+      </div>
+      <div class="pc-num">${n.phone}</div>
+      <div class="pc-price">$${n.price.toFixed(2)} <span>/ رقم واحد</span></div>
+      <button class="buy-btn" ${n.status !== 'available' ? 'disabled' : ''} onclick="openBuyNum(${n.id})">
+        ${n.status === 'available' ? '🛒 شراء الآن' : 'تم البيع'}
+      </button>
+    </div>`).join('');
+}
+
+function renderSocialPage() {
+  const el = document.getElementById('socialGrid');
+  if (!el) return;
+  const platforms = [...new Set(DB.socialPackages.map(p => p.platform))];
+  el.innerHTML = platforms.map(platform => {
+    const pkgs = DB.socialPackages.filter(p => p.platform === platform);
+    return `<div class="soc-card">
+      <div class="soc-hd">
+        <div class="soc-logo" style="background:${socialColors[platform] || '#444'}22;color:${socialColors[platform] || '#fff'}">${socialEmojis[platform] || '📱'}</div>
+        <div><div class="soc-plat">${platform}</div><div class="soc-type">${pkgs.map(p => p.type).join(' · ')}</div></div>
+      </div>
+      <div class="pkg-rows">
+        ${pkgs.map(pkg => `
+        <div class="pkg-row" onclick="openBuyDirect('${pkg.qty.toLocaleString()} ${pkg.type} ${platform}',${pkg.price},null,'social',${pkg.id})">
+          <div class="pkg-qty">🔢 ${pkg.qty.toLocaleString()} ${pkg.type}</div>
+          <div class="pkg-pr">$${pkg.price}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTgVerify() {
+  const el = document.getElementById('tgVerifyGrid');
+  if (!el) return;
+  el.innerHTML = DB.tgVerifyPackages.map(p => `
+    <div class="soc-card">
+      <div class="soc-hd">
+        <div class="soc-logo" style="background:rgba(77,159,255,0.12);color:#4D9FFF">${p.type.includes('بادج') ? '🏅' : '✅'}</div>
+        <div><div class="soc-plat">${p.type}</div><div class="soc-type">توثيق تلغرام</div></div>
+      </div>
+      <div style="font-size:0.85rem;color:var(--text2);margin-bottom:16px;line-height:1.6">${p.desc}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:1.5rem;font-weight:800;color:var(--gold)">$${p.price}</div>
+        <button class="buy-btn" style="width:auto;padding:11px 22px" onclick="openBuyDirect('${p.type} تلغرام',${p.price},null,'tgverify',${p.id})">طلب الخدمة</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderGames() {
+  const el = document.getElementById('gamesGrid');
+  if (!el) return;
+  const games = [...new Set(DB.gamePackages.map(p => p.game))];
+  el.innerHTML = games.map(game => {
+    const pkgs = DB.gamePackages.filter(p => p.game === game);
+    const icon = pkgs[0]?.icon || '🎮';
+    return `<div class="game-card">
+      <div class="game-icon">${icon}</div>
+      <div class="game-name">${game}</div>
+      <div class="game-pkgs">
+        ${pkgs.map(p => `
+        <div class="game-pkg-row" onclick="openBuyDirect('${p.package} - ${game}',${p.price},null,'game',${p.id})">
+          <div class="gp-name">${p.package}</div>
+          <div class="gp-price">$${p.price}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderWallet() {
+  if (!currentUser) return;
+  const fresh = DB.users.find(u => u.id === currentUser.id);
+  if (fresh) currentUser = fresh;
+  const walletAmtEl = document.getElementById('walletAmt');
+  if (walletAmtEl) walletAmtEl.textContent = currentUser.balance.toFixed(2);
+  const wb = document.getElementById('walletBalNav');
+  if (wb) wb.textContent = currentUser.balance.toFixed(2);
+  const mmBal = document.getElementById('mmBalance');
+  if (mmBal) mmBal.textContent = currentUser.balance.toFixed(2);
+  
+  const txs = DB.transactions.filter(t => t.user_id === currentUser.id);
+  const totalIn = txs.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0);
+  const totalOut = txs.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0);
+  const elIn = document.getElementById('wltTotalIn');
+  const elOut = document.getElementById('wltTotalOut');
+  const elCnt = document.getElementById('wltTxCount');
+  if (elIn) elIn.textContent = '$' + totalIn.toFixed(2);
+  if (elOut) elOut.textContent = '$' + totalOut.toFixed(2);
+  if (elCnt) elCnt.textContent = txs.length;
+  renderTxList('all');
+}
+
+let txFilter = 'all';
+function filterTx(type, el) {
+  txFilter = type;
+  document.querySelectorAll('#txFilterBtns .tab-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderTxList(type);
+}
+
+function renderTxList(type) {
+  if (!currentUser) return;
+  let txs = DB.transactions.filter(t => t.user_id === currentUser.id);
+  if (type !== 'all') txs = txs.filter(t => t.type === type);
+  txs = [...txs].reverse();
+  const list = document.getElementById('txList');
+  if (!list) return;
+  if (!txs.length) {
+    list.innerHTML = `<div class="wlt-empty"><div class="wlt-empty-icon">📋</div><div>لا توجد معاملات بعد</div></div>`;
+    return;
+  }
+  list.innerHTML = txs.map(t => `
+    <div class="tx-item">
+      <div class="tx-left">
+        <div class="tx-ico ${t.type}">${t.type === 'credit' ? '💚' : '🔴'}</div>
+        <div><div class="tx-desc">${t.description}</div><div class="tx-date">${t.date || t.transaction_date || new Date().toLocaleString('ar')}</div></div>
+      </div>
+      <div class="tx-amt ${t.type}">${t.type === 'credit' ? '+' : '-'}$${t.amount.toFixed(2)}</div>
+    </div>`).join('');
+}
+
+// ============================================================
+// ADD FUNDS WITH QR FROM DATABASE
+// ============================================================
+let currentAddFundsAmount = 0;
+
+function setAmt(val) {
+  document.getElementById('addFundsAmt').value = val;
+  document.querySelectorAll('.af-preset').forEach(b => b.classList.toggle('af-active', parseFloat(b.textContent.replace('$', '')) === val));
+}
+
+function afUpdateProgress(step) {
+  [1, 2, 3].forEach(s => {
+    const dot = document.getElementById('afDot' + s);
+    const progStep = document.getElementById('afProgStep' + s);
+    const line = document.getElementById('afLine' + s);
+    if (!dot || !progStep) return;
+    if (s < step) { dot.className = 'af-prog-dot done-dot'; dot.textContent = '✓'; progStep.className = 'af-prog-step done'; }
+    else if (s === step) { dot.className = 'af-prog-dot active-dot'; dot.textContent = s; progStep.className = 'af-prog-step active'; }
+    else { dot.className = 'af-prog-dot'; dot.textContent = s; progStep.className = 'af-prog-step'; }
+    if (line) line.className = 'af-prog-line ' + (s < step ? 'done-line' : '');
+  });
+}
+
+function afGoStep1() {
+  document.getElementById('afStep1').style.display = 'block';
+  document.getElementById('afStep2').style.display = 'none';
+  document.getElementById('afStep3').style.display = 'none';
+  afUpdateProgress(1);
+}
+
+function afGoStep2() {
+  const amt = parseFloat(document.getElementById('addFundsAmt').value);
+  if (!amt || amt < 1) {
+    showToast('أدخل مبلغاً صحيحاً (1$ على الأقل)', 'error');
+    return;
+  }
+  currentAddFundsAmount = amt;
+  
+  // Get ShamCash payment method from database
+  const pm = DB.paymentMethods.shamcash || { num: '0949277889', ownerName: 'عبدالحميد محمد الحسين', qr: '', active: true };
+  
+  document.getElementById('afAmtDisplay').textContent = '$' + amt.toFixed(2);
+  document.getElementById('afShamNum').textContent = pm.num;
+  document.getElementById('afShamName').textContent = pm.ownerName;
+  document.getElementById('afShamAmt').textContent = '$' + amt.toFixed(2) + ' USD';
+  
+  const imgEl = document.getElementById('afQrImg');
+  const fallbackEl = document.getElementById('afQrFallback');
+  const qrUrl = pm.qr || '';
+  
+  if (imgEl && fallbackEl) {
+    if (qrUrl && qrUrl !== '' && (qrUrl.startsWith('http') || qrUrl.startsWith('data:image'))) {
+      imgEl.style.display = 'block';
+      imgEl.style.opacity = '0.5';
+      imgEl.onload = function() {
+        this.style.opacity = '1';
+        fallbackEl.style.display = 'none';
+      };
+      imgEl.onerror = function() {
+        this.style.display = 'none';
+        fallbackEl.style.display = 'block';
+        fallbackEl.innerHTML = `
+          <div style="font-size:2rem;margin-bottom:12px">💳</div>
+          <div style="font-weight:bold;margin-bottom:8px">رقم محفظة شام كاش:</div>
+          <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px">${pm.num}</div>
+          <div>👤 اسم الحساب: ${pm.ownerName}</div>
+          <div>💵 المبلغ: $${amt.toFixed(2)}</div>
+          <button class="copy-btn" onclick="copyText('${pm.num}')" style="margin-top:15px;padding:8px 16px">📋 نسخ الرقم</button>
+        `;
+      };
+      imgEl.src = qrUrl + '?t=' + Date.now();
+    } else {
+      imgEl.style.display = 'none';
+      fallbackEl.style.display = 'block';
+      fallbackEl.innerHTML = `
+        <div style="font-size:2rem;margin-bottom:12px">💳</div>
+        <div style="font-weight:bold;margin-bottom:8px">رقم محفظة شام كاش:</div>
+        <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px">${pm.num}</div>
+        <div>👤 اسم الحساب: ${pm.ownerName}</div>
+        <div>💵 المبلغ: $${amt.toFixed(2)}</div>
+        <button class="copy-btn" onclick="copyText('${pm.num}')" style="margin-top:15px;padding:8px 16px">📋 نسخ الرقم</button>
+      `;
+    }
+  }
+  
+  document.getElementById('afStep1').style.display = 'none';
+  document.getElementById('afStep2').style.display = 'block';
+  document.getElementById('afStep3').style.display = 'none';
+  afUpdateProgress(2);
+}
+
+function afGoStep3() {
+  const amt = currentAddFundsAmount;
+  const user = currentUser;
+  const msg = 'مرحباً زود 👋\nأريد إضافة رصيد $' + amt.toFixed(2) + '\nالحساب: ' + user.email + '\nالاسم: ' + user.name;
+  const waLink = document.getElementById('afWaLink');
+  if (waLink) waLink.href = 'https://wa.me/963949277889?text=' + encodeURIComponent(msg);
+  document.getElementById('afStep1').style.display = 'none';
+  document.getElementById('afStep2').style.display = 'none';
+  document.getElementById('afStep3').style.display = 'block';
+  afUpdateProgress(3);
+}
+
+function openAddFunds() {
+  if (!currentUser) { showPage('login'); return; }
+  document.getElementById('addFundsAmt').value = '';
+  document.querySelectorAll('.af-preset').forEach(b => b.classList.remove('af-active'));
+  document.getElementById('txProof').value = '';
+  afGoStep1();
+  openModal('addFundsModal');
+}
+
+async function confirmAddFundsRequest() {
+  const amt = currentAddFundsAmount;
+  const proof = document.getElementById('txProof').value.trim();
+  const order = {
+    user: currentUser.name,
+    user_id: currentUser.id,
+    type: 'طلب شحن محفظة',
+    detail: '$' + amt.toFixed(2) + (proof ? ' — إيصال: ' + proof : ''),
+    amount: 0,
+    requested_amt: amt,
+    status: 'pending',
+    order_time: new Date().toLocaleString('ar')
+  };
+  
+  if (useSupabase && supabase) {
+    await supabase.from('orders').insert(order);
+  } else {
+    DB.orders.push({ ...order, id: Date.now() });
+    saveDB();
+  }
+  
+  closeModal('addFundsModal');
+  showToast('تم إرسال الطلب! تواصل مع الإدارة على واتساب ✅', 'success');
+}
+
+// ============================================================
+// BUY LOGIC
+// ============================================================
+let pendingBuy = null;
+
+function openBuyNum(id) {
+  if (!currentUser) { showPage('login'); return; }
+  const n = DB.numbers.find(x => x.id === id);
+  if (!n || n.status !== 'available') { showToast('هذا الرقم غير متاح', 'error'); return; }
+  pendingBuy = { type: 'number', id, price: n.price, data: n };
+  showBuyModal('شراء رقم ' + n.phone + ' (' + n.country + ')', n.price, async () => {
+    const idx = DB.numbers.findIndex(x => x.id === id);
+    DB.numbers[idx].status = 'sold';
+    if (useSupabase && supabase) {
+      await supabase.from('numbers').update({ status: 'sold' }).eq('id', id);
+    }
+    const order = { user: currentUser.name, user_id: currentUser.id, type: 'شراء رقم', detail: n.phone + ' | ' + n.country, amount: n.price, status: 'done', order_time: new Date().toLocaleString('ar') };
+    if (useSupabase && supabase) {
+      await supabase.from('orders').insert(order);
+    } else {
+      DB.orders.push({ ...order, id: Date.now() });
+      saveDB();
+    }
+    renderNumbersByType(n.type);
+    showToast('تم شراء الرقم ' + n.phone + ' 🎉', 'success');
+  });
+}
+
+function openBuyDirect(desc, price, cb, category, pkgId) {
+  if (!currentUser) { showPage('login'); return; }
+  pendingBuy = { desc, price, cb, category, pkgId };
+  showBuyModal(desc, price, cb || async function () {
+    const order = { user: currentUser.name, user_id: currentUser.id, type: category || 'خدمة', detail: desc, amount: price, status: 'done', order_time: new Date().toLocaleString('ar') };
+    if (useSupabase && supabase) {
+      await supabase.from('orders').insert(order);
+    } else {
+      DB.orders.push({ ...order, id: Date.now() });
+      saveDB();
+    }
+    showToast('تم الشراء بنجاح ✅', 'success');
+  });
+}
+
+function showBuyModal(desc, price, onConfirm) {
+  document.getElementById('buyModalDesc').textContent = desc;
+  document.getElementById('bm-balance').textContent = '$' + currentUser.balance.toFixed(2);
+  document.getElementById('bm-price').textContent = '$' + price.toFixed(2);
+  const after = currentUser.balance - price;
+  document.getElementById('bm-after').textContent = '$' + after.toFixed(2);
+  document.getElementById('bm-after').style.color = after >= 0 ? 'var(--green)' : 'var(--red)';
+  pendingBuy._onConfirm = onConfirm;
+  openModal('buyModal');
+}
+
+async function executeBuy() {
+  if (!pendingBuy) return;
+  const { price, _onConfirm } = pendingBuy;
+  if (currentUser.balance < price) { showToast('رصيدك غير كافٍ! يرجى شحن المحفظة أولاً', 'error'); closeModal('buyModal'); return; }
+  
+  currentUser.balance -= price;
+  if (useSupabase && supabase) {
+    await supabase.from('users').update({ balance: currentUser.balance }).eq('id', currentUser.id);
+  } else {
+    const ui = DB.users.findIndex(u => u.id === currentUser.id);
+    DB.users[ui].balance = currentUser.balance;
+    saveDB();
+  }
+  
+  const tx = { user_id: currentUser.id, type: 'debit', description: pendingBuy.desc || 'شراء خدمة', amount: price, transaction_date: new Date().toLocaleString('ar') };
+  if (useSupabase && supabase) {
+    await supabase.from('transactions').insert(tx);
+  } else {
+    DB.transactions.push({ ...tx, id: Date.now() });
+    saveDB();
+  }
+  
+  updateNav();
+  closeModal('buyModal');
+  if (_onConfirm) await _onConfirm();
+  pendingBuy = null;
+}
+
+// ============================================================
+// RECHARGE
+// ============================================================
+let rcState = {};
+function resetRecharge() { rcState = {}; }
+function switchRcTab(tab, el) {
+  document.querySelectorAll('#rcTabs .tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#page-recharge .tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('rc-' + tab).classList.add('active');
+}
+function selectRcOp(op, region) {
+  rcState[region] = { op, pkg: null };
+  const pkgs = DB.rechargePkgs.filter(p => p.operator === op);
+  const cap = region.charAt(0).toUpperCase() + region.slice(1);
+  const g = document.getElementById('rcGrid' + cap);
+  if (g) g.innerHTML = pkgs.map(p => `
+    <div class="rc-card" onclick="selectRcPkg('${region}',${p.id},this)">
+      <div class="rc-icon">⚡</div>
+      <div class="rc-amt">${p.qty.toLocaleString()}</div>
+      <div class="rc-lbl">وحدة</div>
+      <div style="margin-top:7px;font-weight:700;color:var(--gold)">$${p.price}</div>
+    </div>`).join('');
+  const d = document.getElementById('rcPkgs' + cap);
+  if (d) d.style.display = 'block';
+}
+function selectRcPkg(region, pkgId, el) {
+  const pkg = DB.rechargePkgs.find(p => p.id === pkgId);
+  if (!rcState[region]) rcState[region] = {};
+  rcState[region].pkg = pkg;
+  const cap = region.charAt(0).toUpperCase() + region.slice(1);
+  document.querySelectorAll('#rcGrid' + cap + ' .rc-card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function doRecharge(region) {
+  const st = rcState[region];
+  if (!st || !st.op || !st.pkg) { showToast('اختر الشبكة والفئة أولاً', 'error'); return; }
+  const cap = region.charAt(0).toUpperCase() + region.slice(1);
+  const num = document.getElementById('rcNum' + cap)?.value.trim();
+  if (!num) { showToast('أدخل رقم الهاتف', 'error'); return; }
+  openBuyDirect('شحن ' + st.pkg.qty.toLocaleString() + ' وحدة - ' + st.op + ' - ' + num, st.pkg.price, async () => {
+    const order = { user: currentUser.name, user_id: currentUser.id, type: 'شحن رصيد', detail: st.op + ' | ' + num + ' | ' + st.pkg.qty.toLocaleString() + ' وحدة', amount: st.pkg.price, status: 'done', order_time: new Date().toLocaleString('ar') };
+    if (useSupabase && supabase) {
+      await supabase.from('orders').insert(order);
+    } else {
+      DB.orders.push({ ...order, id: Date.now() });
+      saveDB();
+    }
+    showToast('تم شحن ' + st.pkg.qty.toLocaleString() + ' وحدة ✅', 'success');
+    rcState[region] = {};
+  });
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const avail = DB.numbers.filter(n => n.status === 'available').length;
+  const sold = DB.numbers.filter(n => n.status === 'sold').length;
+  const elA = document.getElementById('ov-avail'), elS = document.getElementById('ov-sold');
+  const elU = document.getElementById('ov-users'), elO = document.getElementById('ov-orders');
+  const elP = document.getElementById('ov-pending'), elR = document.getElementById('ov-revenue');
+  if (elA) elA.textContent = avail;
+  if (elS) elS.textContent = sold;
+  if (elU) elU.textContent = DB.users.filter(u => u.role !== 'admin').length;
+  if (elO) elO.textContent = DB.orders.length;
+  const pending = DB.orders.filter(o => o.status === 'pending').length;
+  if (elP) elP.textContent = pending;
+  const rev = DB.orders.filter(o => o.status === 'done').reduce((s, o) => s + (o.amount || 0), 0);
+  if (elR) elR.textContent = '$' + rev.toFixed(2);
+  const badge = document.getElementById('pendingBadge');
+  if (badge) { badge.style.display = pending > 0 ? '' : 'none'; badge.textContent = pending; }
+  
+  renderDNum(); renderDWa(); renderDTg(); renderDSoc();
+  renderDTgV(); renderDGames(); renderDRc(); renderDUsers(); renderDOrders(); renderDPM();
+  
+  const rb = document.getElementById('ovOrdersBody');
+  if (rb) rb.innerHTML = [...DB.orders].reverse().slice(0, 8).map(o => `
+    <tr><td style="font-weight:600">${o.user}</td><td><span class="pt pt-avail" style="font-size:.75rem">${o.type}</span></td>
+    <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
+    <td style="color:var(--gold);font-weight:700">$${(o.amount || 0).toFixed(2)}</td>
+    <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time}</td></tr>`).join('') ||
+    '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
+}
+
+function renderDNum() {
+  const nums = DB.numbers.filter(n => n.type === 'phone');
+  const el = document.getElementById('dNumCount'); if (el) el.textContent = nums.length;
+  const tb = document.getElementById('dNumBody'); if (!tb) return;
+  tb.innerHTML = nums.map(n => `<tr>
+    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone}</div></td>
+    <td>📱 هاتفي</td><td>${countryFlags[n.country] || ''} ${n.country}</td><td>${n.operator}</td>
+    <td style="color:var(--gold);font-weight:700">$${n.price.toFixed(2)}</td>
+    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>
+    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
+    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td>
+  </tr>`).join('');
+}
+
+function renderDWa() {
+  const nums = DB.numbers.filter(n => n.type === 'whatsapp');
+  const tb = document.getElementById('dWaBody'); if (!tb) return;
+  tb.innerHTML = nums.map(n => `<tr>
+    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone}</div></td>
+    <td>${countryFlags[n.country] || ''} ${n.country}</td>
+    <td style="color:var(--gold);font-weight:700">$${n.price.toFixed(2)}</td>
+    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>
+    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
+    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td>
+  </tr>`).join('');
+}
+
+function renderDTg() {
+  const nums = DB.numbers.filter(n => n.type === 'telegram');
+  const tb = document.getElementById('dTgBody'); if (!tb) return;
+  tb.innerHTML = nums.map(n => `<tr>
+    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone}</div></td>
+    <td>${countryFlags[n.country] || ''} ${n.country}</td>
+    <td style="color:var(--gold);font-weight:700">$${n.price.toFixed(2)}</td>
+    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>
+    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
+    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td>
+  </tr>`).join('');
+}
+
+function renderDSoc() {
+  const tb = document.getElementById('dSocBody'); if (!tb) return;
+  tb.innerHTML = DB.socialPackages.map(p => `<tr>
+    <td>${socialEmojis[p.platform] || '📱'} ${p.platform}</td>
+    <td>${p.type}</td><td style="font-weight:700">${p.qty.toLocaleString()}</td>
+    <td style="color:var(--gold);font-weight:700">$${p.price.toFixed(2)}</td>
+    <td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف</button></td>
+  </tr>`).join('');
+}
+
+function renderDTgV() {
+  const tb = document.getElementById('dTgVerifyBody'); if (!tb) return;
+  tb.innerHTML = DB.tgVerifyPackages.map(p => `<tr>
+    <td style="font-weight:600">${p.type}</td>
+    <td style="color:var(--text2);font-size:.82rem">${p.desc}</td>
+    <td style="color:var(--gold);font-weight:700">$${p.price.toFixed(2)}</td>
+    <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف</button></td>
+  </tr>`).join('');
+}
+
+function renderDGames() {
+  const tb = document.getElementById('dGamesBody'); if (!tb) return;
+  tb.innerHTML = DB.gamePackages.map(p => `<tr>
+    <td>${p.icon || '🎮'} ${p.game}</td>
+    <td style="font-weight:600">${p.package}</td>
+    <td style="color:var(--gold);font-weight:700">$${p.price.toFixed(2)}</td>
+    <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
+  </tr>`).join('');
+}
+
+function renderDRc() {
+  const tb = document.getElementById('dRcBody'); if (!tb) return;
+  tb.innerHTML = DB.rechargePkgs.map(p => `<tr>
+    <td style="font-weight:600">${p.operator}</td>
+    <td>${countryFlags[p.country] || ''} ${p.country}</td>
+    <td>${p.qty.toLocaleString()} وحدة</td>
+    <td style="color:var(--gold);font-weight:700">$${p.price.toFixed(2)}</td>
+    <td><button class="del-btn" onclick="deleteRcPkg(${p.id})">حذف</button></td>
+  </tr>`).join('');
+}
+
+function renderDUsers() {
+  const tb = document.getElementById('dUsersBody'); if (!tb) return;
+  tb.innerHTML = DB.users.map(u => `<tr>
+    <td style="font-weight:600">${u.name}</td><td style="color:var(--text2)">${u.email}</td>
+    <td style="color:var(--gold);font-weight:700">$${(u.balance || 0).toFixed(2)}</td>
+    <td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td>
+    <td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}</td>
+    <td>${u.role !== 'admin' ? `<button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name}')">+ رصيد</button>` : '—'}</td>
+  </tr>`).join('');
+  
+  const pending = DB.orders.filter(o => o.status === 'pending');
+  const pb = document.getElementById('dPendingBody');
+  if (pb) pb.innerHTML = pending.length ? pending.map((o, idx) => `<tr>
+    <td style="font-weight:600">${o.user}</td>
+    <td style="color:var(--gold);font-weight:700">$${(o.requested_amt || 0).toFixed(2)}</td>
+    <td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time}</td>
+    <td>
+      <button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button>
+      <button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button>
+    </td>
+  </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة</td></tr>';
+}
+
+function renderDOrders() {
+  const tb = document.getElementById('dOrdersBody'); if (!tb) return;
+  tb.innerHTML = [...DB.orders].reverse().map(o => `<tr>
+    <td>${o.user}</td><td><span class="pt pt-avail" style="font-size:.75rem">${o.type}</span></td>
+    <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
+    <td style="color:var(--gold);font-weight:700">$${(o.amount || 0).toFixed(2)}</td>
+    <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time}</td>
+  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
+}
+
+function renderDPM() {
+  const pm = DB.paymentMethods;
+  const cards = [
+    { key: 'binance', icon: '₿', name: 'Binance Pay / USDT', rows: [['العنوان', pm.binance?.addr], ['UID', pm.binance?.uid]], qr: pm.binance?.qr, active: pm.binance?.active, color: '#F0B90B' },
+    { key: 'shamcash', icon: '💳', name: 'شام كاش', rows: [['رقم المحفظة', pm.shamcash?.num], ['صاحب الحساب', pm.shamcash?.ownerName]], qr: pm.shamcash?.qr, active: pm.shamcash?.active, color: '#00C851' },
+    { key: 'western', icon: '🌐', name: 'Western Union', rows: [['الاسم', pm.western?.ownerName], ['الدولة', pm.western?.country]], active: pm.western?.active, color: '#FFDD00' },
+  ];
+  const el = document.getElementById('pmGrid'); if (!el) return;
+  el.innerHTML = cards.map(c => `
+    <div class="pm-card ${c.active ? 'active-pm' : 'inactive-pm'}">
+      <div class="pm-header">
+        <div class="pm-icon" style="background:${c.color}22;font-size:1.4rem;display:flex;align-items:center;justify-content:center">${c.icon}</div>
+        <div><div class="pm-name">${c.name}</div><div class="pm-status" style="color:${c.active ? 'var(--green)' : 'var(--red)'}">${c.active ? '✅ مفعّل' : '❌ معطّل'}</div></div>
+      </div>
+      <div class="pm-details">
+        ${c.rows.map(r => `<div class="pm-detail-row"><span>${r[0]}</span><span>${r[1] || '—'}</span></div>`).join('')}
+      </div>
+      ${c.qr ? `<div class="pm-qr"><img src="${c.qr}" alt="QR" onerror="this.style.display='none'"></div>` : ''}
+    </div>`).join('');
+}
+
+function switchDash(name, el) {
+  document.querySelectorAll('.dash-sec').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('dash-' + name).classList.add('active');
+  el.classList.add('active');
+  renderDashboard();
+}
+
+// Admin helpers
+async function quickAddBal(uid, name) {
+  const amt = parseFloat(prompt('أدخل المبلغ لإضافته لـ ' + name + ' ($):'));
+  if (!amt || amt <= 0 || isNaN(amt)) return;
+  
+  if (useSupabase && supabase) {
+    const { data: user } = await supabase.from('users').select('balance').eq('id', uid).single();
+    const newBalance = (user?.balance || 0) + amt;
+    await supabase.from('users').update({ balance: newBalance }).eq('id', uid);
+    await supabase.from('transactions').insert({ user_id: uid, type: 'credit', description: 'إضافة رصيد من الإدارة', amount: amt, transaction_date: new Date().toLocaleString('ar') });
+  } else {
+    const ui = DB.users.findIndex(u => u.id === uid);
+    DB.users[ui].balance += amt;
+    DB.transactions.push({ id: Date.now(), user_id: uid, type: 'credit', description: 'إضافة رصيد من الإدارة', amount: amt, date: new Date().toLocaleString('ar') });
+    saveDB();
+  }
+  
+  await refreshAllData();
+  renderDashboard();
+  showToast('تم إضافة $' + amt.toFixed(2) + ' لـ ' + name + ' ✅', 'success');
+}
+
+async function approveWalletRequest(orderId) {
+  const order = DB.orders.find(o => o.id === orderId);
+  if (!order) return;
+  const amt = order.requested_amt || 0;
+  
+  if (useSupabase && supabase) {
+    await supabase.from('orders').update({ status: 'approved', amount: amt }).eq('id', orderId);
+    const { data: user } = await supabase.from('users').select('balance').eq('id', order.user_id).single();
+    await supabase.from('users').update({ balance: (user?.balance || 0) + amt }).eq('id', order.user_id);
+    await supabase.from('transactions').insert({ user_id: order.user_id, type: 'credit', description: 'إضافة رصيد — تمت الموافقة', amount: amt, transaction_date: new Date().toLocaleString('ar') });
+  } else {
+    const ui = DB.users.findIndex(u => u.id === order.user_id);
+    DB.users[ui].balance += amt;
+    order.status = 'approved';
+    order.amount = amt;
+    DB.transactions.push({ id: Date.now(), user_id: order.user_id, type: 'credit', description: 'إضافة رصيد — تمت الموافقة', amount: amt, date: new Date().toLocaleString('ar') });
+    saveDB();
+  }
+  
+  await refreshAllData();
+  renderDashboard();
+  showToast('تمت الموافقة وإضافة $' + amt.toFixed(2) + ' لـ ' + order.user + ' ✅', 'success');
+}
+
+function rejectWalletRequest(orderId) {
+  const order = DB.orders.find(o => o.id === orderId);
+  if (order) order.status = 'rejected';
+  saveDB();
+  renderDashboard();
+  showToast('تم رفض الطلب', 'success');
+}
+
+// CRUD Operations
+async function deleteNum(id) {
+  if (useSupabase && supabase) {
+    await supabase.from('numbers').delete().eq('id', id);
+  } else {
+    DB.numbers = DB.numbers.filter(n => n.id !== id);
+    saveDB();
+  }
+  await refreshAllData();
+  renderDashboard();
+  showToast('تم حذف الرقم', 'success');
+}
+
+async function toggleNumStatus(id) {
+  const i = DB.numbers.findIndex(n => n.id === id);
+  const newStatus = DB.numbers[i].status === 'available' ? 'sold' : 'available';
+  if (useSupabase && supabase) {
+    await supabase.from('numbers').update({ status: newStatus }).eq('id', id);
+  } else {
+    DB.numbers[i].status = newStatus;
+    saveDB();
+  }
+  await refreshAllData();
+  renderDashboard();
+  showToast('تم تحديث الحالة', 'success');
+}
+
+async function deleteSoc(id) {
+  if (useSupabase && supabase) {
+    await supabase.from('social_packages').delete().eq('id', id);
+  } else {
+    DB.socialPackages = DB.socialPackages.filter(p => p.id !== id);
+    saveDB();
+  }
+  await refreshAllData();
+  renderDashboard();
+  showToast('تم الحذف', 'success');
+}
+
+async function deleteTgV(id) {
+  if (useSupabase && supabase) {
+    await supabase.from('tg_verify_packages').delete().eq('id', id);
+  } else {
+    DB.tgVerifyPackages = DB.tgVerifyPackages.filter(p => p.id !== id);
+    saveDB();
+  }
+  await refreshAllData();
+  renderDashboard();
+  showToast('تم الحذف', 'success');
+}
+
+async function deleteGame(id) {
+  if (useSupabase && supabase) {
+    await supabase.from('game_packages').delete().eq('id', id);
+  } else {
+    DB.gamePackages = DB.gamePackages.filter(p => p.id !== id);
+    saveDB();
+  }
+  await refreshAllData();
+  renderDashboard();
+  showToast('تم الحذف', 'success');
+}
+
+async function deleteRcPkg(id) {
+  if (useSupabase && supabase) {
+    await supabase.from('recharge_packages').delete().eq('id', id);
+  } else {
+    DB.rechargePkgs = DB.rechargePkgs.filter(p => p.id !== id);
+    saveDB();
+  }
+  await refreshAllData();
+  renderDashboard();
+  showToast('تم الحذف', 'success');
+}
+
+// Modal Open Functions
+function openAddNum(type) {
+  document.getElementById('addNumType').value = type;
+  document.getElementById('addNumTitle').textContent = type === 'whatsapp' ? '💬 إضافة رقم واتساب' : type === 'telegram' ? '✈️ إضافة رقم تلغرام' : '📱 إضافة رقم هاتفي';
+  document.getElementById('newNumOpGroup').style.display = type === 'phone' ? '' : 'none';
+  openModal('addNumModal');
+}
+
+async function confirmAddNum() {
+  const type = document.getElementById('addNumType').value;
+  const phone = document.getElementById('newNumPhone').value.trim();
+  const country = document.getElementById('newNumCountry').value;
+  const op = document.getElementById('newNumOp').value;
+  const price = parseFloat(document.getElementById('newNumPrice').value);
+  if (!phone || !price) { showToast('أدخل جميع البيانات', 'error'); return; }
+  const newNum = { id: Date.now(), type, phone, country, operator: op, price, status: 'available' };
+  
+  if (useSupabase && supabase) {
+    await supabase.from('numbers').insert(newNum);
+  } else {
+    DB.numbers.push(newNum);
+    saveDB();
+  }
+  
+  closeModal('addNumModal');
+  document.getElementById('newNumPhone').value = '';
+  document.getElementById('newNumPrice').value = '';
+  await refreshAllData();
+  renderDashboard();
+  showToast('تم إضافة الرقم ✅', 'success');
+}
+
+function openAddSocial() { openModal('addSocialModal'); }
+async function confirmAddSocial() {
+  const qty = parseInt(document.getElementById('nSocQty').value);
+  const price = parseFloat(document.getElementById('nSocPrice').value);
+  if (!qty || !price) { showToast('أدخل الكمية والسعر', 'error'); return; }
+  const p = { id: Date.now(), platform: document.getElementById('nSocPlat').value, type: document.getElementById('nSocType').value, qty, price };
+  
+  if (useSupabase && supabase) {
+    await supabase.from('social_packages').insert(p);
+  } else {
+    DB.socialPackages.push(p);
+    saveDB();
+  }
+  
+  closeModal('addSocialModal');
+  await refreshAllData();
+  renderDashboard();
+  renderSocialPage();
+  document.getElementById('nSocQty').value = '';
+  document.getElementById('nSocPrice').value = '';
+  showToast('تمت إضافة الباقة ✅', 'success');
+}
+
+function openAddTgVerify() { openModal('addTgVerifyModal'); }
+async function confirmAddTgVerify() {
+  const price = parseFloat(document.getElementById('nTgVPrice').value);
+  if (!price) { showToast('أدخل السعر', 'error'); return; }
+  const p = { id: Date.now(), type: document.getElementById('nTgVType').value, desc: document.getElementById('nTgVDesc').value, price };
+  
+  if (useSupabase && supabase) {
+    await supabase.from('tg_verify_packages').insert(p);
+  } else {
+    DB.tgVerifyPackages.push(p);
+    saveDB();
+  }
+  
+  closeModal('addTgVerifyModal');
+  await refreshAllData();
+  renderDashboard();
+  document.getElementById('nTgVDesc').value = '';
+  document.getElementById('nTgVPrice').value = '';
+  showToast('تمت الإضافة ✅', 'success');
+}
+
+function openAddGame() {
+  document.getElementById('nGameName').value = '';
+  document.getElementById('nGameIcon').value = '🎮';
+  document.getElementById('nGamePkg').value = '';
+  document.getElementById('nGamePrice').value = '';
+  openModal('addGameModal');
+}
+
+async function confirmAddGame() {
+  const gameName = document.getElementById('nGameName').value.trim();
+  const gameIcon = document.getElementById('nGameIcon').value.trim() || '🎮';
+  const price = parseFloat(document.getElementById('nGamePrice').value);
+  const pkg = document.getElementById('nGamePkg').value.trim();
+  if (!gameName || !price || !pkg) { showToast('أدخل جميع البيانات', 'error'); return; }
+  const p = { id: Date.now(), game: gameName, icon: gameIcon, package: pkg, price };
+  
+  if (useSupabase && supabase) {
+    await supabase.from('game_packages').insert(p);
+  } else {
+    DB.gamePackages.push(p);
+    saveDB();
+  }
+  
+  closeModal('addGameModal');
+  await refreshAllData();
+  renderDashboard();
+  renderGames();
+  showToast('تمت الإضافة ✅', 'success');
+}
+
+function openAddRcPkg() { openModal('addRcPkgModal'); }
+async function confirmAddRcPkg() {
+  const qty = parseInt(document.getElementById('nRcQty').value);
+  const price = parseFloat(document.getElementById('nRcPrice').value);
+  if (!qty || !price) { showToast('أدخل البيانات', 'error'); return; }
+  const p = { id: Date.now(), country: document.getElementById('nRcCountry').value, operator: document.getElementById('nRcOp').value, qty, price };
+  
+  if (useSupabase && supabase) {
+    await supabase.from('recharge_packages').insert(p);
+  } else {
+    DB.rechargePkgs.push(p);
+    saveDB();
+  }
+  
+  closeModal('addRcPkgModal');
+  await refreshAllData();
+  renderDashboard();
+  document.getElementById('nRcOp').value = '';
+  document.getElementById('nRcQty').value = '';
+  document.getElementById('nRcPrice').value = '';
+  showToast('تمت الإضافة ✅', 'success');
+}
+
+function openAdminAddBal() {
+  const sel = document.getElementById('adminBalUser');
+  sel.innerHTML = DB.users.filter(u => u.role !== 'admin').map(u => `<option value="${u.id}">${u.name} — ${u.email} ($${(u.balance || 0).toFixed(2)})</option>`).join('');
+  document.getElementById('adminBalAmt').value = '';
+  document.getElementById('adminBalNote').value = '';
+  openModal('adminAddBalModal');
+}
+
+async function confirmAdminAddBal() {
+  const uid = parseInt(document.getElementById('adminBalUser').value);
+  const amt = parseFloat(document.getElementById('adminBalAmt').value);
+  const note = document.getElementById('adminBalNote').value.trim() || 'إضافة من الإدارة';
+  if (!uid || !amt || amt <= 0) { showToast('أدخل البيانات بشكل صحيح', 'error'); return; }
+  
+  if (useSupabase && supabase) {
+    const { data: user } = await supabase.from('users').select('balance, name').eq('id', uid).single();
+    await supabase.from('users').update({ balance: (user?.balance || 0) + amt }).eq('id', uid);
+    await supabase.from('transactions').insert({ user_id: uid, type: 'credit', description: 'إضافة رصيد من الإدارة — ' + note, amount: amt, transaction_date: new Date().toLocaleString('ar') });
+    await supabase.from('orders').insert({ user: user?.name, user_id: uid, type: 'إضافة رصيد (أدمن)', detail: '$' + amt.toFixed(2) + ' — ' + note, amount: amt, status: 'done', order_time: new Date().toLocaleString('ar') });
+  } else {
+    const ui = DB.users.findIndex(u => u.id === uid);
+    DB.users[ui].balance += amt;
+    DB.transactions.push({ id: Date.now(), user_id: uid, type: 'credit', description: 'إضافة رصيد من الإدارة — ' + note, amount: amt, date: new Date().toLocaleString('ar') });
+    DB.orders.push({ id: Date.now(), user: DB.users[ui].name, user_id: uid, type: 'إضافة رصيد (أدمن)', detail: '$' + amt.toFixed(2) + ' — ' + note, amount: amt, status: 'done', time: new Date().toLocaleString('ar') });
+    saveDB();
+  }
+  
+  closeModal('adminAddBalModal');
+  await refreshAllData();
+  renderDashboard();
+  showToast('تم إضافة $' + amt.toFixed(2) + ' للحساب ✅', 'success');
+}
+
+// Payment Methods Management
+function openEditPM() {
+  const pm = DB.paymentMethods;
+  document.getElementById('pm-binance-addr').value = pm.binance?.addr || '';
+  document.getElementById('pm-binance-uid').value = pm.binance?.uid || '';
+  document.getElementById('pm-binance-qr').value = pm.binance?.qr || '';
+  document.getElementById('pm-binance-active').checked = pm.binance?.active || false;
+  document.getElementById('pm-sham-num').value = pm.shamcash?.num || '';
+  document.getElementById('pm-sham-name').value = pm.shamcash?.ownerName || '';
+  document.getElementById('pm-sham-qr').value = pm.shamcash?.qr || '';
+  document.getElementById('pm-sham-active').checked = pm.shamcash?.active || false;
+  document.getElementById('pm-wu-name').value = pm.western?.ownerName || '';
+  document.getElementById('pm-wu-country').value = pm.western?.country || '';
+  document.getElementById('pm-wu-active').checked = pm.western?.active || false;
+  
+  if (pm.shamcash?.qr) {
+    const previewImg = document.getElementById('shamQrPreviewImg');
+    const previewDiv = document.getElementById('shamQrPreview');
+    if (previewImg && previewDiv) {
+      previewImg.src = pm.shamcash.qr;
+      previewDiv.style.display = 'block';
+    }
+  }
+  openModal('editPMModal');
+}
+
+function switchPMTab(key, el) {
+  document.querySelectorAll('#editPMModal .tab-btn').forEach(btn => btn.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#editPMModal .tab-content').forEach(content => content.classList.remove('active'));
+  document.getElementById('pmt-' + key).classList.add('active');
+}
+
+async function savePaymentMethods() {
+  showLoadingOverlay('جاري حفظ الإعدادات...');
+  try {
+    const shamcashQr = document.getElementById('pm-sham-qr').value.trim();
+    const methods = [
+      { method: 'binance', data: { addr: document.getElementById('pm-binance-addr').value.trim(), uid: document.getElementById('pm-binance-uid').value.trim(), qr: document.getElementById('pm-binance-qr').value.trim() }, active: document.getElementById('pm-binance-active').checked },
+      { method: 'shamcash', data: { num: document.getElementById('pm-sham-num').value.trim(), ownerName: document.getElementById('pm-sham-name').value.trim(), qr: shamcashQr }, active: document.getElementById('pm-sham-active').checked },
+      { method: 'western', data: { ownerName: document.getElementById('pm-wu-name').value.trim(), country: document.getElementById('pm-wu-country').value.trim() }, active: document.getElementById('pm-wu-active').checked }
+    ];
+    
+    for (const m of methods) {
+      DB.paymentMethods[m.method] = { ...m.data, active: m.active };
+      if (useSupabase && supabase) {
+        await supabase.from('payment_methods').upsert({ method: m.method, data: m.data, active: m.active }, { onConflict: 'method' });
+      }
+    }
+    saveDB();
+    closeModal('editPMModal');
+    await refreshAllData();
+    renderDashboard();
+    showToast('تم حفظ الإعدادات بنجاح ✅', 'success');
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('حدث خطأ أثناء الحفظ', 'error');
+  } finally {
+    hideLoadingOverlay();
+  }
+}
+
+function handleQrUpload(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const imageUrl = e.target.result;
+    if (type === 'shamcash') {
+      document.getElementById('pm-sham-qr').value = imageUrl;
+      const previewImg = document.getElementById('shamQrPreviewImg');
+      const previewDiv = document.getElementById('shamQrPreview');
+      if (previewImg && previewDiv) {
+        previewImg.src = imageUrl;
+        previewDiv.style.display = 'block';
+      }
+      showToast('تم تحميل الصورة بنجاح ✅', 'success');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function previewQrUrl(type) {
+  if (type === 'shamcash') {
+    const url = document.getElementById('pm-sham-qr').value.trim();
+    const previewImg = document.getElementById('shamQrPreviewImg');
+    const previewDiv = document.getElementById('shamQrPreview');
+    if (url && previewImg && previewDiv) {
+      previewImg.src = url;
+      previewDiv.style.display = 'block';
+    } else if (previewDiv) {
+      previewDiv.style.display = 'none';
+    }
+  }
+}
+
+// ============================================================
+// MOBILE MENU
+// ============================================================
+function toggleMobileMenu() {
+  const hb = document.getElementById('hamburger');
+  const mm = document.getElementById('mobileMenu');
+  if (!hb || !mm) return;
+  const isOpen = mm.classList.contains('open');
+  hb.classList.toggle('open');
+  mm.classList.toggle('open');
+  document.body.style.overflow = isOpen ? '' : 'hidden';
+}
+
+function closeMM() {
+  const hb = document.getElementById('hamburger');
+  const mm = document.getElementById('mobileMenu');
+  if (hb) hb.classList.remove('open');
+  if (mm) mm.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+document.addEventListener('DOMContentLoaded', async function() {
+  window.addEventListener('scroll', function() {
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.classList.toggle('scrolled', window.scrollY > 20);
+  }, { passive: true });
+  
+  const hb = document.getElementById('hamburger');
+  if (hb) hb.addEventListener('click', function(e) { e.stopPropagation(); toggleMobileMenu(); });
+  
+  document.addEventListener('click', function(e) {
+    const mm = document.getElementById('mobileMenu');
+    const hb2 = document.getElementById('hamburger');
+    if (mm && hb2 && mm.classList.contains('open') && !mm.contains(e.target) && !hb2.contains(e.target)) closeMM();
+  });
+  
+  document.querySelectorAll('.modal-ov').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+  
+  loadDB();
+  ensureDBSchema();
+  loadSession();
+  updateNav();
+  renderSocialPage();
+  renderGames();
+  renderTgVerify();
+  
+  await initSupabase();
+  
+  renderSocialPage();
+  renderGames();
+  renderTgVerify();
+  if (currentUser) {
+    const fresh = DB.users.find(u => u.id === currentUser.id);
+    if (fresh) currentUser = fresh;
+    updateNav();
+  }
+});

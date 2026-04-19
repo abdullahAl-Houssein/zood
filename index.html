@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>زود | منصة الاتصالات والرقمية</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar" id="mainNav">
+  <div class="logo" onclick="showPage('home')">
+    <div class="logo-icon">ز</div>
+    <div class="logo-text">زود</div>
+  </div>
+  <div class="nav-links" id="navLinks">
+    <button class="nav-btn ghost" onclick="showPage('home')">الرئيسية</button>
+    <button class="nav-btn ghost" onclick="requireLogin('numbers')">الخطوط</button>
+    <button class="nav-btn ghost" onclick="requireLogin('recharge')">شحن الرصيد</button>
+    <button class="nav-btn ghost" onclick="requireLogin('social')">سوشيال</button>
+    <button class="nav-btn ghost" onclick="requireLogin('games')">الألعاب</button>
+    <div class="wallet-badge" id="walletBadge" onclick="requireLogin('wallet')" style="display:none">
+      💰 <span id="walletBalNav">0</span> $
+    </div>
+    <div id="navAuthButtons" style="display:flex;gap:6px;align-items:center">
+      <button class="nav-btn ghost" onclick="showPage('register')" style="margin-left:6px">إنشاء حساب</button>
+      <button class="nav-btn gold" onclick="showPage('login')">تسجيل الدخول</button>
+    </div>
+    <div id="navUserButtons" style="gap:8px;align-items:center;display:none">
+      <span id="navUserName" style="font-size:0.85rem;color:var(--text2)"></span>
+      <button class="nav-btn ghost" id="logoutBtn" onclick="logout()">خروج</button>
+      <button class="nav-btn gold" id="dashNavBtn" style="display:none" onclick="showPage('dashboard')">لوحة التحكم</button>
+    </div>
+  </div>
+  <!-- Hamburger for mobile -->
+  <button class="hamburger" id="hamburger" aria-label="القائمة">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+
+  <!-- User wallet row (shown when logged in) -->
+  <div id="mmWallet" style="display:none;background:rgba(245,200,66,0.05);border-bottom:1px solid rgba(245,200,66,0.12);padding:16px 20px;cursor:pointer" onclick="closeMM();requireLogin('wallet')">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(245,200,66,0.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem">💰</div>
+        <div>
+          <div id="mmUserNameDisplay" style="font-size:0.88rem;font-weight:700;color:var(--text)">مرحباً</div>
+          <div style="font-size:0.75rem;color:var(--text3)">رصيدك</div>
+        </div>
+      </div>
+      <div class="mm-balance-chip">$<span id="mmBalance">0.00</span></div>
+    </div>
+  </div>
+
+  <!-- Main nav -->
+  <div class="mm-section-title">القائمة الرئيسية</div>
+  <button class="m-nav-btn" onclick="closeMM();showPage('home')"><span style="font-size:1.1rem">🏠</span> الرئيسية</button>
+
+  <!-- Numbers group -->
+  <div class="mm-section-title">الخطوط والأرقام</div>
+  <button class="m-nav-btn" onclick="closeMM();requireLogin('numbers')"><span style="font-size:1.1rem">📱</span> خطوط هاتفية</button>
+  <button class="m-nav-btn" onclick="closeMM();requireLogin('whatsapp')"><span style="font-size:1.1rem">💬</span> أرقام واتساب</button>
+  <button class="m-nav-btn" onclick="closeMM();requireLogin('telegram-nums')"><span style="font-size:1.1rem">✈️</span> أرقام تلغرام</button>
+
+  <!-- Services group -->
+  <div class="mm-section-title">الخدمات الرقمية</div>
+  <button class="m-nav-btn" onclick="closeMM();requireLogin('recharge')"><span style="font-size:1.1rem">⚡</span> شحن الرصيد</button>
+  <button class="m-nav-btn" onclick="closeMM();requireLogin('social')"><span style="font-size:1.1rem">👥</span> متابعين سوشيال</button>
+  <button class="m-nav-btn" onclick="closeMM();requireLogin('telegram-verify')"><span style="font-size:1.1rem">✅</span> توثيق تلغرام</button>
+  <button class="m-nav-btn" onclick="closeMM();requireLogin('games')"><span style="font-size:1.1rem">🎮</span> شحن الألعاب</button>
+
+  <!-- Auth section -->
+  <div class="mm-divider"></div>
+
+  <!-- NOT logged in -->
+  <div id="mmAuthSection">
+    <button class="m-nav-btn gold" id="mmRegBtn" onclick="closeMM();showPage('register')">إنشاء حساب مجاني ✨</button>
+    <button class="m-nav-btn" id="mmLoginBtn" onclick="closeMM();showPage('login')" style="justify-content:center;color:var(--gold);font-weight:700;border-bottom:none">تسجيل الدخول</button>
+  </div>
+
+  <!-- Logged in -->
+  <div id="mmUserSection" style="display:none">
+    <button class="m-nav-btn gold" id="mmDashBtn" style="display:none" onclick="closeMM();showPage('dashboard')"><span style="font-size:1.1rem">📊</span> لوحة التحكم</button>
+    <button class="m-nav-btn" id="mmLogoutBtn" onclick="closeMM();logout()" style="color:var(--red);justify-content:center;border-bottom:none"><span style="font-size:1rem">🚪</span> تسجيل الخروج</button>
+  </div>
+
+</div>
+
+<!-- ===== HOME ===== -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="hero-bg"></div><div class="hero-grid"></div>
+    <div class="hero-content">
+      <div class="hero-badge">⚡ منصة الاتصالات الرقمية الأولى</div>
+      <h1 class="hero-title">كل ما تحتاجه من<br><span class="hl">اتصالات وخدمات رقمية</span><br>في مكان واحد</h1>
+      <p class="hero-sub">خطوط هاتفية، شحن رصيد، متابعين سوشيال، توثيق تلغرام، شحن ألعاب — كل ذلك بسرعة وأمان وبأفضل الأسعار.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="requireLogin('numbers')">ابدأ الآن ←</button>
+        <button class="btn-sec" id="heroRegBtn" onclick="showPage('register')">إنشاء حساب مجاني</button>
+        <button class="btn-sec" id="heroServBtn" style="display:none" onclick="document.querySelector('.section').scrollIntoView({behavior:'smooth'})">تصفح الخدمات ↓</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-item"><div class="stat-num">+5000</div><div class="stat-lbl">رقم متاح</div></div>
+        <div class="stat-item"><div class="stat-num">+12</div><div class="stat-lbl">دولة</div></div>
+        <div class="stat-item"><div class="stat-num">99%</div><div class="stat-lbl">رضا العملاء</div></div>
+        <div class="stat-item"><div class="stat-num">24/7</div><div class="stat-lbl">دعم مستمر</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-tag">خدماتنا</div>
+      <h2 class="sec-title">ماذا يقدم زود؟</h2>
+      <p class="sec-sub">منصة متكاملة تجمع كل احتياجاتك الرقمية</p>
+    </div>
+    <div class="services-grid">
+      <div class="svc-card" onclick="requireLogin('numbers')">
+        <div class="svc-icon" style="background:rgba(245,200,66,0.12)">📱</div>
+        <div class="svc-name">خطوط هاتفية</div>
+        <div class="svc-desc">أرقام عادية من سوريا، السعودية، الإمارات وأكثر</div>
+        <div class="svc-badge">📞 هاتف</div>
+      </div>
+      <div class="svc-card" onclick="requireLogin('whatsapp')">
+        <div class="svc-icon" style="background:rgba(0,224,154,0.12)">💬</div>
+        <div class="svc-name">أرقام واتساب</div>
+        <div class="svc-desc">أرقام مخصصة لواتساب من دول متعددة</div>
+        <div class="svc-badge">🟢 واتساب</div>
+      </div>
+      <div class="svc-card" onclick="requireLogin('telegram-nums')">
+        <div class="svc-icon" style="background:rgba(77,159,255,0.12)">✈️</div>
+        <div class="svc-name">أرقام تلغرام</div>
+        <div class="svc-desc">أرقام لتسجيل حسابات تلغرام جديدة</div>
+        <div class="svc-badge">🔵 تلغرام</div>
+      </div>
+      <div class="svc-card" onclick="requireLogin('recharge')">
+        <div class="svc-icon" style="background:rgba(255,149,0,0.12)">⚡</div>
+        <div class="svc-name">شحن الرصيد</div>
+        <div class="svc-desc">سيريتل، MTN، شبكات سورية وعراقية وخليجية</div>
+        <div class="svc-badge">💳 شحن</div>
+      </div>
+      <div class="svc-card" onclick="requireLogin('social')">
+        <div class="svc-icon" style="background:rgba(155,89,255,0.12)">👥</div>
+        <div class="svc-name">متابعين سوشيال</div>
+        <div class="svc-desc">إنستاغرام، تيك توك، فيسبوك، يوتيوب</div>
+        <div class="svc-badge">📣 سوشيال</div>
+      </div>
+      <div class="svc-card" onclick="requireLogin('telegram-verify')">
+        <div class="svc-icon" style="background:rgba(77,159,255,0.14)">✅</div>
+        <div class="svc-name">توثيق تلغرام</div>
+        <div class="svc-desc">توثيق حسابات ومجموعات تلغرام بعلامة التحقق</div>
+        <div class="svc-badge">✅ توثيق</div>
+      </div>
+      <div class="svc-card" onclick="requireLogin('games')">
+        <div class="svc-icon" style="background:rgba(255,77,109,0.12)">🎮</div>
+        <div class="svc-name">شحن ألعاب وبرامج</div>
+        <div class="svc-desc">PUBG، Free Fire، Clash، iTunes وأكثر</div>
+        <div class="svc-badge">🎯 ألعاب</div>
+      </div>
+      <div class="svc-card" onclick="requireLogin('wallet')">
+        <div class="svc-icon" style="background:rgba(0,224,154,0.12)">💰</div>
+        <div class="svc-name">محفظة رقمية</div>
+        <div class="svc-desc">شحن وإدارة رصيدك بأمان تام</div>
+        <div class="svc-badge">🔐 آمن</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LOGIN ===== -->
+<div id="page-login" class="page">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo"><div class="logo-icon">ز</div><div class="logo-text">زود</div></div>
+      <h2 class="auth-title">أهلاً بعودتك!</h2>
+      <p class="auth-sub">سجّل دخولك للوصول إلى خدماتك</p>
+      <div class="fg"><label class="fl">البريد الإلكتروني</label><input type="email" class="fi" id="loginEmail" placeholder="example@email.com"></div>
+      <div class="fg"><label class="fl">كلمة المرور</label><input type="password" class="fi" id="loginPass" placeholder="••••••••"><div class="err" id="loginErr">البيانات غير صحيحة.</div></div>
+      <button class="fb" onclick="doLogin()">تسجيل الدخول</button>
+      <p class="auth-sw">ليس لديك حساب؟ <a onclick="showPage('register')">إنشاء حساب</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REGISTER ===== -->
+<div id="page-register" class="page">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo"><div class="logo-icon">ز</div><div class="logo-text">زود</div></div>
+      <h2 class="auth-title">إنشاء حساب جديد</h2>
+      <p class="auth-sub">انضم لآلاف المستخدمين على زود</p>
+      <div class="fg"><label class="fl">الاسم الكامل</label><input type="text" class="fi" id="regName" placeholder="محمد أحمد"></div>
+      <div class="fg"><label class="fl">البريد الإلكتروني</label><input type="email" class="fi" id="regEmail" placeholder="example@email.com"></div>
+      <div class="fg"><label class="fl">كلمة المرور</label><input type="password" class="fi" id="regPass" placeholder="8 أحرف على الأقل"><div class="err" id="regErr">هذا البريد مسجل مسبقاً.</div></div>
+      <button class="fb" onclick="doRegister()">إنشاء الحساب</button>
+      <p class="auth-sw">لديك حساب؟ <a onclick="showPage('login')">تسجيل الدخول</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== NUMBERS (Phone) ===== -->
+<div id="page-numbers" class="page">
+  <div class="prod-header">
+    <button class="back-btn" onclick="showPage('home')">← رجوع</button>
+    <div class="prod-title-area"><h2>📱 الخطوط الهاتفية</h2><p>أرقام هاتفية من دول عديدة</p></div>
+    <div class="filter-bar">
+      <select class="fi" id="numCountryF" style="width:150px;padding:9px 13px" onchange="renderNumbersByType('phone')">
+        <option value="">كل الدول</option>
+        <option value="سوريا">🇸🇾 سوريا</option><option value="السعودية">🇸🇦 السعودية</option>
+        <option value="الإمارات">🇦🇪 الإمارات</option><option value="تركيا">🇹🇷 تركيا</option>
+        <option value="مصر">🇪🇬 مصر</option><option value="العراق">🇮🇶 العراق</option>
+      </select>
+      <select class="fi" id="numOpF" style="width:150px;padding:9px 13px" onchange="renderNumbersByType('phone')">
+        <option value="">كل الشبكات</option>
+        <option value="سيريتل">سيريتل</option><option value="MTN">MTN</option>
+        <option value="STC">STC</option><option value="Etisalat">Etisalat</option>
+        <option value="Turkcell">Turkcell</option><option value="Zain">Zain</option>
+      </select>
+    </div>
+  </div>
+  <div class="products-grid" id="numbersGrid"></div>
+</div>
+
+<!-- ===== WHATSAPP ===== -->
+<div id="page-whatsapp" class="page">
+  <div class="prod-header">
+    <button class="back-btn" onclick="showPage('home')">← رجوع</button>
+    <div class="prod-title-area"><h2>💬 أرقام واتساب</h2><p>أرقام مخصصة لتسجيل واتساب</p></div>
+    <div class="filter-bar">
+      <select class="fi" id="waCountryF" style="width:150px;padding:9px 13px" onchange="renderNumbersByType('whatsapp')">
+        <option value="">كل الدول</option>
+        <option value="سوريا">🇸🇾 سوريا</option><option value="السعودية">🇸🇦 السعودية</option>
+        <option value="الإمارات">🇦🇪 الإمارات</option><option value="تركيا">🇹🇷 تركيا</option>
+        <option value="مصر">🇪🇬 مصر</option><option value="العراق">🇮🇶 العراق</option>
+      </select>
+    </div>
+  </div>
+  <div class="products-grid" id="waGrid"></div>
+</div>
+
+<!-- ===== TELEGRAM NUMBERS ===== -->
+<div id="page-telegram-nums" class="page">
+  <div class="prod-header">
+    <button class="back-btn" onclick="showPage('home')">← رجوع</button>
+    <div class="prod-title-area"><h2>✈️ أرقام تلغرام</h2><p>أرقام لتسجيل حسابات تلغرام</p></div>
+    <div class="filter-bar">
+      <select class="fi" id="tgCountryF" style="width:150px;padding:9px 13px" onchange="renderNumbersByType('telegram')">
+        <option value="">كل الدول</option>
+        <option value="سوريا">🇸🇾 سوريا</option><option value="السعودية">🇸🇦 السعودية</option>
+        <option value="الإمارات">🇦🇪 الإمارات</option><option value="روسيا">🇷🇺 روسيا</option>
+        <option value="تركيا">🇹🇷 تركيا</option><option value="العراق">🇮🇶 العراق</option>
+      </select>
+    </div>
+  </div>
+  <div class="products-grid" id="tgGrid"></div>
+</div>
+
+<!-- ===== RECHARGE ===== -->
+<div id="page-recharge" class="page">
+  <div class="prod-header">
+    <button class="back-btn" onclick="showPage('home')">← رجوع</button>
+    <div class="prod-title-area"><h2>⚡ شحن الرصيد</h2><p>اشحن رصيدك بسرعة فائقة</p></div>
+  </div>
+  <div style="padding:32px 2rem;max-width:950px;margin:0 auto">
+    <div class="tab-bar" id="rcTabs">
+      <button class="tab-btn active" onclick="switchRcTab('syria',this)">🇸🇾 سوريا</button>
+      <button class="tab-btn" onclick="switchRcTab('iraq',this)">🇮🇶 العراق</button>
+      <button class="tab-btn" onclick="switchRcTab('gulf',this)">🌍 الخليج</button>
+      <button class="tab-btn" onclick="switchRcTab('intl',this)">🌐 دولي</button>
+    </div>
+    <!-- Syria -->
+    <div class="tab-content active" id="rc-syria">
+      <h3 style="margin-bottom:18px;font-size:1rem;color:var(--text2)">اختر الشبكة السورية</h3>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px">
+        <button class="rc-card" style="flex:1;min-width:120px;max-width:160px" onclick="selectRcOp('سيريتل','syria')">
+          <div class="rc-icon">📡</div><div style="font-weight:700">سيريتل</div>
+        </button>
+        <button class="rc-card" style="flex:1;min-width:120px;max-width:160px" onclick="selectRcOp('MTN سوريا','syria')">
+          <div class="rc-icon">📶</div><div style="font-weight:700">MTN سوريا</div>
+        </button>
+      </div>
+      <div id="rcPkgsSyria" style="display:none">
+        <h3 style="margin-bottom:14px;font-size:0.95rem;color:var(--text2)">اختر فئة الشحن</h3>
+        <div class="rc-grid" id="rcGridSyria"></div>
+        <div style="margin-top:24px"><label class="fl">رقم الهاتف السوري</label><input type="text" class="fi" id="rcNumSyria" placeholder="+963 9XX XXX XXX" style="max-width:340px;direction:ltr"></div>
+        <button class="btn-primary" style="margin-top:18px" onclick="doRecharge('syria')">تأكيد الشحن</button>
+      </div>
+    </div>
+    <!-- Iraq -->
+    <div class="tab-content" id="rc-iraq">
+      <h3 style="margin-bottom:18px;font-size:1rem;color:var(--text2)">اختر الشبكة العراقية</h3>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px">
+        <button class="rc-card" style="flex:1;min-width:120px;max-width:160px" onclick="selectRcOp('Zain العراق','iraq')">
+          <div class="rc-icon">📱</div><div style="font-weight:700">Zain</div>
+        </button>
+        <button class="rc-card" style="flex:1;min-width:120px;max-width:160px" onclick="selectRcOp('Asiacell','iraq')">
+          <div class="rc-icon">🌐</div><div style="font-weight:700">Asiacell</div>
+        </button>
+        <button class="rc-card" style="flex:1;min-width:120px;max-width:160px" onclick="selectRcOp('Korek','iraq')">
+          <div class="rc-icon">📡</div><div style="font-weight:700">Korek</div>
+        </button>
+      </div>
+      <div id="rcPkgsIraq" style="display:none">
+        <div class="rc-grid" id="rcGridIraq"></div>
+        <div style="margin-top:24px"><label class="fl">رقم الهاتف العراقي</label><input type="text" class="fi" id="rcNumIraq" placeholder="+964 7XX XXX XXXX" style="max-width:340px;direction:ltr"></div>
+        <button class="btn-primary" style="margin-top:18px" onclick="doRecharge('iraq')">تأكيد الشحن</button>
+      </div>
+    </div>
+    <!-- Gulf -->
+    <div class="tab-content" id="rc-gulf">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px">
+        <button class="rc-card" style="flex:1;min-width:120px;max-width:160px" onclick="selectRcOp('STC','gulf')"><div class="rc-icon">🇸🇦</div><div style="font-weight:700">STC</div></button>
+        <button class="rc-card" style="flex:1;min-width:120px;max-width:160px" onclick="selectRcOp('Etisalat','gulf')"><div class="rc-icon">🇦🇪</div><div style="font-weight:700">Etisalat</div></button>
+        <button class="rc-card" style="flex:1;min-width:120px;max-width:160px" onclick="selectRcOp('Ooredoo','gulf')"><div class="rc-icon">🌍</div><div style="font-weight:700">Ooredoo</div></button>
+      </div>
+      <div id="rcPkgsGulf" style="display:none">
+        <div class="rc-grid" id="rcGridGulf"></div>
+        <div style="margin-top:24px"><label class="fl">رقم الهاتف</label><input type="text" class="fi" id="rcNumGulf" placeholder="+966 5XX XXX XXXX" style="max-width:340px;direction:ltr"></div>
+        <button class="btn-primary" style="margin-top:18px" onclick="doRecharge('gulf')">تأكيد الشحن</button>
+      </div>
+    </div>
+    <!-- Intl -->
+    <div class="tab-content" id="rc-intl">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px">
+        <button class="rc-card" style="flex:1;min-width:120px;max-width:160px" onclick="selectRcOp('Turkcell','intl')"><div class="rc-icon">🇹🇷</div><div style="font-weight:700">Turkcell</div></button>
+        <button class="rc-card" style="flex:1;min-width:120px;max-width:160px" onclick="selectRcOp('Vodafone','intl')"><div class="rc-icon">🌐</div><div style="font-weight:700">Vodafone</div></button>
+      </div>
+      <div id="rcPkgsIntl" style="display:none">
+        <div class="rc-grid" id="rcGridIntl"></div>
+        <div style="margin-top:24px"><label class="fl">رقم الهاتف</label><input type="text" class="fi" id="rcNumIntl" placeholder="+XX XXX XXX XXXX" style="max-width:340px;direction:ltr"></div>
+        <button class="btn-primary" style="margin-top:18px" onclick="doRecharge('intl')">تأكيد الشحن</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SOCIAL ===== -->
+<div id="page-social" class="page">
+  <div class="prod-header">
+    <button class="back-btn" onclick="showPage('home')">← رجوع</button>
+    <div class="prod-title-area"><h2>👥 متابعين وتفاعل</h2><p>رفع تفاعلك على منصات التواصل</p></div>
+  </div>
+  <div style="padding:32px 2rem;max-width:1200px;margin:0 auto">
+    <div class="social-grid" id="socialGrid"></div>
+  </div>
+</div>
+
+<!-- ===== TELEGRAM VERIFY ===== -->
+<div id="page-telegram-verify" class="page">
+  <div class="prod-header">
+    <button class="back-btn" onclick="showPage('home')">← رجوع</button>
+    <div class="prod-title-area"><h2>✅ توثيق تلغرام</h2><p>توثيق الحسابات والمجموعات</p></div>
+  </div>
+  <div style="padding:32px 2rem;max-width:900px;margin:0 auto">
+    <div class="social-grid" id="tgVerifyGrid"></div>
+  </div>
+</div>
+
+<!-- ===== GAMES ===== -->
+<div id="page-games" class="page">
+  <div class="prod-header">
+    <button class="back-btn" onclick="showPage('home')">← رجوع</button>
+    <div class="prod-title-area"><h2>🎮 شحن الألعاب والبرامج</h2><p>شحن سريع لأشهر الألعاب والبرامج</p></div>
+  </div>
+  <div style="padding:32px 2rem;max-width:1200px;margin:0 auto">
+    <div class="games-grid" id="gamesGrid"></div>
+  </div>
+</div>
+
+<!-- ===== WALLET ===== -->
+<div id="page-wallet" class="page">
+  <div class="wlt-hero">
+    <div class="wlt-inner">
+      <!-- Balance Card -->
+      <div class="wlt-card">
+        <div class="wlt-card-bg"></div>
+        <div class="wlt-card-content">
+          <div class="wlt-top">
+            <div class="wlt-icon-wrap">💰</div>
+            <div class="wlt-label">رصيدك الحالي</div>
+          </div>
+          <div class="wlt-amount-row">
+            <span class="wlt-amount" id="walletAmt">0.00</span>
+            <span class="wlt-currency">USD</span>
+          </div>
+          <div class="wlt-btns">
+            <button class="wlt-add-btn" onclick="openAddFunds()">
+              <span class="wlt-btn-icon">+</span>
+              <span>إضافة رصيد</span>
+            </button>
+            <button class="wlt-hist-btn" onclick="document.getElementById('txSec').scrollIntoView({behavior:'smooth'})">
+              <span>📋</span>
+              <span>السجل</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Quick Stats -->
+      <div class="wlt-stats">
+        <div class="wlt-stat">
+          <div class="wlt-stat-icon" style="background:rgba(0,224,154,0.1);color:var(--green)">↑</div>
+          <div>
+            <div class="wlt-stat-val" id="wltTotalIn">$0.00</div>
+            <div class="wlt-stat-lbl">إجمالي الشحن</div>
+          </div>
+        </div>
+        <div class="wlt-stat">
+          <div class="wlt-stat-icon" style="background:rgba(255,77,109,0.1);color:var(--red)">↓</div>
+          <div>
+            <div class="wlt-stat-val" id="wltTotalOut">$0.00</div>
+            <div class="wlt-stat-lbl">إجمالي المصروف</div>
+          </div>
+        </div>
+        <div class="wlt-stat">
+          <div class="wlt-stat-icon" style="background:rgba(77,159,255,0.1);color:var(--blue)">🧾</div>
+          <div>
+            <div class="wlt-stat-val" id="wltTxCount">0</div>
+            <div class="wlt-stat-lbl">عدد العمليات</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Transactions -->
+  <div class="wlt-tx-section" id="txSec">
+    <div class="wlt-tx-header">
+      <h3 class="wlt-tx-title">سجل المعاملات</h3>
+      <div id="txFilterBtns" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="tab-btn active" onclick="filterTx('all',this)">الكل</button>
+        <button class="tab-btn" onclick="filterTx('credit',this)">شحن</button>
+        <button class="tab-btn" onclick="filterTx('debit',this)">مصروف</button>
+      </div>
+    </div>
+    <div id="txList" class="wlt-tx-list"></div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="page-dashboard" class="page">
+  <div class="sidebar" id="dashSidebar">
+    <div class="sb-sec">
+      <div class="sb-title">الرئيسية</div>
+      <div class="sb-link active" onclick="switchDash('overview',this)"><span class="si">📊</span> نظرة عامة</div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-title">الأرقام</div>
+      <div class="sb-link" onclick="switchDash('numbers',this)"><span class="si">📱</span> خطوط هاتفية</div>
+      <div class="sb-link" onclick="switchDash('whatsapp-nums',this)"><span class="si">💬</span> أرقام واتساب</div>
+      <div class="sb-link" onclick="switchDash('tg-nums',this)"><span class="si">✈️</span> أرقام تلغرام</div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-title">الخدمات</div>
+      <div class="sb-link" onclick="switchDash('social-pkgs',this)"><span class="si">📣</span> باقات سوشيال</div>
+      <div class="sb-link" onclick="switchDash('tg-verify',this)"><span class="si">✅</span> توثيق تلغرام</div>
+      <div class="sb-link" onclick="switchDash('games-pkgs',this)"><span class="si">🎮</span> باقات الألعاب</div>
+      <div class="sb-link" onclick="switchDash('recharge-pkgs',this)"><span class="si">⚡</span> باقات الشحن</div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-title">الإدارة</div>
+      <div class="sb-link" onclick="switchDash('users',this)"><span class="si">👤</span> المستخدمون <span id="pendingBadge" style="display:none;background:var(--red);color:#fff;font-size:0.7rem;padding:2px 7px;border-radius:50px;margin-right:auto">0</span></div>
+      <div class="sb-link" onclick="switchDash('orders',this)"><span class="si">🧾</span> الطلبات</div>
+      <div class="sb-link" onclick="switchDash('payment-methods',this)"><span class="si">💳</span> طرق الدفع</div>
+    </div>
+  </div>
+  <div class="dash-main">
+
+    <!-- OVERVIEW -->
+    <div class="dash-sec active" id="dash-overview">
+      <div class="dash-title">نظرة عامة</div>
+      <div class="dash-sub">مرحباً بك في لوحة تحكم زود</div>
+      <div class="dash-stats">
+        <div class="stat-card"><div class="sl">الأرقام المتاحة</div><div class="sv gold" id="ov-avail">0</div><div class="ss">رقم متاح</div></div>
+        <div class="stat-card"><div class="sl">الأرقام المباعة</div><div class="sv red" id="ov-sold">0</div><div class="ss">رقم</div></div>
+        <div class="stat-card"><div class="sl">المستخدمون</div><div class="sv blue" id="ov-users">0</div><div class="ss">مسجل</div></div>
+        <div class="stat-card"><div class="sl">إجمالي الطلبات</div><div class="sv green" id="ov-orders">0</div><div class="ss">طلب</div></div>
+        <div class="stat-card"><div class="sl">طلبات شحن معلقة</div><div class="sv red" id="ov-pending">0</div><div class="ss" style="color:var(--red)">تحتاج موافقة</div></div>
+        <div class="stat-card"><div class="sl">إيرادات اليوم</div><div class="sv purple" id="ov-revenue">$0</div><div class="ss">دولار</div></div>
+      </div>
+      <div class="dtw">
+        <div class="dth"><h3>آخر الطلبات</h3></div>
+        <table><thead><tr><th>المستخدم</th><th>الخدمة</th><th>التفاصيل</th><th>المبلغ</th><th>الوقت</th></tr></thead>
+        <tbody id="ovOrdersBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- PHONE NUMBERS -->
+    <div class="dash-sec" id="dash-numbers">
+      <div class="dash-title">الخطوط الهاتفية</div>
+      <div class="dash-sub">إدارة أرقام الخطوط العادية</div>
+      <div class="dtw">
+        <div class="dth"><h3>الأرقام (<span id="dNumCount">0</span>)</h3><button class="add-btn" onclick="openAddNum('phone')">+ إضافة رقم</button></div>
+        <table><thead><tr><th>الرقم</th><th>النوع</th><th>الدولة</th><th>الشبكة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead>
+        <tbody id="dNumBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- WHATSAPP NUMS -->
+    <div class="dash-sec" id="dash-whatsapp-nums">
+      <div class="dash-title">أرقام واتساب</div>
+      <div class="dash-sub">إدارة أرقام واتساب</div>
+      <div class="dtw">
+        <div class="dth"><h3>الأرقام</h3><button class="add-btn" onclick="openAddNum('whatsapp')">+ إضافة رقم</button></div>
+        <table><thead><tr><th>الرقم</th><th>الدولة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead>
+        <tbody id="dWaBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- TG NUMS -->
+    <div class="dash-sec" id="dash-tg-nums">
+      <div class="dash-title">أرقام تلغرام</div>
+      <div class="dash-sub">إدارة أرقام تلغرام</div>
+      <div class="dtw">
+        <div class="dth"><h3>الأرقام</h3><button class="add-btn" onclick="openAddNum('telegram')">+ إضافة رقم</button></div>
+        <table><thead><tr><th>الرقم</th><th>الدولة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead>
+        <tbody id="dTgBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- SOCIAL PACKAGES -->
+    <div class="dash-sec" id="dash-social-pkgs">
+      <div class="dash-title">باقات السوشيال</div>
+      <div class="dash-sub">إدارة باقات المتابعين والتفاعل</div>
+      <div class="dtw">
+        <div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddSocial()">+ إضافة باقة</button></div>
+        <table><thead><tr><th>المنصة</th><th>النوع</th><th>الكمية</th><th>السعر</th><th>إجراء</th></tr></thead>
+        <tbody id="dSocBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- TG VERIFY -->
+    <div class="dash-sec" id="dash-tg-verify">
+      <div class="dash-title">باقات توثيق تلغرام</div>
+      <div class="dash-sub">إدارة خدمات توثيق تلغرام</div>
+      <div class="dtw">
+        <div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddTgVerify()">+ إضافة باقة</button></div>
+        <table><thead><tr><th>النوع</th><th>الوصف</th><th>السعر</th><th>إجراء</th></tr></thead>
+        <tbody id="dTgVerifyBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- GAMES -->
+    <div class="dash-sec" id="dash-games-pkgs">
+      <div class="dash-title">باقات الألعاب والبرامج</div>
+      <div class="dash-sub">إدارة باقات شحن الألعاب</div>
+      <div class="dtw">
+        <div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddGame()">+ إضافة باقة</button></div>
+        <table><thead><tr><th>اللعبة</th><th>الباقة</th><th>السعر</th><th>إجراء</th></tr></thead>
+        <tbody id="dGamesBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- RECHARGE PKGS -->
+    <div class="dash-sec" id="dash-recharge-pkgs">
+      <div class="dash-title">باقات شحن الرصيد</div>
+      <div class="dash-sub">إدارة فئات الشحن</div>
+      <div class="dtw">
+        <div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddRcPkg()">+ إضافة فئة</button></div>
+        <table><thead><tr><th>الشبكة</th><th>الدولة</th><th>الكمية</th><th>السعر</th><th>إجراء</th></tr></thead>
+        <tbody id="dRcBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="dash-sec" id="dash-users">
+      <div class="dash-title">المستخدمون</div>
+      <div class="dash-sub">قائمة جميع المسجلين وإدارة أرصدتهم</div>
+      <div style="margin-bottom:16px">
+        <button class="add-btn" onclick="openAdminAddBal()">💰 إضافة رصيد لمستخدم</button>
+      </div>
+      <div class="dtw">
+        <div class="dth"><h3>المستخدمون</h3></div>
+        <table><thead><tr><th>الاسم</th><th>البريد</th><th>الرصيد</th><th>الدور</th><th>تاريخ التسجيل</th><th>إجراء</th></tr></thead>
+        <tbody id="dUsersBody"></tbody></table>
+      </div>
+      <div class="dtw" style="margin-top:20px">
+        <div class="dth"><h3>🔔 طلبات شحن المحفظة المعلقة</h3></div>
+        <table><thead><tr><th>المستخدم</th><th>المبلغ المطلوب</th><th>الوقت</th><th>إجراء</th></tr></thead>
+        <tbody id="dPendingBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="dash-sec" id="dash-orders">
+      <div class="dash-title">الطلبات</div>
+      <div class="dash-sub">جميع العمليات المنفذة</div>
+      <div class="dtw">
+        <div class="dth"><h3>سجل الطلبات</h3></div>
+        <tr><thead><tr><th>المستخدم</th><th>النوع</th><th>التفاصيل</th><th>المبلغ</th><th>الوقت</th></tr></thead>
+        <tbody id="dOrdersBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- PAYMENT METHODS -->
+    <div class="dash-sec" id="dash-payment-methods">
+      <div class="dash-title">💳 طرق الدفع</div>
+      <div class="dash-sub">إدارة طرق الدفع المتاحة للمستخدمين</div>
+      <div class="pm-grid" id="pmGrid"></div>
+      <button class="add-btn" onclick="openEditPM()">⚙️ تعديل إعدادات الدفع</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- ADD FUNDS — STEP MODAL -->
+<div class="modal-ov" id="addFundsModal">
+  <div class="modal-box af-modal">
+
+    <!-- Progress bar -->
+    <div class="af-progress">
+      <div class="af-prog-step active" id="afProgStep1">
+        <div class="af-prog-dot active-dot" id="afDot1">1</div>
+        <span id="afLbl1">المبلغ</span>
+      </div>
+      <div class="af-prog-line" id="afLine1"></div>
+      <div class="af-prog-step" id="afProgStep2">
+        <div class="af-prog-dot" id="afDot2">2</div>
+        <span id="afLbl2">الدفع</span>
+      </div>
+      <div class="af-prog-line" id="afLine2"></div>
+      <div class="af-prog-step" id="afProgStep3">
+        <div class="af-prog-dot" id="afDot3">3</div>
+        <span id="afLbl3">الإشعار</span>
+      </div>
+    </div>
+
+    <!-- STEP 1: Enter Amount -->
+    <div class="af-step" id="afStep1">
+      <div class="af-step-header">
+        <div class="af-step-num">1</div>
+        <div>
+          <div class="af-step-title">أدخل المبلغ</div>
+          <div class="af-step-sub">كم تريد إضافة؟</div>
+        </div>
+      </div>
+      <div class="af-amt-presets">
+        <button class="af-preset" onclick="setAmt(5)">$5</button>
+        <button class="af-preset" onclick="setAmt(10)">$10</button>
+        <button class="af-preset" onclick="setAmt(20)">$20</button>
+        <button class="af-preset" onclick="setAmt(50)">$50</button>
+        <button class="af-preset" onclick="setAmt(100)">$100</button>
+      </div>
+      <div class="af-input-row">
+        <span class="af-dollar">$</span>
+        <input type="number" class="fi af-amt-input" id="addFundsAmt" placeholder="0.00" min="1" step="0.5">
+      </div>
+      <div class="af-step-footer">
+        <button class="m-cancel" onclick="closeModal('addFundsModal')">إلغاء</button>
+        <button class="m-confirm" onclick="afGoStep2()">التالي ←</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Show ShamCash QR + Details -->
+    <div class="af-step" id="afStep2" style="display:none">
+      <div class="af-step-header">
+        <div class="af-step-num">2</div>
+        <div>
+          <div class="af-step-title">ادفع عبر شام كاش</div>
+          <div class="af-step-sub">أرسل <strong id="afAmtDisplay" style="color:var(--gold)"></strong> للحساب التالي</div>
+        </div>
+      </div>
+
+      <!-- QR Code area -->
+      <div class="af-qr-wrap" id="afQrWrap">
+        <div class="af-qr-label">امسح الباركود بتطبيق شام كاش</div>
+        <div class="af-qr-box" id="afQrBox">
+          <img id="afQrImg" src="" alt="QR شام كاش" style="max-width:100%;border-radius:12px;display:none;margin:0 auto;" loading="eager">
+          <div id="afQrFallback" class="af-qr-fallback">
+            <div style="font-size:3rem;margin-bottom:12px">📱</div>
+            <div>لم يتم رفع الباركود بعد</div>
+            <div style="font-size:0.78rem;color:var(--text3);margin-top:6px">يرجى إرسال المبلغ يدوياً على الرقم أدناه</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Info -->
+      <div class="af-account-box">
+        <div class="af-account-row">
+          <span class="af-account-lbl">💳 رقم المحفظة</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="afShamNum" class="af-account-val"></span>
+            <button class="copy-btn" onclick="copyText(document.getElementById('afShamNum').textContent)">📋 نسخ</button>
+          </div>
+        </div>
+        <div class="af-account-row">
+          <span class="af-account-lbl">👤 اسم الحساب</span>
+          <span id="afShamName" class="af-account-val"></span>
+        </div>
+        <div class="af-account-row af-account-total">
+          <span class="af-account-lbl">💵 المبلغ المطلوب</span>
+          <span id="afShamAmt" class="af-account-val" style="color:var(--gold);font-size:1.1rem"></span>
+        </div>
+      </div>
+
+      <div class="af-step-footer" style="flex-direction:column;gap:10px">
+        <button class="af-wa-btn" onclick="afGoStep3()">
+          <span style="font-size:1.2rem">✅</span>
+          <span>أرسلت المبلغ — التالي</span>
+        </button>
+        <button class="m-cancel" style="width:100%;text-align:center" onclick="afGoStep1()">← رجوع</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Send WhatsApp Notification -->
+    <div class="af-step" id="afStep3" style="display:none">
+      <div class="af-step-header">
+        <div class="af-step-num" style="background:var(--green)">3</div>
+        <div>
+          <div class="af-step-title">أرسل إشعار التحويل</div>
+          <div class="af-step-sub">أعلمنا لنضيف رصيدك فوراً</div>
+        </div>
+      </div>
+
+      <div class="af-success-msg">
+        <div class="af-success-icon">🎉</div>
+        <div class="af-success-text">أرسل لنا صورة الإيصال عبر واتساب</div>
+        <div class="af-success-sub">سيتم مراجعة تحويلك وإضافة الرصيد خلال دقائق</div>
+      </div>
+
+      <!-- WhatsApp instructions -->
+      <div class="af-wa-instructions">
+        <div class="af-wa-step">
+          <div class="af-wa-step-num">١</div>
+          <div>افتح واتساب وأرسل للرقم <strong>0949277889</strong></div>
+        </div>
+        <div class="af-wa-step">
+          <div class="af-wa-step-num">٢</div>
+          <div>أرسل صورة إيصال التحويل من تطبيق شام كاش</div>
+        </div>
+        <div class="af-wa-step">
+          <div class="af-wa-step-num">٣</div>
+          <div>اذكر بريدك الإلكتروني أو اسمك في الرسالة</div>
+        </div>
+      </div>
+
+      <div class="fg" style="margin-bottom:0">
+        <label class="fl">رقم الإيصال (اختياري — للتسريع)</label>
+        <input type="text" class="fi" id="txProof" placeholder="أدخل رقم العملية من التطبيق">
+      </div>
+
+      <div class="af-step-footer" style="flex-direction:column;gap:10px;margin-top:20px">
+        <a id="afWaLink" href="#" target="_blank" class="af-wa-btn" onclick="confirmAddFundsRequest()">
+          <span style="font-size:1.2rem">💬</span>
+          <span>فتح واتساب الآن</span>
+        </a>
+        <button class="m-cancel" style="width:100%;text-align:center" onclick="closeModal('addFundsModal')">إغلاق</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADMIN: ADD BALANCE TO USER -->
+<div class="modal-ov" id="adminAddBalModal">
+  <div class="modal-box">
+    <div class="modal-title">💰 إضافة رصيد لمستخدم</div>
+    <div class="modal-sub">إضافة رصيد مباشرة من الأدمن لأي حساب</div>
+    <div class="fg"><label class="fl">اختر المستخدم</label>
+      <select class="fi" id="adminBalUser"></select>
+    </div>
+    <div class="fg"><label class="fl">المبلغ (USD)</label><input type="number" class="fi" id="adminBalAmt" placeholder="مثال: 10" min="0.5" step="0.5"></div>
+    <div class="fg"><label class="fl">ملاحظة (اختياري)</label><input type="text" class="fi" id="adminBalNote" placeholder="سبب الإضافة"></div>
+    <div class="modal-foot">
+      <button class="m-cancel" onclick="closeModal('adminAddBalModal')">إلغاء</button>
+      <button class="m-confirm" onclick="confirmAdminAddBal()">إضافة الرصيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PAYMENT METHOD -->
+<div class="modal-ov" id="editPMModal">
+  <div class="modal-box">
+    <div class="modal-title">⚙️ إعدادات طرق الدفع</div>
+    <div class="modal-sub">تعديل معلومات كل طريقة دفع</div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchPMTab('binance',this)">Binance</button>
+      <button class="tab-btn" onclick="switchPMTab('shamcash',this)">شام كاش</button>
+      <button class="tab-btn" onclick="switchPMTab('western',this)">Western Union</button>
+    </div>
+    <!-- Binance -->
+    <div id="pmt-binance" class="tab-content active">
+      <div class="fg"><label class="fl">رقم محفظة USDT (TRC20)</label><input type="text" class="fi" id="pm-binance-addr" placeholder="T..."></div>
+      <div class="fg"><label class="fl">UID Binance Pay</label><input type="text" class="fi" id="pm-binance-uid" placeholder="123456789"></div>
+      <div class="fg"><label class="fl">رابط QR Code (رابط صورة)</label><input type="text" class="fi" id="pm-binance-qr" placeholder="https://..."></div>
+      <div class="fg" style="display:flex;align-items:center;gap:12px">
+        <label class="fl" style="margin:0">تفعيل طريقة الدفع</label>
+        <input type="checkbox" id="pm-binance-active" style="width:18px;height:18px;cursor:pointer">
+      </div>
+    </div>
+    <!-- ShamCash -->
+    <div id="pmt-shamcash" class="tab-content">
+      <div class="fg"><label class="fl">رقم المحفظة شام كاش</label><input type="text" class="fi" id="pm-sham-num" placeholder="09XX XXX XXX"></div>
+      <div class="fg"><label class="fl">اسم صاحب المحفظة</label><input type="text" class="fi" id="pm-sham-name" placeholder="محمد أحمد"></div>
+      <div class="fg">
+        <label class="fl">صورة الباركود QR</label>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:10px;align-items:center">
+            <label style="flex:1;padding:12px;background:var(--dark4);border:1.5px dashed rgba(245,200,66,0.3);border-radius:10px;cursor:pointer;text-align:center;font-size:0.85rem;color:var(--text2)">
+              📁 رفع صورة الباركود
+              <input type="file" accept="image/*" style="display:none" onchange="handleQrUpload(event,'shamcash')">
+            </label>
+          </div>
+          <div id="shamQrPreview" style="display:none;text-align:center"><img id="shamQrPreviewImg" src="" style="max-width:120px;border-radius:10px;border:2px solid rgba(245,200,66,0.4)"><br><small style="color:var(--text3);font-size:0.75rem">معاينة الباركود</small></div>
+          <input type="text" class="fi" id="pm-sham-qr" placeholder="أو الصق رابط الصورة هنا" oninput="previewQrUrl('shamcash')">
+        </div>
+      </div>
+      <div class="fg" style="display:flex;align-items:center;gap:12px">
+        <label class="fl" style="margin:0">تفعيل طريقة الدفع</label>
+        <input type="checkbox" id="pm-sham-active" style="width:18px;height:18px;cursor:pointer">
+      </div>
+    </div>
+    <!-- Western Union -->
+    <div id="pmt-western" class="tab-content">
+      <div class="fg"><label class="fl">الاسم الكامل</label><input type="text" class="fi" id="pm-wu-name" placeholder="Full Name"></div>
+      <div class="fg"><label class="fl">الدولة</label><input type="text" class="fi" id="pm-wu-country" placeholder="Syria"></div>
+      <div class="fg" style="display:flex;align-items:center;gap:12px">
+        <label class="fl" style="margin:0">تفعيل طريقة الدفع</label>
+        <input type="checkbox" id="pm-wu-active" style="width:18px;height:18px;cursor:pointer">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="m-cancel" onclick="closeModal('editPMModal')">إلغاء</button>
+      <button class="m-confirm" onclick="savePaymentMethods()">حفظ التغييرات</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD NUMBER MODAL -->
+<div class="modal-ov" id="addNumModal">
+  <div class="modal-box">
+    <div class="modal-title" id="addNumTitle">📱 إضافة رقم</div>
+    <div class="modal-sub">أضف رقماً جديداً للقائمة</div>
+    <input type="hidden" id="addNumType">
+    <div class="fg"><label class="fl">رقم الهاتف</label><input type="text" class="fi" id="newNumPhone" placeholder="+963 944 123 456"></div>
+    <div class="grid2">
+      <div class="fg"><label class="fl">الدولة</label>
+        <select class="fi" id="newNumCountry">
+          <option value="سوريا">🇸🇾 سوريا</option><option value="السعودية">🇸🇦 السعودية</option>
+          <option value="الإمارات">🇦🇪 الإمارات</option><option value="تركيا">🇹🇷 تركيا</option>
+          <option value="مصر">🇪🇬 مصر</option><option value="العراق">🇮🇶 العراق</option>
+          <option value="روسيا">🇷🇺 روسيا</option>
+        </select>
+      </div>
+      <div class="fg" id="newNumOpGroup"><label class="fl">الشبكة</label>
+        <select class="fi" id="newNumOp">
+          <option value="سيريتل">سيريتل</option><option value="MTN">MTN</option>
+          <option value="STC">STC</option><option value="Etisalat">Etisalat</option>
+          <option value="Turkcell">Turkcell</option><option value="Zain">Zain</option>
+          <option value="Asiacell">Asiacell</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">السعر (USD)</label><input type="number" class="fi" id="newNumPrice" placeholder="مثال: 5.99" min="0.1" step="0.01"></div>
+    <div class="modal-foot">
+      <button class="m-cancel" onclick="closeModal('addNumModal')">إلغاء</button>
+      <button class="m-confirm" onclick="confirmAddNum()">إضافة الرقم</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SOCIAL -->
+<div class="modal-ov" id="addSocialModal">
+  <div class="modal-box">
+    <div class="modal-title">📣 إضافة باقة سوشيال</div>
+    <div class="modal-sub">أضف باقة متابعين أو تفاعل</div>
+    <div class="grid2">
+      <div class="fg"><label class="fl">المنصة</label>
+        <select class="fi" id="nSocPlat"><option value="Instagram">إنستاغرام</option><option value="TikTok">تيك توك</option><option value="Facebook">فيسبوك</option><option value="YouTube">يوتيوب</option><option value="Twitter">تويتر</option><option value="Snapchat">سناب شات</option></select>
+      </div>
+      <div class="fg"><label class="fl">النوع</label>
+        <select class="fi" id="nSocType"><option value="متابعين">متابعين</option><option value="إعجابات">إعجابات</option><option value="مشاهدات">مشاهدات</option><option value="تعليقات">تعليقات</option><option value="مشاركات">مشاركات</option></select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="fg"><label class="fl">الكمية</label><input type="number" class="fi" id="nSocQty" placeholder="1000"></div>
+      <div class="fg"><label class="fl">السعر (USD)</label><input type="number" class="fi" id="nSocPrice" placeholder="2.99" step="0.01"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="m-cancel" onclick="closeModal('addSocialModal')">إلغاء</button>
+      <button class="m-confirm" onclick="confirmAddSocial()">إضافة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TG VERIFY -->
+<div class="modal-ov" id="addTgVerifyModal">
+  <div class="modal-box">
+    <div class="modal-title">✅ إضافة باقة توثيق تلغرام</div>
+    <div class="modal-sub">أضف خدمة توثيق جديدة</div>
+    <div class="fg"><label class="fl">نوع التوثيق</label>
+      <select class="fi" id="nTgVType"><option value="توثيق حساب شخصي">توثيق حساب شخصي</option><option value="توثيق مجموعة">توثيق مجموعة</option><option value="توثيق قناة">توثيق قناة</option><option value="بادج ذهبي">بادج ذهبي</option></select>
+    </div>
+    <div class="fg"><label class="fl">الوصف</label><input type="text" class="fi" id="nTgVDesc" placeholder="وصف الخدمة"></div>
+    <div class="fg"><label class="fl">السعر (USD)</label><input type="number" class="fi" id="nTgVPrice" placeholder="29.99" step="0.01"></div>
+    <div class="modal-foot">
+      <button class="m-cancel" onclick="closeModal('addTgVerifyModal')">إلغاء</button>
+      <button class="m-confirm" onclick="confirmAddTgVerify()">إضافة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD GAME -->
+<div class="modal-ov" id="addGameModal">
+  <div class="modal-box">
+    <div class="modal-title">🎮 إضافة باقة لعبة أو برنامج</div>
+    <div class="modal-sub">اكتب اسم اللعبة بحرية أو اختر من القائمة المقترحة</div>
+    <div class="fg">
+      <label class="fl">اسم اللعبة / البرنامج</label>
+      <input type="text" class="fi" id="nGameName" placeholder="مثال: PUBG Mobile، Free Fire، بطاقة Google Play..." list="gamesSuggestions" autocomplete="off">
+      <datalist id="gamesSuggestions">
+        <option value="PUBG Mobile"><option value="Free Fire"><option value="Clash of Clans">
+        <option value="Mobile Legends"><option value="Fortnite"><option value="Call of Duty Mobile">
+        <option value="Genshin Impact"><option value="Roblox"><option value="Minecraft">
+        <option value="iTunes"><option value="Google Play"><option value="Steam">
+        <option value="PlayStation Store"><option value="Xbox"><option value="Nintendo eShop">
+        <option value="Spotify Premium"><option value="Netflix"><option value="Canva Pro">
+      </datalist>
+    </div>
+    <div class="fg">
+      <label class="fl">رمز/أيقونة اللعبة (emoji)</label>
+      <input type="text" class="fi" id="nGameIcon" placeholder="مثال: 🎯 أو 🔥 أو 🎮" maxlength="4" style="font-size:1.4rem;text-align:center">
+    </div>
+    <div class="grid2">
+      <div class="fg"><label class="fl">اسم الباقة</label><input type="text" class="fi" id="nGamePkg" placeholder="مثال: 60 UC، 500 Diamond"></div>
+      <div class="fg"><label class="fl">السعر (USD)</label><input type="number" class="fi" id="nGamePrice" placeholder="2.99" step="0.01" min="0.1"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="m-cancel" onclick="closeModal('addGameModal')">إلغاء</button>
+      <button class="m-confirm" onclick="confirmAddGame()">إضافة الباقة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD RECHARGE PKG -->
+<div class="modal-ov" id="addRcPkgModal">
+  <div class="modal-box">
+    <div class="modal-title">⚡ إضافة فئة شحن</div>
+    <div class="modal-sub">أضف فئة شحن جديدة</div>
+    <div class="grid2">
+      <div class="fg"><label class="fl">الدولة</label>
+        <select class="fi" id="nRcCountry"><option value="سوريا">سوريا</option><option value="العراق">العراق</option><option value="السعودية">السعودية</option><option value="الإمارات">الإمارات</option><option value="تركيا">تركيا</option><option value="دولي">دولي</option></select>
+      </div>
+      <div class="fg"><label class="fl">الشبكة</label><input type="text" class="fi" id="nRcOp" placeholder="سيريتل"></div>
+    </div>
+    <div class="grid2">
+      <div class="fg"><label class="fl">الكمية (وحدة)</label><input type="number" class="fi" id="nRcQty" placeholder="1000"></div>
+      <div class="fg"><label class="fl">السعر (USD)</label><input type="number" class="fi" id="nRcPrice" placeholder="3.99" step="0.01"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="m-cancel" onclick="closeModal('addRcPkgModal')">إلغاء</button>
+      <button class="m-confirm" onclick="confirmAddRcPkg()">إضافة</button>
+    </div>
+  </div>
+</div>
+
+<!-- BUY CONFIRM -->
+<div class="modal-ov" id="buyModal">
+  <div class="modal-box">
+    <div class="modal-title">🛒 تأكيد الشراء</div>
+    <div class="modal-sub" id="buyModalDesc"></div>
+    <div style="padding:18px;background:var(--dark3);border-radius:12px;margin:14px 0">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+        <span style="color:var(--text2)">رصيدك الحالي</span>
+        <span id="bm-balance" style="color:var(--green);font-weight:700"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+        <span style="color:var(--text2)">سعر الخدمة</span>
+        <span id="bm-price" style="color:var(--gold);font-weight:700"></span>
+      </div>
+      <div style="height:1px;background:rgba(255,255,255,0.06);margin:6px 0"></div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:var(--text2)">الرصيد بعد الشراء</span>
+        <span id="bm-after" style="font-weight:700"></span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="m-cancel" onclick="closeModal('buyModal')">إلغاء</button>
+      <button class="m-confirm" onclick="executeBuy()">تأكيد الشراء</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+<div class="db-status local" id="dbStatus" style="display:none">💾 محلي</div>
+
+<!-- Floating WhatsApp Button -->
+<a href="https://wa.me/963949277889" target="_blank" id="waFloat" title="تواصل معنا" style="position:fixed;bottom:28px;right:28px;z-index:998;width:54px;height:54px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;font-size:1.6rem;box-shadow:0 4px 20px rgba(37,211,102,0.45);text-decoration:none;transition:transform .2s;display:none" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">💬</a>
+
+<script src="script.js"></script>
+</body>
+</html>
