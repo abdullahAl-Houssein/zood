@@ -717,7 +717,21 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
 .db-status.connected{background:rgba(0,224,154,0.12);border:1px solid rgba(0,224,154,0.25);color:var(--green);}
 .db-status.local{background:rgba(255,200,66,0.1);border:1px solid rgba(255,200,66,0.2);color:var(--gold);}
 
-/* إصلاح صورة الباركود على الموبايل */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /* إصلاح صورة الباركود على الموبايل */
 .af-qr-box {
   min-height: auto !important;
   padding: 10px !important;
@@ -1238,7 +1252,7 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
       <div class="dash-sub">إدارة أرقام الخطوط العادية</div>
       <div class="dtw">
         <div class="dth"><h3>الأرقام (<span id="dNumCount">0</span>)</h3><button class="add-btn" onclick="openAddNum('phone')">+ إضافة رقم</button></div>
-        <tr><thead><tr><th>الرقم</th><th>النوع</th><th>الدولة</th><th>الشبكة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead>
+        <table><thead><tr><th>الرقم</th><th>النوع</th><th>الدولة</th><th>الشبكة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead>
         <tbody id="dNumBody"></tbody></table>
       </div>
     </div>
@@ -1249,7 +1263,7 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
       <div class="dash-sub">إدارة أرقام واتساب</div>
       <div class="dtw">
         <div class="dth"><h3>الأرقام</h3><button class="add-btn" onclick="openAddNum('whatsapp')">+ إضافة رقم</button></div>
-        <tr><thead><tr><th>الرقم</th><th>الدولة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead>
+        <table><thead><tr><th>الرقم</th><th>الدولة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead>
         <tbody id="dWaBody"></tbody></table>
       </div>
     </div>
@@ -1260,7 +1274,7 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
       <div class="dash-sub">إدارة أرقام تلغرام</div>
       <div class="dtw">
         <div class="dth"><h3>الأرقام</h3><button class="add-btn" onclick="openAddNum('telegram')">+ إضافة رقم</button></div>
-        <tr><thead><tr><th>الرقم</th><th>الدولة</th><th>السعر</th><th>الحالة</th><th>إجراء</th><tr></thead>
+        <table><thead><tr><th>الرقم</th><th>الدولة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead>
         <tbody id="dTgBody"></tbody></table>
       </div>
     </div>
@@ -1272,7 +1286,7 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
       <div class="dtw">
         <div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddSocial()">+ إضافة باقة</button></div>
         <table><thead><tr><th>المنصة</th><th>النوع</th><th>الكمية</th><th>السعر</th><th>إجراء</th></tr></thead>
-        <tbody id="dSocBody"></tbody></tr>
+        <tbody id="dSocBody"></tbody></table>
       </div>
     </div>
 
@@ -1282,7 +1296,7 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
       <div class="dash-sub">إدارة خدمات توثيق تلغرام</div>
       <div class="dtw">
         <div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddTgVerify()">+ إضافة باقة</button></div>
-        <tr><thead><tr><th>النوع</th><th>الوصف</th><th>السعر</th><th>إجراء</th></tr></thead>
+        <table><thead><tr><th>النوع</th><th>الوصف</th><th>السعر</th><th>إجراء</th></tr></thead>
         <tbody id="dTgVerifyBody"></tbody></table>
       </div>
     </div>
@@ -1293,7 +1307,7 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
       <div class="dash-sub">إدارة باقات شحن الألعاب</div>
       <div class="dtw">
         <div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddGame()">+ إضافة باقة</button></div>
-        <tr><thead><tr><th>اللعبة</th><th>الباقة</th><th>السعر</th><th>إجراء</th></tr></thead>
+        <table><thead><tr><th>اللعبة</th><th>الباقة</th><th>السعر</th><th>إجراء</th></tr></thead>
         <tbody id="dGamesBody"></tbody></table>
       </div>
     </div>
@@ -1304,7 +1318,7 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
       <div class="dash-sub">إدارة فئات الشحن</div>
       <div class="dtw">
         <div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddRcPkg()">+ إضافة فئة</button></div>
-        <tr><thead><tr><th>الشبكة</th><th>الدولة</th><th>الكمية</th><th>السعر</th><th>إجراء</th></tr></thead>
+        <table><thead><tr><th>الشبكة</th><th>الدولة</th><th>الكمية</th><th>السعر</th><th>إجراء</th></tr></thead>
         <tbody id="dRcBody"></tbody></table>
       </div>
     </div>
@@ -1318,7 +1332,7 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
       </div>
       <div class="dtw">
         <div class="dth"><h3>المستخدمون</h3></div>
-        </table><thead><tr><th>الاسم</th><th>البريد</th><th>الرصيد</th><th>الدور</th><th>تاريخ التسجيل</th><th>إجراء</th></tr></thead>
+        <table><thead><tr><th>الاسم</th><th>البريد</th><th>الرصيد</th><th>الدور</th><th>تاريخ التسجيل</th><th>إجراء</th></tr></thead>
         <tbody id="dUsersBody"></tbody></table>
       </div>
       <div class="dtw" style="margin-top:20px">
@@ -1334,7 +1348,7 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
       <div class="dash-sub">جميع العمليات المنفذة</div>
       <div class="dtw">
         <div class="dth"><h3>سجل الطلبات</h3></div>
-        </table><thead><tr><th>المستخدم</th><th>النوع</th><th>التفاصيل</th><th>المبلغ</th><th>الوقت</th></tr></thead>
+        <table><thead><tr><th>المستخدم</th><th>النوع</th><th>التفاصيل</th><th>المبلغ</th><th>الوقت</th></tr></thead>
         <tbody id="dOrdersBody"></tbody></table>
       </div>
     </div>
@@ -1740,16 +1754,16 @@ input,select,textarea,button{font-family:'Cairo',sans-serif;}
 // ============================================================
 // SUPABASE CONFIG
 // ============================================================
-const SUPABASE_URL = 'https://clqekuhmpaesuauhxpam.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNscWVrdWhtcGFlc3VhdWh4cGFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjEwOTksImV4cCI6MjA5MjA5NzA5OX0.gPKYh__MGh0sNEA_F-0bBPKZiyCtmC3wPmJlXyo5Jt0';
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ⚠️ تعليمات: استبدل SUPA_KEY بالـ anon key من:
+// Supabase Dashboard → Project Settings → API → Project API keys → anon/public
+const SUPA_URL = 'https://clqekuhmpaesuauhxpam.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNscWVrdWhtcGFlc3VhdWh4cGFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjEwOTksImV4cCI6MjA5MjA5NzA5OX0.gPKYh__MGh0sNEA_F-0bBPKZiyCtmC3wPmJlXyo5Jt0';
 
 async function sb(table, method='GET', body=null, query='') {
-  const url = SUPABASE_URL + '/rest/v1/' + table + query;
+  const url = SUPA_URL + '/rest/v1/' + table + query;
   const headers = {
-    'apikey': SUPABASE_KEY,
-    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
     'Content-Type': 'application/json',
     'Prefer': method==='POST'?'return=representation':'return=representation'
   };
@@ -1760,13 +1774,14 @@ async function sb(table, method='GET', body=null, query='') {
   } catch(e) { console.error('SB fetch error:', e); return null; }
 }
 
+// Convenience helpers
 const sbGet = (t,q='') => sb(t,'GET',null,q);
 const sbPost = (t,b) => sb(t,'POST',b);
 const sbPatch = (t,b,q) => sb(t,'PATCH',b,q);
 const sbDelete = (t,q) => sb(t,'DELETE',null,q);
 
 // ============================================================
-// FALLBACK LOCAL DB
+// FALLBACK LOCAL DB (used when Supabase unavailable)
 // ============================================================
 const DEFAULT_DB = {
   users:[{ id:1, name:'مدير النظام', email:'admin@zood.com', pass:'admin123', role:'admin', balance:500, createdAt:'2024-01-01' }],
@@ -1831,13 +1846,14 @@ const DEFAULT_DB = {
 };
 
 let DB = JSON.parse(JSON.stringify(DEFAULT_DB));
-let useSupabase = false;
+let useSupabase = false; // will be set after connection test
 
 function saveDB(){ try{ localStorage.setItem('zoodDB_v3', JSON.stringify(DB)); }catch(e){} }
 function loadDB(){
   try{
     const s = localStorage.getItem('zoodDB_v3');
     if(s){ const d=JSON.parse(s); if(d.users) DB=d; }
+    // migrate old key
     else {
       const old = localStorage.getItem('zoodDB_v2');
       if(old){ const d=JSON.parse(old); if(d.users) DB=d; }
@@ -1862,15 +1878,18 @@ function ensureDBSchema(){
 async function initSupabase(){
   try {
     showLoadingOverlay('جارٍ تحميل البيانات...');
+    // Test connection by loading users
     const users = await sbGet('users','?select=*&order=id');
     if(users && Array.isArray(users) && users.length > 0){
       useSupabase = true;
+      // Map supabase users to local format
       DB.users = users.map(u => ({
         id: u.id, name: u.name, email: u.email, pass: u.pass,
         role: u.role, balance: parseFloat(u.balance)||0,
         createdAt: u.created_at ? u.created_at.split('T')[0] : '2024-01-01'
       }));
 
+      // Load all data in parallel
       const [nums, soc, tgv, games, rc, orders, txs, pms] = await Promise.all([
         sbGet('numbers','?select=*&order=id'),
         sbGet('social_packages','?select=*&order=id'),
@@ -1909,6 +1928,7 @@ async function initSupabase(){
   }
 }
 
+// Mappers: supabase → local format
 function mapNum(n){ return {id:n.id,type:n.type,phone:n.phone,country:n.country,operator:n.operator,price:parseFloat(n.price)||0,status:n.status||'available'}; }
 function mapSoc(s){ return {id:s.id,platform:s.platform,type:s.type,qty:parseInt(s.qty)||0,price:parseFloat(s.price)||0}; }
 function mapTgv(t){ return {id:t.id,type:t.type,desc:t.description,price:parseFloat(t.price)||0}; }
@@ -1917,9 +1937,12 @@ function mapRc(r){ return {id:r.id,country:r.country,operator:r.operator,qty:par
 function mapOrder(o){ return {id:o.id,user:o.user_name,userId:o.user_id,type:o.type,detail:o.detail,amount:parseFloat(o.amount)||0,requestedAmt:parseFloat(o.requested_amt)||0,status:o.status||'done',time:o.order_time||new Date().toLocaleString('ar')}; }
 function mapTx(t){ return {id:t.id,userId:t.user_id,type:t.type,desc:t.description,amount:parseFloat(t.amount)||0,date:t.transaction_date||new Date().toLocaleString('ar')}; }
 
+// Supabase write helpers
 async function sbSaveUser(user){
   if(!useSupabase) return;
-  try{ await sbPatch('users',{balance:user.balance},'?id=eq.'+user.id); }catch(e){}
+  try{
+    await sbPatch('users',{balance:user.balance},'?id=eq.'+user.id);
+  }catch(e){}
 }
 async function sbAddTransaction(tx){
   if(!useSupabase) return;
@@ -1987,6 +2010,7 @@ let currentUser = null;
 function saveSession(user){ try{ localStorage.setItem('zoodSession_v2', JSON.stringify({id:user.id,email:user.email})); }catch(e){} }
 function loadSession(){
   try{
+    // Try new key first, fall back to old
     let s = localStorage.getItem('zoodSession_v2') || localStorage.getItem('zoodSession');
     if(!s) return;
     const {id} = JSON.parse(s);
@@ -2038,6 +2062,7 @@ function requireLogin(page){ if(!currentUser){ showPage('login'); return; } show
 
 function updateNav(){
   const ok=!!currentUser, admin=ok&&currentUser.role==='admin';
+  // Desktop nav
   const authBtns=document.getElementById('navAuthButtons');
   const userBtns=document.getElementById('navUserButtons');
   if(authBtns) authBtns.style.display=ok?'none':'flex';
@@ -2046,20 +2071,25 @@ function updateNav(){
   if(wbadge) wbadge.style.display=ok?'flex':'none';
   const dashBtn=document.getElementById('dashNavBtn');
   if(dashBtn) dashBtn.style.display=admin?'':'none';
+  // Hero buttons
   const heroReg=document.getElementById('heroRegBtn');
   const heroServ=document.getElementById('heroServBtn');
   if(heroReg) heroReg.style.display=ok?'none':'';
   if(heroServ) heroServ.style.display=ok?'':'none';
+  // Name display
   const nameEl=document.getElementById('navUserName');
   if(nameEl&&ok) nameEl.textContent='👤 '+currentUser.name;
+  // Balance
   if(ok){
     const wb=document.getElementById('walletBalNav');
     if(wb) wb.textContent=currentUser.balance.toFixed(2);
     const wa=document.getElementById('walletAmt');
     if(wa) wa.textContent=currentUser.balance.toFixed(2);
   }
+  // WhatsApp float
   const waFloat=document.getElementById('waFloat');
   if(waFloat) waFloat.style.display=ok?'flex':'none';
+  // Mobile menu sync
   const mmWalletRow=document.getElementById('mmWallet');
   const mmBalEl=document.getElementById('mmBalance');
   const mmNameEl=document.getElementById('mmUserNameDisplay');
@@ -2263,6 +2293,7 @@ function renderWallet(){
   if(mmBal) mmBal.textContent=currentUser.balance.toFixed(2);
   const mmNameEl2=document.getElementById('mmUserNameDisplay');
   if(mmNameEl2&&currentUser) mmNameEl2.textContent=currentUser.name;
+  // Stats
   const txs=DB.transactions.filter(t=>t.userId===currentUser.id);
   const totalIn=txs.filter(t=>t.type==='credit').reduce((s,t)=>s+t.amount,0);
   const totalOut=txs.filter(t=>t.type==='debit').reduce((s,t)=>s+t.amount,0);
@@ -2334,12 +2365,15 @@ function afGoStep2() {
     return; 
   }
   
+  // جلب البيانات من DB
   const pm = DB.paymentMethods.shamcash || { 
     num: '0949277889', 
     ownerName: 'عبدالحميد محمد الحسين', 
     qr: '' 
   };
   const qrUrl = pm.qr || '';
+  
+  console.log('ShamCash data from DB:', pm);
   
   document.getElementById('afAmtDisplay').textContent = '$' + amt.toFixed(2);
   document.getElementById('afShamNum').textContent = pm.num;
@@ -2529,7 +2563,7 @@ function renderDWa(){
     <td><span class="pt ${n.status==='available'?'pt-avail':'pt-sold'}">${n.status==='available'?'متاح':'مباع'}</span></td>
     <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
     <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status==='available'?'تعطيل':'تفعيل'}</button></td>
-  <tr>`).join('');
+  </tr>`).join('');
 }
 function renderDTg(){
   const nums=DB.numbers.filter(n=>n.type==='telegram');
@@ -2589,6 +2623,7 @@ function renderDUsers(){
     <td style="color:var(--text3)">${u.createdAt}</td>
     <td>${u.role!=='admin'?`<button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name}')">+ رصيد</button>`:'—'}</td>
   </tr>`).join('');
+  // Pending requests
   const pending=DB.orders.filter(o=>o.status==='pending');
   const pb=document.getElementById('dPendingBody');
   if(pb) pb.innerHTML=pending.length?pending.map((o,i)=>`<tr>
@@ -2778,12 +2813,452 @@ async function deleteRcPkg(id){
   renderDashboard(); showToast('تم الحذف','success');
 }
 
+
+
+
+  
+async function handleQrUpload(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // استخدام supabase المعرف مسبقاً
+  if (typeof supabase === 'undefined') {
+    showToast('خطأ: لم يتم تهيئة قاعدة البيانات', 'error');
+    return;
+  }
+  
+  showLoadingOverlay('جاري رفع الصورة...');
+  
+  try {
+    if (type === 'shamcash') {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `shamcash_qr_${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+      
+      const { data, error } = await supabase
+        .storage
+        .from('qr-codes')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (error) {
+        console.error('Error uploading:', error);
+        showToast('فشل رفع الصورة: ' + error.message, 'error');
+        hideLoadingOverlay();
+        return;
+      }
+      
+      const { data: publicUrlData } = supabase
+        .storage
+        .from('qr-codes')
+        .getPublicUrl(filePath);
+      
+      const imageUrl = publicUrlData.publicUrl;
+      
+      document.getElementById('pm-sham-qr').value = imageUrl;
+      document.getElementById('shamQrPreviewImg').src = imageUrl;
+      document.getElementById('shamQrPreview').style.display = 'block';
+      
+      showToast('تم رفع الصورة بنجاح ✅', 'success');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('حدث خطأ أثناء رفع الصورة', 'error');
+  } finally {
+    hideLoadingOverlay();
+  }
+}
+
+
+
+
+  
+function previewQrUrl(type) {
+  if (type === 'shamcash') {
+    const url = document.getElementById('pm-sham-qr').value.trim();
+    const previewImg = document.getElementById('shamQrPreviewImg');
+    const previewDiv = document.getElementById('shamQrPreview');
+    
+    if (url && previewImg && previewDiv) {
+      // التحقق من أن الرابط صالح
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image')) {
+        previewImg.src = url;
+        previewDiv.style.display = 'block';
+        previewImg.onerror = function() {
+          previewDiv.style.display = 'none';
+          showToast('الرابط غير صالح', 'error');
+        };
+      } else {
+        previewDiv.style.display = 'none';
+      }
+    } else if (previewDiv) {
+      previewDiv.style.display = 'none';
+    }
+  }
+}
+
+
+
+
+  
+async function savePaymentMethods() {
+  if (typeof supabase === 'undefined') {
+    showToast('خطأ: لم يتم تهيئة قاعدة البيانات', 'error');
+    return;
+  }
+  
+  showLoadingOverlay('جاري حفظ الإعدادات...');
+  
+  try {
+    const shamcashQr = document.getElementById('pm-sham-qr').value.trim();
+    
+    const methods = [
+      { method: 'binance', data: { 
+          addr: document.getElementById('pm-binance-addr').value.trim(), 
+          uid: document.getElementById('pm-binance-uid').value.trim(), 
+          qr: document.getElementById('pm-binance-qr').value.trim() 
+        }, 
+        active: document.getElementById('pm-binance-active').checked 
+      },
+      { method: 'shamcash', data: { 
+          num: document.getElementById('pm-sham-num').value.trim(), 
+          ownerName: document.getElementById('pm-sham-name').value.trim(), 
+          qr: shamcashQr 
+        }, 
+        active: document.getElementById('pm-sham-active').checked 
+      },
+      { method: 'western', data: { 
+          ownerName: document.getElementById('pm-wu-name').value.trim(), 
+          country: document.getElementById('pm-wu-country').value.trim() 
+        }, 
+        active: document.getElementById('pm-wu-active').checked 
+      }
+    ];
+    
+    for (const m of methods) {
+      await supabase
+        .from('payment_methods')
+        .upsert({ method: m.method, data: m.data, active: m.active }, 
+                { onConflict: 'method' });
+    }
+    
+    await refreshAllData();
+    
+    closeModal('editPMModal');
+    renderDashboard();
+    showToast('تم حفظ الإعدادات بنجاح ✅', 'success');
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('حدث خطأ أثناء الحفظ', 'error');
+  } finally {
+    hideLoadingOverlay();
+  }
+}
+
+
+  
+function switchPMTab(key,el){
+  document.querySelectorAll('#editPMModal .tab-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#editPMModal .tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('pmt-'+key).classList.add('active');
+}
+function openAdminAddBal(){
+  const sel=document.getElementById('adminBalUser');
+  sel.innerHTML=DB.users.filter(u=>u.role!=='admin').map(u=>`<option value="${u.id}">${u.name} — ${u.email} ($${u.balance.toFixed(2)})</option>`).join('');
+  document.getElementById('adminBalAmt').value=''; document.getElementById('adminBalNote').value='';
+  openModal('adminAddBalModal');
+}
+async function confirmAdminAddBal(){
+  const uid=parseInt(document.getElementById('adminBalUser').value);
+  const amt=parseFloat(document.getElementById('adminBalAmt').value);
+  const note=document.getElementById('adminBalNote').value.trim()||'إضافة من الإدارة';
+  if(!uid||!amt||amt<=0){ showToast('أدخل البيانات بشكل صحيح','error'); return; }
+  const ui=DB.users.findIndex(u=>u.id===uid);
+  if(ui===-1){ showToast('المستخدم غير موجود','error'); return; }
+  DB.users[ui].balance+=amt;
+  const tx={userId:uid,type:'credit',desc:'إضافة رصيد من الإدارة — '+note,amount:amt,date:new Date().toLocaleString('ar')};
+  const order={user:DB.users[ui].name,userId:uid,type:'إضافة رصيد (أدمن)',detail:'$'+amt.toFixed(2)+' — '+note,amount:amt,status:'done',time:new Date().toLocaleString('ar')};
+  DB.transactions.push(tx); DB.orders.push(order); saveDB();
+  await sbSaveUser(DB.users[ui]);
+  await sbAddTransaction(tx);
+  await sbAddOrder(order);
+  closeModal('adminAddBalModal'); renderDashboard();
+  showToast('تم إضافة $'+amt.toFixed(2)+' لحساب '+DB.users[ui].name+' ✅','success');
+}
+
+// MODALS
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+// TOAST
+let toastTimer;
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  if(!t) return;
+  t.textContent=(type==='success'?'✅ ':'❌ ')+msg;
+  t.className='toast '+type+' show';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),4000);
+}
+
+// COPY
+function copyText(text){
+  if(!text||text==='—') return;
+  navigator.clipboard?.writeText(text).then(()=>showToast('تم النسخ','success')).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('تم النسخ','success');
+  });
+}
+
+// MOBILE MENU
+function toggleMobileMenu(){
+  const hb=document.getElementById('hamburger');
+  const mm=document.getElementById('mobileMenu');
+  if(!hb||!mm) return;
+  const isOpen=mm.classList.contains('open');
+  hb.classList.toggle('open'); mm.classList.toggle('open');
+  document.body.style.overflow=isOpen?'':'hidden';
+}
+function closeMM(){
+  const hb=document.getElementById('hamburger');
+  const mm=document.getElementById('mobileMenu');
+  if(hb) hb.classList.remove('open');
+  if(mm) mm.classList.remove('open');
+  document.body.style.overflow='';
+}
+
 // ============================================================
-// PAYMENT METHODS FUNCTIONS
+// INIT
 // ============================================================
+loadDB();
+ensureDBSchema();
+loadSession();
+updateNav();
+renderSocialPage();
+renderGames();
+renderTgVerify();
+
+// After DOM ready
+document.addEventListener('DOMContentLoaded', async function(){
+  // Navbar scroll effect
+  window.addEventListener('scroll', function(){
+    const nav=document.getElementById('mainNav');
+    if(nav) nav.classList.toggle('scrolled',window.scrollY>20);
+  },{passive:true});
+
+  // Hamburger
+  const hb=document.getElementById('hamburger');
+  if(hb) hb.addEventListener('click',function(e){ e.stopPropagation(); toggleMobileMenu(); });
+
+  // Close menu on outside click
+  document.addEventListener('click',function(e){
+    const mm=document.getElementById('mobileMenu');
+    const hb2=document.getElementById('hamburger');
+    if(mm&&hb2&&!mm.contains(e.target)&&!hb2.contains(e.target)) closeMM();
+  });
+
+  // Close modals on backdrop click
+  document.querySelectorAll('.modal-ov').forEach(m=>m.addEventListener('click',e=>{
+    if(e.target===m) m.classList.remove('open');
+  }));
+
+  // QR image load
+  const qrImg=document.getElementById('afQrImg');
+  if(qrImg) qrImg.addEventListener('load',function(){ this.classList.add('loaded'); });
+
+  // Init Supabase (async, non-blocking for UI)
+  await initSupabase();
+
+  // Re-render after data load
+  renderSocialPage();
+  renderGames();
+  renderTgVerify();
+  if(currentUser){
+    const fresh=DB.users.find(u=>u.id===currentUser.id);
+    if(fresh) currentUser=fresh;
+    updateNav();
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // ============================================================
+// إصلاح مشكلة السكرول في صفحة الباركود
+// ============================================================
+
+// إصلاح دالة إغلاق القائمة
+function closeMMFixed() {
+  const hb = document.getElementById('hamburger');
+  const mm = document.getElementById('mobileMenu');
+  if (hb) hb.classList.remove('open');
+  if (mm) mm.classList.remove('open');
+  // إزالة الـ overflow المخفي من الـ body
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.height = '';
+  document.documentElement.style.overflow = '';
+}
+
+// استبدال الدالة القديمة
+window.closeMM = closeMMFixed;
+
+// إصلاح دالة فتح القائمة
+function toggleMobileMenuFixed() {
+  const hb = document.getElementById('hamburger');
+  const mm = document.getElementById('mobileMenu');
+  if (!hb || !mm) return;
+  const isOpen = mm.classList.contains('open');
+  hb.classList.toggle('open');
+  mm.classList.toggle('open');
+  if (!isOpen) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+}
+
+window.toggleMobileMenu = toggleMobileMenuFixed;
+
+// إضافة مستمع لإغلاق القائمة عند النقر خارجها
+document.addEventListener('click', function(e) {
+  const mm = document.getElementById('mobileMenu');
+  const hb = document.getElementById('hamburger');
+  if (mm && hb && mm.classList.contains('open') && !mm.contains(e.target) && !hb.contains(e.target)) {
+    closeMMFixed();
+  }
+});
+
+// إصلاح السكرول عند فتح وإغلاق الـ modal
+const originalOpenModal = window.openModal;
+const originalCloseModal = window.closeModal;
+
+window.openModal = function(id) {
+  if (originalOpenModal) originalOpenModal(id);
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeModal = function(id) {
+  if (originalCloseModal) originalCloseModal(id);
+  document.body.style.overflow = '';
+};
+// ============================================================
+// إصلاح صورة الباركود على الموبايل
+// ============================================================
+
+// تحسين دالة afGoStep2
+const originalAfGoStep2 = window.afGoStep2;
+window.afGoStep2 = function() {
+  const amt = parseFloat(document.getElementById('addFundsAmt').value);
+  if (!amt || amt < 1) { 
+    showToast('أدخل مبلغاً صحيحاً (1$ على الأقل)', 'error'); 
+    return; 
+  }
+  
+  const pm = DB.paymentMethods.shamcash;
+  document.getElementById('afAmtDisplay').textContent = '$' + amt.toFixed(2);
+  document.getElementById('afShamNum').textContent = pm.num || '0949277889';
+  document.getElementById('afShamName').textContent = pm.ownerName || 'عبدالحميد محمد الحسين';
+  document.getElementById('afShamAmt').textContent = '$' + amt.toFixed(2) + ' USD';
+  
+  const qr = pm.qr || '';
+  const imgEl = document.getElementById('afQrImg');
+  const fallbackEl = document.getElementById('afQrFallback');
+  
+  if (qr && imgEl && fallbackEl) {
+    // تنظيف الصورة القديمة
+    imgEl.src = '';
+    imgEl.style.display = 'none';
+    
+    // إنشاء صورة جديدة للتأكد من التحميل
+    const tempImg = new Image();
+    tempImg.onload = function() {
+      imgEl.src = qr;
+      imgEl.style.display = 'block';
+      imgEl.style.maxWidth = '100%';
+      imgEl.style.height = 'auto';
+      if (fallbackEl) fallbackEl.style.display = 'none';
+      console.log('QR code loaded successfully');
+    };
+    tempImg.onerror = function() {
+      console.log('QR code failed to load, using fallback');
+      imgEl.style.display = 'none';
+      if (fallbackEl) fallbackEl.style.display = 'block';
+    };
+    tempImg.src = qr;
+  } else if (imgEl && fallbackEl) {
+    imgEl.style.display = 'none';
+    fallbackEl.style.display = 'block';
+  }
+  
+  document.getElementById('afStep1').style.display = 'none';
+  document.getElementById('afStep2').style.display = 'block';
+  document.getElementById('afStep3').style.display = 'none';
+  
+  if (window.afUpdateProgress) window.afUpdateProgress(2);
+};
+
+// إضافة دالة لإعادة محاولة تحميل الصورة
+function retryLoadQR() {
+  const imgEl = document.getElementById('afQrImg');
+  const qr = DB.paymentMethods.shamcash?.qr;
+  if (imgEl && qr && imgEl.src !== qr) {
+    imgEl.src = qr;
+    imgEl.style.display = 'block';
+  }
+}
+
+// إضافة زر إعادة تحميل QR
+function addQRReloadButton() {
+  const qrBox = document.getElementById('afQrBox');
+  if (qrBox && !document.getElementById('qrReloadBtn')) {
+    const reloadBtn = document.createElement('button');
+    reloadBtn.id = 'qrReloadBtn';
+    reloadBtn.textContent = '🔄 إعادة تحميل الباركود';
+    reloadBtn.style.cssText = 'margin-top:10px;padding:6px 12px;background:rgba(245,200,66,0.2);border:1px solid rgba(245,200,66,0.3);border-radius:8px;color:var(--gold);cursor:pointer;font-size:0.75rem;width:100%';
+    reloadBtn.onclick = retryLoadQR;
+    qrBox.appendChild(reloadBtn);
+  }
+}
+
+// استدعاء إضافة الزر عند فتح الـ modal
+const originalOpenAddFunds = window.openAddFunds;
+window.openAddFunds = function() {
+  if (originalOpenAddFunds) originalOpenAddFunds();
+  setTimeout(addQRReloadButton, 500);
+};
+
+
+
+
+
+
+
+
+  // ============================================================
+// دوال إدارة طرق الدفع
+// ============================================================
+
 function openEditPM() {
   const pm = DB.paymentMethods;
   
+  // تعبئة الحقول بالقيم الحالية
   document.getElementById('pm-binance-addr').value = pm.binance?.addr || '';
   document.getElementById('pm-binance-uid').value = pm.binance?.uid || '';
   document.getElementById('pm-binance-qr').value = pm.binance?.qr || '';
@@ -2798,6 +3273,7 @@ function openEditPM() {
   document.getElementById('pm-wu-country').value = pm.western?.country || '';
   document.getElementById('pm-wu-active').checked = pm.western?.active || false;
   
+  // عرض معاينة الصورة إذا وجدت
   if (pm.shamcash?.qr) {
     const previewImg = document.getElementById('shamQrPreviewImg');
     const previewDiv = document.getElementById('shamQrPreview');
@@ -2811,6 +3287,93 @@ function openEditPM() {
   }
   
   openModal('editPMModal');
+}
+
+function switchPMTab(key, el) {
+  // إزالة التحديد من جميع الأزرار
+  document.querySelectorAll('#editPMModal .tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  // تحديد الزر الحالي
+  el.classList.add('active');
+  
+  // إخفاء جميع المحتويات
+  document.querySelectorAll('#editPMModal .tab-content').forEach(content => {
+    content.classList.remove('active');
+  });
+  
+  // إظهار المحتوى المطلوب
+  const targetContent = document.getElementById('pmt-' + key);
+  if (targetContent) targetContent.classList.add('active');
+}
+
+async function savePaymentMethods() {
+  showLoadingOverlay('جاري حفظ الإعدادات...');
+  
+  try {
+    const shamcashQr = document.getElementById('pm-sham-qr').value.trim();
+    
+    // تجهيز البيانات
+    const methods = [
+      { 
+        method: 'binance', 
+        data: { 
+          addr: document.getElementById('pm-binance-addr').value.trim(), 
+          uid: document.getElementById('pm-binance-uid').value.trim(), 
+          qr: document.getElementById('pm-binance-qr').value.trim() 
+        }, 
+        active: document.getElementById('pm-binance-active').checked 
+      },
+      { 
+        method: 'shamcash', 
+        data: { 
+          num: document.getElementById('pm-sham-num').value.trim(), 
+          ownerName: document.getElementById('pm-sham-name').value.trim(), 
+          qr: shamcashQr 
+        }, 
+        active: document.getElementById('pm-sham-active').checked 
+      },
+      { 
+        method: 'western', 
+        data: { 
+          ownerName: document.getElementById('pm-wu-name').value.trim(), 
+          country: document.getElementById('pm-wu-country').value.trim() 
+        }, 
+        active: document.getElementById('pm-wu-active').checked 
+      }
+    ];
+    
+    // حفظ كل طريقة دفع
+    for (const m of methods) {
+      const { error } = await supabase
+        .from('payment_methods')
+        .upsert({ 
+          method: m.method, 
+          data: m.data, 
+          active: m.active 
+        }, { 
+          onConflict: 'method' 
+        });
+      
+      if (error) {
+        console.error('Error saving:', m.method, error);
+        showToast(`خطأ في حفظ ${m.method}`, 'error');
+      }
+    }
+    
+    // تحديث البيانات المحلية
+    await refreshAllData();
+    
+    closeModal('editPMModal');
+    renderDashboard();
+    showToast('تم حفظ الإعدادات بنجاح ✅', 'success');
+    
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('حدث خطأ أثناء الحفظ', 'error');
+  } finally {
+    hideLoadingOverlay();
+  }
 }
 
 function handleQrUpload(event, type) {
@@ -2845,180 +3408,13 @@ function previewQrUrl(type) {
     const previewDiv = document.getElementById('shamQrPreview');
     
     if (url && previewImg && previewDiv) {
-      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image')) {
-        previewImg.src = url;
-        previewDiv.style.display = 'block';
-        previewImg.onerror = function() {
-          previewDiv.style.display = 'none';
-          showToast('الرابط غير صالح', 'error');
-        };
-      } else {
-        previewDiv.style.display = 'none';
-      }
+      previewImg.src = url;
+      previewDiv.style.display = 'block';
     } else if (previewDiv) {
       previewDiv.style.display = 'none';
     }
   }
 }
-
-async function savePaymentMethods() {
-  showLoadingOverlay('جاري حفظ الإعدادات...');
-  
-  try {
-    const shamcashQr = document.getElementById('pm-sham-qr').value.trim();
-    
-    const methods = [
-      { method: 'binance', data: { addr: document.getElementById('pm-binance-addr').value.trim(), uid: document.getElementById('pm-binance-uid').value.trim(), qr: document.getElementById('pm-binance-qr').value.trim() }, active: document.getElementById('pm-binance-active').checked },
-      { method: 'shamcash', data: { num: document.getElementById('pm-sham-num').value.trim(), ownerName: document.getElementById('pm-sham-name').value.trim(), qr: shamcashQr }, active: document.getElementById('pm-sham-active').checked },
-      { method: 'western', data: { ownerName: document.getElementById('pm-wu-name').value.trim(), country: document.getElementById('pm-wu-country').value.trim() }, active: document.getElementById('pm-wu-active').checked }
-    ];
-    
-    for (const m of methods) {
-      const { error } = await supabase
-        .from('payment_methods')
-        .upsert({ method: m.method, data: m.data, active: m.active }, { onConflict: 'method' });
-      
-      if (error) console.error('Error saving:', m.method, error);
-    }
-    
-    await refreshAllData();
-    closeModal('editPMModal');
-    renderDashboard();
-    showToast('تم حفظ الإعدادات بنجاح ✅', 'success');
-  } catch (error) {
-    console.error('Error:', error);
-    showToast('حدث خطأ أثناء الحفظ', 'error');
-  } finally {
-    hideLoadingOverlay();
-  }
-}
-
-function switchPMTab(key, el) {
-  document.querySelectorAll('#editPMModal .tab-btn').forEach(btn => btn.classList.remove('active'));
-  el.classList.add('active');
-  document.querySelectorAll('#editPMModal .tab-content').forEach(content => content.classList.remove('active'));
-  const targetContent = document.getElementById('pmt-' + key);
-  if (targetContent) targetContent.classList.add('active');
-}
-
-function openAdminAddBal(){
-  const sel=document.getElementById('adminBalUser');
-  sel.innerHTML=DB.users.filter(u=>u.role!=='admin').map(u=>`<option value="${u.id}">${u.name} — ${u.email} ($${u.balance.toFixed(2)})</option>`).join('');
-  document.getElementById('adminBalAmt').value=''; document.getElementById('adminBalNote').value='';
-  openModal('adminAddBalModal');
-}
-async function confirmAdminAddBal(){
-  const uid=parseInt(document.getElementById('adminBalUser').value);
-  const amt=parseFloat(document.getElementById('adminBalAmt').value);
-  const note=document.getElementById('adminBalNote').value.trim()||'إضافة من الإدارة';
-  if(!uid||!amt||amt<=0){ showToast('أدخل البيانات بشكل صحيح','error'); return; }
-  const ui=DB.users.findIndex(u=>u.id===uid);
-  if(ui===-1){ showToast('المستخدم غير موجود','error'); return; }
-  DB.users[ui].balance+=amt;
-  const tx={userId:uid,type:'credit',desc:'إضافة رصيد من الإدارة — '+note,amount:amt,date:new Date().toLocaleString('ar')};
-  const order={user:DB.users[ui].name,userId:uid,type:'إضافة رصيد (أدمن)',detail:'$'+amt.toFixed(2)+' — '+note,amount:amt,status:'done',time:new Date().toLocaleString('ar')};
-  DB.transactions.push(tx); DB.orders.push(order); saveDB();
-  await sbSaveUser(DB.users[ui]);
-  await sbAddTransaction(tx);
-  await sbAddOrder(order);
-  closeModal('adminAddBalModal'); renderDashboard();
-  showToast('تم إضافة $'+amt.toFixed(2)+' لحساب '+DB.users[ui].name+' ✅','success');
-}
-
-// ============================================================
-// UTILITIES
-// ============================================================
-function openModal(id){ document.getElementById(id).classList.add('open'); }
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-
-let toastTimer;
-function showToast(msg,type='success'){
-  const t=document.getElementById('toast');
-  if(!t) return;
-  t.textContent=(type==='success'?'✅ ':'❌ ')+msg;
-  t.className='toast '+type+' show';
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>t.classList.remove('show'),4000);
-}
-
-function copyText(text){
-  if(!text||text==='—') return;
-  navigator.clipboard?.writeText(text).then(()=>showToast('تم النسخ','success')).catch(()=>{
-    const ta=document.createElement('textarea');
-    ta.value=text; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
-    showToast('تم النسخ','success');
-  });
-}
-
-function toggleMobileMenu(){
-  const hb=document.getElementById('hamburger');
-  const mm=document.getElementById('mobileMenu');
-  if(!hb||!mm) return;
-  const isOpen=mm.classList.contains('open');
-  hb.classList.toggle('open');
-  mm.classList.toggle('open');
-  document.body.style.overflow=isOpen?'':'hidden';
-}
-function closeMM(){
-  const hb=document.getElementById('hamburger');
-  const mm=document.getElementById('mobileMenu');
-  if(hb) hb.classList.remove('open');
-  if(mm) mm.classList.remove('open');
-  document.body.style.overflow='';
-}
-
-// ============================================================
-// REFRESH DATA
-// ============================================================
-async function refreshAllData() {
-  await initSupabase();
-}
-
-// ============================================================
-// INIT
-// ============================================================
-loadDB();
-ensureDBSchema();
-loadSession();
-updateNav();
-renderSocialPage();
-renderGames();
-renderTgVerify();
-
-document.addEventListener('DOMContentLoaded', async function(){
-  window.addEventListener('scroll', function(){
-    const nav=document.getElementById('mainNav');
-    if(nav) nav.classList.toggle('scrolled',window.scrollY>20);
-  },{passive:true});
-
-  const hb=document.getElementById('hamburger');
-  if(hb) hb.addEventListener('click',function(e){ e.stopPropagation(); toggleMobileMenu(); });
-
-  document.addEventListener('click',function(e){
-    const mm=document.getElementById('mobileMenu');
-    const hb2=document.getElementById('hamburger');
-    if(mm&&hb2&&!mm.contains(e.target)&&!hb2.contains(e.target)) closeMM();
-  });
-
-  document.querySelectorAll('.modal-ov').forEach(m=>m.addEventListener('click',e=>{
-    if(e.target===m) m.classList.remove('open');
-  }));
-
-  const qrImg=document.getElementById('afQrImg');
-  if(qrImg) qrImg.addEventListener('load',function(){ this.classList.add('loaded'); });
-
-  await initSupabase();
-
-  renderSocialPage();
-  renderGames();
-  renderTgVerify();
-  if(currentUser){
-    const fresh=DB.users.find(u=>u.id===currentUser.id);
-    if(fresh) currentUser=fresh;
-    updateNav();
-  }
-});
-</script>
+ </script>
 </body>
 </html>
