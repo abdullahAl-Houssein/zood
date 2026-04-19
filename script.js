@@ -1036,26 +1036,41 @@ function renderDRc() {
 }
 
 function renderDUsers() {
-  const tb = document.getElementById('dUsersBody'); if (!tb) return;
-  tb.innerHTML = DB.users.map(u => `<tr>
-    <td style="font-weight:600">${u.name || ''}</td><td style="color:var(--text2)">${u.email || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(u.balance)}</td>
-    <td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td>
-    <td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}</td>
-    <td>${u.role !== 'admin' ? `<button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')">+ رصيد</button>` : '—'}</td>
-  </tr>`).join('');
-  
-  const pending = DB.orders.filter(o => o.status === 'pending');
-  const pb = document.getElementById('dPendingBody');
-  if (pb) pb.innerHTML = pending.length ? pending.map((o, idx) => `<tr>
-    <td style="font-weight:600">${o.user || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}</td>
-    <td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}</td>
-    <td>
-      <button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button>
-      <button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button>
-    </td>
-  </tr>`).join('') : '<td><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
+    const tb = document.getElementById('dUsersBody');
+    if (!tb) return;
+    
+    tb.innerHTML = DB.users.map(u => `
+        <tr>
+            <td style="font-weight:600">${u.name || ''}</td>
+            <td style="color:var(--text2)">${u.email || ''}</td>
+            <td style="color:var(--gold);font-weight:700">$${safeToFixed(u.balance)}</td>
+            <td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td>
+            <td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}</td>
+            <td>
+                ${u.role !== 'admin' ? `
+                    <button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')" style="background:rgba(0,224,154,0.1);color:var(--green);margin-bottom:5px">💰 إضافة</button>
+                    <button class="edit-btn" onclick="quickDeductBal(${u.id},'${u.name || ''}')" style="background:rgba(255,77,109,0.1);color:var(--red);border-color:rgba(255,77,109,0.2)">💸 خصم</button>
+                ` : '—'}
+            </td>
+        </tr>
+    `).join('');
+    
+    // طلبات شحن المحفظة المعلقة
+    const pending = DB.orders.filter(o => o.status === 'pending');
+    const pb = document.getElementById('dPendingBody');
+    if (pb) {
+        pb.innerHTML = pending.length ? pending.map((o, idx) => `
+            <tr>
+                <td style="font-weight:600">${o.user || ''}</td>
+                <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}</td>
+                <td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}</td>
+                <td>
+                    <button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button>
+                    <button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button>
+                </td>
+            </tr>
+        `).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
+    }
 }
 
 function renderDOrders() {
