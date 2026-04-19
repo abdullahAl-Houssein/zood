@@ -1621,3 +1621,259 @@ document.addEventListener('DOMContentLoaded', async function() {
     updateNav();
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================================
+// QR CODE UPLOAD TO SUPABASE STORAGE
+// ============================================================
+
+let selectedQRFile = null;
+
+// Handle file selection
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('shamQrFile');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files.length > 0) {
+                selectedQRFile = e.target.files[0];
+                
+                // Preview the image
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const previewImg = document.getElementById('shamQrPreviewImg');
+                    const previewDiv = document.getElementById('shamQrPreview');
+                    if (previewImg && previewDiv) {
+                        previewImg.src = evt.target.result;
+                        previewDiv.style.display = 'block';
+                    }
+                    showToast('تم اختيار الصورة. اضغط "رفع الصورة" لحفظها', 'success');
+                };
+                reader.readAsDataURL(selectedQRFile);
+            }
+        });
+    }
+});
+
+async function uploadQRCode() {
+    if (!selectedQRFile) {
+        showToast('الرجاء اختيار صورة أولاً', 'error');
+        return;
+    }
+    
+    if (!useSupabase || !supabase) {
+        showToast('لا يمكن رفع الصورة - قاعدة البيانات غير متصلة', 'error');
+        return;
+    }
+    
+    showLoadingOverlay('جاري رفع الصورة...');
+    
+    try {
+        // Generate unique filename
+        const fileExt = selectedQRFile.name.split('.').pop();
+        const fileName = `shamcash_qr_${Date.now()}.${fileExt}`;
+        const filePath = `public/${fileName}`;
+        
+        // Upload to Supabase Storage
+        const { data, error } = await supabase.storage
+            .from('qr-codes')
+            .upload(filePath, selectedQRFile, {
+                cacheControl: '3600',
+                upsert: true
+            });
+        
+        if (error) {
+            console.error('Upload error:', error);
+            showToast('فشل رفع الصورة: ' + error.message, 'error');
+            hideLoadingOverlay();
+            return;
+        }
+        
+        // Get public URL
+        const { data: urlData } = supabase.storage
+            .from('qr-codes')
+            .getPublicUrl(filePath);
+        
+        const publicUrl = urlData.publicUrl;
+        console.log('QR Code uploaded, public URL:', publicUrl);
+        
+        // Set the URL in the input field
+        const qrInput = document.getElementById('pm-sham-qr');
+        if (qrInput) {
+            qrInput.value = publicUrl;
+        }
+        
+        showToast('تم رفع الصورة بنجاح ✅', 'success');
+        
+        // Clear the selected file
+        selectedQRFile = null;
+        const fileInput = document.getElementById('shamQrFile');
+        if (fileInput) fileInput.value = '';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('حدث خطأ أثناء رفع الصورة', 'error');
+    } finally {
+        hideLoadingOverlay();
+    }
+}
+
+// Modified savePaymentMethods function
+async function savePaymentMethods() {
+    showLoadingOverlay('جاري حفظ الإعدادات...');
+    try {
+        // Get QR URL from input (already uploaded)
+        const qrUrl = document.getElementById('pm-sham-qr')?.value.trim() || '';
+        
+        const methods = [
+            { 
+                method: 'binance', 
+                data: { 
+                    addr: document.getElementById('pm-binance-addr')?.value.trim() || '', 
+                    uid: document.getElementById('pm-binance-uid')?.value.trim() || '', 
+                    qr: document.getElementById('pm-binance-qr')?.value.trim() || '' 
+                }, 
+                active: document.getElementById('pm-binance-active')?.checked || false 
+            },
+            { 
+                method: 'shamcash', 
+                data: { 
+                    walletAddress: document.getElementById('pm-sham-num')?.value.trim() || 'c8a4d105019df664d62048e38d986', 
+                    ownerName: document.getElementById('pm-sham-name')?.value.trim() || 'عبدالحميد محمد الحسين',
+                    phoneNumber: document.getElementById('pm-sham-phone')?.value.trim() || '0949277889',
+                    qr: qrUrl 
+                }, 
+                active: document.getElementById('pm-sham-active')?.checked || true 
+            },
+            { 
+                method: 'western', 
+                data: { 
+                    ownerName: document.getElementById('pm-wu-name')?.value.trim() || '', 
+                    country: document.getElementById('pm-wu-country')?.value.trim() || '' 
+                }, 
+                active: document.getElementById('pm-wu-active')?.checked || false 
+            }
+        ];
+        
+        for (const m of methods) {
+            // Update local DB first
+            DB.paymentMethods[m.method] = { ...m.data, active: m.active };
+            
+            // Then try to update Supabase if available
+            if (useSupabase && supabase) {
+                try {
+                    const { error } = await supabase
+                        .from('payment_methods')
+                        .upsert({ 
+                            method: m.method, 
+                            data: m.data, 
+                            active: m.active 
+                        }, { 
+                            onConflict: 'method' 
+                        });
+                    
+                    if (error) {
+                        console.error(`Error saving ${m.method}:`, error);
+                    } else {
+                        console.log(`Successfully saved ${m.method}`);
+                    }
+                } catch (err) {
+                    console.error(`Exception saving ${m.method}:`, err);
+                }
+            }
+        }
+        
+        saveDB();
+        closeModal('editPMModal');
+        await refreshAllData();
+        renderDashboard();
+        showToast('تم حفظ الإعدادات بنجاح ✅', 'success');
+    } catch (error) {
+        console.error('Error in savePaymentMethods:', error);
+        showToast('حدث خطأ أثناء الحفظ', 'error');
+    } finally {
+        hideLoadingOverlay();
+    }
+}
+
+// Modified afGoStep2 function - to show QR from URL
+function afGoStep2() {
+    const amt = parseFloat(document.getElementById('addFundsAmt').value);
+    if (!amt || amt < 1) {
+        showToast('أدخل مبلغاً صحيحاً (1$ على الأقل)', 'error');
+        return;
+    }
+    currentAddFundsAmount = amt;
+    
+    const pm = DB.paymentMethods.shamcash || { 
+        walletAddress: 'c8a4d105019df664d62048e38d986', 
+        ownerName: 'عبدالحميد محمد الحسين', 
+        qr: '', 
+        phoneNumber: '0949277889',
+        active: true 
+    };
+    
+    document.getElementById('afAmtDisplay').textContent = '$' + safeToFixed(amt);
+    const walletAddressElement = document.getElementById('afShamNum');
+    if (walletAddressElement) {
+        walletAddressElement.textContent = pm.walletAddress || pm.num || 'c8a4d105019df664d62048e38d986';
+    }
+    const ownerNameElement = document.getElementById('afShamName');
+    if (ownerNameElement) {
+        ownerNameElement.textContent = pm.ownerName || 'عبدالحميد محمد الحسين';
+    }
+    const shamAmtElement = document.getElementById('afShamAmt');
+    if (shamAmtElement) {
+        shamAmtElement.textContent = '$' + safeToFixed(amt) + ' USD';
+    }
+    
+    const imgEl = document.getElementById('afQrImg');
+    const qrUrl = pm.qr || '';
+    
+    console.log('QR URL from DB:', qrUrl);
+    
+    if (imgEl) {
+        if (qrUrl && qrUrl !== '' && (qrUrl.startsWith('http') || qrUrl.startsWith('https'))) {
+            imgEl.style.display = 'block';
+            imgEl.style.maxWidth = '100%';
+            imgEl.style.height = 'auto';
+            imgEl.src = qrUrl + '?t=' + Date.now();
+            imgEl.onload = function() {
+                console.log('QR image loaded successfully');
+                this.style.opacity = '1';
+                const fallbackEl = document.getElementById('afQrFallback');
+                if (fallbackEl) fallbackEl.style.display = 'none';
+            };
+            imgEl.onerror = function() {
+                console.log('QR image failed to load');
+                this.style.display = 'none';
+                showFallbackContent(pm, amt);
+            };
+        } else {
+            console.log('No valid QR URL, showing fallback');
+            imgEl.style.display = 'none';
+            showFallbackContent(pm, amt);
+        }
+    } else {
+        console.log('QR image element not found');
+        showFallbackContent(pm, amt);
+    }
+    
+    const step1 = document.getElementById('afStep1');
+    const step2 = document.getElementById('afStep2');
+    const step3 = document.getElementById('afStep3');
+    if (step1) step1.style.display = 'none';
+    if (step2) step2.style.display = 'block';
+    if (step3) step3.style.display = 'none';
+    afUpdateProgress(2);
+}
