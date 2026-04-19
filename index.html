@@ -800,17 +800,21 @@
           <input type="text" class="fi" id="pm-sham-phone" placeholder="0949277889">
     </div>
       <div class="fg">
-        <label class="fl">صورة الباركود QR</label>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;gap:10px;align-items:center">
+    <label class="fl">صورة الباركود QR</label>
+    <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:10px;align-items:center">
             <label style="flex:1;padding:12px;background:var(--dark4);border:1.5px dashed rgba(245,200,66,0.3);border-radius:10px;cursor:pointer;text-align:center;font-size:0.85rem;color:var(--text2)">
-              📁 رفع صورة الباركود
-              <input type="file" accept="image/*" style="display:none" onchange="handleQrUpload(event,'shamcash')">
+                📁 اختر صورة الباركود
+                <input type="file" id="shamQrFile" accept="image/*" style="display:none" onchange="handleQrUpload(event,'shamcash')">
             </label>
-          </div>
-          <div id="shamQrPreview" style="display:none;text-align:center"><img id="shamQrPreviewImg" src="" style="max-width:120px;border-radius:10px;border:2px solid rgba(245,200,66,0.4)"><br><small style="color:var(--text3);font-size:0.75rem">معاينة الباركود</small></div>
-          <input type="text" class="fi" id="pm-sham-qr" placeholder="أو الصق رابط الصورة هنا" oninput="previewQrUrl('shamcash')">
         </div>
+        <div id="shamQrPreview" style="display:none;text-align:center">
+            <img id="shamQrPreviewImg" src="" style="max-width:120px;border-radius:10px;border:2px solid rgba(245,200,66,0.4)">
+            <br><small style="color:var(--text3);font-size:0.75rem">معاينة الباركود</small>
+        </div>
+        <input type="text" class="fi" id="pm-sham-qr" placeholder="أو الصق رابط الصورة هنا" oninput="previewQrUrl('shamcash')">
+    </div>
+</div>
       </div>
       <div class="fg" style="display:flex;align-items:center;gap:12px">
         <label class="fl" style="margin:0">تفعيل طريقة الدفع</label>
