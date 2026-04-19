@@ -38,7 +38,7 @@ const DEFAULT_DB = {
   transactions: [],
   paymentMethods: {
     binance: { addr: '347c8a4d105019df664d62048e38d986', uid: '', qr: '', active: true },
-    shamcash: { num: '0949277889', ownerName: 'عبدالحميد محمد الحسين', qr: '', active: true },
+    shamcash: { walletAddress: 'c8a4d105019df664d62048e38d986', ownerName: 'عبدالحميد محمد الحسين', qr: '', phoneNumber: '0949277889', active: true },
     western: { ownerName: 'Zood Services', country: 'Syria', active: false }
   }
 };
@@ -535,7 +535,7 @@ function renderTxList(type) {
 }
 
 // ============================================================
-// ADD FUNDS WITH QR FROM DATABASE - FIXED
+// ADD FUNDS WITH QR FROM DATABASE - COMPLETELY FIXED
 // ============================================================
 let currentAddFundsAmount = 0;
 
@@ -550,9 +550,21 @@ function afUpdateProgress(step) {
     const progStep = document.getElementById('afProgStep' + s);
     const line = document.getElementById('afLine' + s);
     if (!dot || !progStep) return;
-    if (s < step) { dot.className = 'af-prog-dot done-dot'; dot.textContent = '✓'; progStep.className = 'af-prog-step done'; }
-    else if (s === step) { dot.className = 'af-prog-dot active-dot'; dot.textContent = s; progStep.className = 'af-prog-step active'; }
-    else { dot.className = 'af-prog-dot'; dot.textContent = s; progStep.className = 'af-prog-step'; }
+    if (s < step) { 
+      dot.className = 'af-prog-dot done-dot'; 
+      dot.textContent = '✓'; 
+      progStep.className = 'af-prog-step done'; 
+    }
+    else if (s === step) { 
+      dot.className = 'af-prog-dot active-dot'; 
+      dot.textContent = s; 
+      progStep.className = 'af-prog-step active'; 
+    }
+    else { 
+      dot.className = 'af-prog-dot'; 
+      dot.textContent = s; 
+      progStep.className = 'af-prog-step'; 
+    }
     if (line) line.className = 'af-prog-line ' + (s < step ? 'done-line' : '');
   });
 }
@@ -572,57 +584,81 @@ function afGoStep2() {
   }
   currentAddFundsAmount = amt;
   
-  // Get ShamCash payment method from database
-  const pm = DB.paymentMethods.shamcash || { num: '0949277889', ownerName: 'عبدالحميد محمد الحسين', qr: '', active: true };
+  const pm = DB.paymentMethods.shamcash || { 
+    walletAddress: 'c8a4d105019df664d62048e38d986', 
+    ownerName: 'عبدالحميد محمد الحسين', 
+    qr: '', 
+    phoneNumber: '0949277889',
+    active: true 
+  };
   
   document.getElementById('afAmtDisplay').textContent = '$' + safeToFixed(amt);
-  document.getElementById('afShamNum').textContent = pm.num;
-  document.getElementById('afShamName').textContent = pm.ownerName;
-  document.getElementById('afShamAmt').textContent = '$' + safeToFixed(amt) + ' USD';
-  
-  const imgEl = document.getElementById('afQrImg');
-  const fallbackEl = document.getElementById('afQrFallback');
-  const qrUrl = pm.qr || '';
-  
-  if (imgEl && fallbackEl) {
-    if (qrUrl && qrUrl !== '' && (qrUrl.startsWith('http') || qrUrl.startsWith('https') || qrUrl.startsWith('data:image'))) {
-      imgEl.style.display = 'block';
-      imgEl.style.opacity = '0.5';
-      imgEl.onload = function() {
-        this.style.opacity = '1';
-        fallbackEl.style.display = 'none';
-      };
-      imgEl.onerror = function() {
-        this.style.display = 'none';
-        fallbackEl.style.display = 'block';
-        fallbackEl.innerHTML = `
-          <div style="font-size:2rem;margin-bottom:12px">💳</div>
-          <div style="font-weight:bold;margin-bottom:8px">رقم محفظة شام كاش:</div>
-          <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px">${pm.num}</div>
-          <div>👤 اسم الحساب: ${pm.ownerName}</div>
-          <div>💵 المبلغ: $${safeToFixed(amt)}</div>
-          <button class="copy-btn" onclick="copyText('${pm.num}')" style="margin-top:15px;padding:8px 16px">📋 نسخ الرقم</button>
-        `;
-      };
-      imgEl.src = qrUrl + '?t=' + Date.now();
-    } else {
-      imgEl.style.display = 'none';
-      fallbackEl.style.display = 'block';
-      fallbackEl.innerHTML = `
-        <div style="font-size:2rem;margin-bottom:12px">💳</div>
-        <div style="font-weight:bold;margin-bottom:8px">رقم محفظة شام كاش:</div>
-        <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px">${pm.num}</div>
-        <div>👤 اسم الحساب: ${pm.ownerName}</div>
-        <div>💵 المبلغ: $${safeToFixed(amt)}</div>
-        <button class="copy-btn" onclick="copyText('${pm.num}')" style="margin-top:15px;padding:8px 16px">📋 نسخ الرقم</button>
-      `;
-    }
+  const walletAddressElement = document.getElementById('afShamNum');
+  if (walletAddressElement) {
+    walletAddressElement.textContent = pm.walletAddress || pm.num || 'c8a4d105019df664d62048e38d986';
+  }
+  const ownerNameElement = document.getElementById('afShamName');
+  if (ownerNameElement) {
+    ownerNameElement.textContent = pm.ownerName || 'عبدالحميد محمد الحسين';
+  }
+  const shamAmtElement = document.getElementById('afShamAmt');
+  if (shamAmtElement) {
+    shamAmtElement.textContent = '$' + safeToFixed(amt) + ' USD';
   }
   
-  document.getElementById('afStep1').style.display = 'none';
-  document.getElementById('afStep2').style.display = 'block';
-  document.getElementById('afStep3').style.display = 'none';
+  const imgEl = document.getElementById('afQrImg');
+  const qrUrl = pm.qr || '';
+  
+  console.log('QR URL:', qrUrl);
+  
+  if (imgEl) {
+    if (qrUrl && qrUrl !== '' && (qrUrl.startsWith('http') || qrUrl.startsWith('https') || qrUrl.startsWith('data:image'))) {
+      imgEl.style.display = 'block';
+      imgEl.style.maxWidth = '100%';
+      imgEl.style.height = 'auto';
+      imgEl.src = qrUrl + '?t=' + Date.now();
+      imgEl.onload = function() {
+        console.log('QR image loaded successfully');
+        this.style.opacity = '1';
+      };
+      imgEl.onerror = function() {
+        console.log('QR image failed to load');
+        this.style.display = 'none';
+        showFallbackContent(pm, amt);
+      };
+    } else {
+      console.log('No valid QR URL, showing fallback');
+      imgEl.style.display = 'none';
+      showFallbackContent(pm, amt);
+    }
+  } else {
+    console.log('QR image element not found');
+    showFallbackContent(pm, amt);
+  }
+  
+  const step1 = document.getElementById('afStep1');
+  const step2 = document.getElementById('afStep2');
+  const step3 = document.getElementById('afStep3');
+  if (step1) step1.style.display = 'none';
+  if (step2) step2.style.display = 'block';
+  if (step3) step3.style.display = 'none';
   afUpdateProgress(2);
+}
+
+function showFallbackContent(pm, amt) {
+  const fallbackEl = document.getElementById('afQrFallback');
+  if (fallbackEl) {
+    fallbackEl.style.display = 'block';
+    fallbackEl.innerHTML = `
+      <div style="font-size:2rem;margin-bottom:12px">💳</div>
+      <div style="font-weight:bold;margin-bottom:8px">عنوان محفظة شام كاش:</div>
+      <div style="font-size:1rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px;word-break:break-all">${pm.walletAddress || pm.num || 'c8a4d105019df664d62048e38d986'}</div>
+      <div>👤 اسم الحساب: ${pm.ownerName || 'عبدالحميد محمد الحسين'}</div>
+      <div>💵 المبلغ: $${safeToFixed(amt)}</div>
+      <button class="copy-btn" onclick="copyText('${pm.walletAddress || pm.num || 'c8a4d105019df664d62048e38d986'}')" style="margin-top:15px;padding:8px 16px">📋 نسخ العنوان</button>
+      ${pm.phoneNumber ? `<div style="margin-top:10px;font-size:0.8rem;color:var(--text3)">📞 رقم الهاتف (للتأكيد): ${pm.phoneNumber}</div>` : ''}
+    `;
+  }
 }
 
 function afGoStep3() {
@@ -631,24 +667,30 @@ function afGoStep3() {
   const msg = 'مرحباً زود 👋\nأريد إضافة رصيد $' + safeToFixed(amt) + '\nالحساب: ' + user.email + '\nالاسم: ' + user.name;
   const waLink = document.getElementById('afWaLink');
   if (waLink) waLink.href = 'https://wa.me/963949277889?text=' + encodeURIComponent(msg);
-  document.getElementById('afStep1').style.display = 'none';
-  document.getElementById('afStep2').style.display = 'none';
-  document.getElementById('afStep3').style.display = 'block';
+  
+  const step1 = document.getElementById('afStep1');
+  const step2 = document.getElementById('afStep2');
+  const step3 = document.getElementById('afStep3');
+  if (step1) step1.style.display = 'none';
+  if (step2) step2.style.display = 'none';
+  if (step3) step3.style.display = 'block';
   afUpdateProgress(3);
 }
 
 function openAddFunds() {
   if (!currentUser) { showPage('login'); return; }
-  document.getElementById('addFundsAmt').value = '';
+  const amtInput = document.getElementById('addFundsAmt');
+  if (amtInput) amtInput.value = '';
   document.querySelectorAll('.af-preset').forEach(b => b.classList.remove('af-active'));
-  document.getElementById('txProof').value = '';
+  const txProof = document.getElementById('txProof');
+  if (txProof) txProof.value = '';
   afGoStep1();
   openModal('addFundsModal');
 }
 
 async function confirmAddFundsRequest() {
   const amt = currentAddFundsAmount;
-  const proof = document.getElementById('txProof').value.trim();
+  const proof = document.getElementById('txProof')?.value.trim() || '';
   const order = {
     user: currentUser.name,
     user_id: currentUser.id,
@@ -836,7 +878,7 @@ function renderDashboard() {
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
     <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
   </tr>`).join('') ||
-    '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
+    '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
 }
 
 function renderDNum() {
@@ -881,7 +923,7 @@ function renderDTg() {
 
 function renderDSoc() {
   const tb = document.getElementById('dSocBody'); if (!tb) return;
-  tb.innerHTML = DB.socialPackages.map(p => `<tr>
+  tb.innerHTML = DB.socialPackages.map(p => `<td>
     <td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}</td>
     <td>${p.type || ''}</td><td style="font-weight:700">${safeFormatNumber(p.qty)}</td>
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
@@ -906,7 +948,7 @@ function renderDGames() {
     <td style="font-weight:600">${p.package || ''}</td>
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
     <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
-  </tr>`).join('');
+  <tr>`).join('');
 }
 
 function renderDRc() {
@@ -955,8 +997,8 @@ function renderDUsers() {
     <td>
       <button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button>
       <button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button>
-    </td>
-  </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة</td></tr>';
+      </td>
+  </tr>`).join('') : '<td><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة</td></tr>';
 }
 
 function renderDOrders() {
@@ -974,7 +1016,7 @@ function renderDPM() {
   const pm = DB.paymentMethods;
   const cards = [
     { key: 'binance', icon: '₿', name: 'Binance Pay / USDT', rows: [['عنوان المحفظة (TRC20)', pm.binance?.addr], ['UID', pm.binance?.uid]], qr: pm.binance?.qr, active: pm.binance?.active, color: '#F0B90B' },
-    { key: 'shamcash', icon: '💳', name: 'شام كاش', rows: [['رقم المحفظة', pm.shamcash?.num], ['صاحب الحساب', pm.shamcash?.ownerName]], qr: pm.shamcash?.qr, active: pm.shamcash?.active, color: '#00C851' },
+    { key: 'shamcash', icon: '💳', name: 'شام كاش', rows: [['عنوان المحفظة', pm.shamcash?.walletAddress || pm.shamcash?.num], ['صاحب الحساب', pm.shamcash?.ownerName], ['رقم الهاتف', pm.shamcash?.phoneNumber]], qr: pm.shamcash?.qr, active: pm.shamcash?.active, color: '#00C851' },
     { key: 'western', icon: '🌐', name: 'Western Union', rows: [['الاسم', pm.western?.ownerName], ['الدولة', pm.western?.country]], active: pm.western?.active, color: '#FFDD00' },
   ];
   const el = document.getElementById('pmGrid'); 
@@ -987,7 +1029,7 @@ function renderDPM() {
         <div><div class="pm-name">${c.name}</div><div class="pm-status" style="color:${c.active ? 'var(--green)' : 'var(--red)'}">${c.active ? '✅ مفعّل' : '❌ معطّل'}</div></div>
       </div>
       <div class="pm-details">
-        ${c.rows.map(r => `<div class="pm-detail-row"><span>${r[0]}</span><span>${r[1] || '—'}</span></div>`).join('')}
+        ${c.rows.map(r => r[1] ? `<div class="pm-detail-row"><span>${r[0]}</span><span style="word-break:break-all">${r[1]}</span></div>` : '').join('')}
       </div>
       ${c.qr ? `<div class="pm-qr"><img src="${c.qr}" alt="QR" onerror="this.style.display='none'" style="max-width:100px;border-radius:8px;border:2px solid rgba(245,200,66,0.3)"></div>` : ''}
     </div>`).join('');
@@ -1300,21 +1342,44 @@ async function confirmAdminAddBal() {
   showToast('تم إضافة $' + safeToFixed(amt) + ' للحساب ✅', 'success');
 }
 
-// Payment Methods Management - THE FIXED VERSION
+// ============================================================
+// PAYMENT METHODS MANAGEMENT - COMPLETELY FIXED
+// ============================================================
+
 function openEditPM() {
   const pm = DB.paymentMethods;
-  document.getElementById('pm-binance-addr').value = pm.binance?.addr || '';
-  document.getElementById('pm-binance-uid').value = pm.binance?.uid || '';
-  document.getElementById('pm-binance-qr').value = pm.binance?.qr || '';
-  document.getElementById('pm-binance-active').checked = pm.binance?.active || false;
-  document.getElementById('pm-sham-num').value = pm.shamcash?.num || '';
-  document.getElementById('pm-sham-name').value = pm.shamcash?.ownerName || '';
-  document.getElementById('pm-sham-qr').value = pm.shamcash?.qr || '';
-  document.getElementById('pm-sham-active').checked = pm.shamcash?.active || false;
-  document.getElementById('pm-wu-name').value = pm.western?.ownerName || '';
-  document.getElementById('pm-wu-country').value = pm.western?.country || '';
-  document.getElementById('pm-wu-active').checked = pm.western?.active || false;
   
+  // Binance fields
+  const binanceAddr = document.getElementById('pm-binance-addr');
+  if (binanceAddr) binanceAddr.value = pm.binance?.addr || '';
+  const binanceUid = document.getElementById('pm-binance-uid');
+  if (binanceUid) binanceUid.value = pm.binance?.uid || '';
+  const binanceQr = document.getElementById('pm-binance-qr');
+  if (binanceQr) binanceQr.value = pm.binance?.qr || '';
+  const binanceActive = document.getElementById('pm-binance-active');
+  if (binanceActive) binanceActive.checked = pm.binance?.active || false;
+  
+  // ShamCash fields - using walletAddress
+  const shamNum = document.getElementById('pm-sham-num');
+  if (shamNum) shamNum.value = pm.shamcash?.walletAddress || pm.shamcash?.num || '';
+  const shamName = document.getElementById('pm-sham-name');
+  if (shamName) shamName.value = pm.shamcash?.ownerName || '';
+  const shamPhone = document.getElementById('pm-sham-phone');
+  if (shamPhone) shamPhone.value = pm.shamcash?.phoneNumber || '';
+  const shamQr = document.getElementById('pm-sham-qr');
+  if (shamQr) shamQr.value = pm.shamcash?.qr || '';
+  const shamActive = document.getElementById('pm-sham-active');
+  if (shamActive) shamActive.checked = pm.shamcash?.active || false;
+  
+  // Western Union fields
+  const wuName = document.getElementById('pm-wu-name');
+  if (wuName) wuName.value = pm.western?.ownerName || '';
+  const wuCountry = document.getElementById('pm-wu-country');
+  if (wuCountry) wuCountry.value = pm.western?.country || '';
+  const wuActive = document.getElementById('pm-wu-active');
+  if (wuActive) wuActive.checked = pm.western?.active || false;
+  
+  // Show QR preview if exists
   if (pm.shamcash?.qr) {
     const previewImg = document.getElementById('shamQrPreviewImg');
     const previewDiv = document.getElementById('shamQrPreview');
@@ -1323,6 +1388,7 @@ function openEditPM() {
       previewDiv.style.display = 'block';
     }
   }
+  
   openModal('editPMModal');
 }
 
@@ -1337,11 +1403,35 @@ function switchPMTab(key, el) {
 async function savePaymentMethods() {
   showLoadingOverlay('جاري حفظ الإعدادات...');
   try {
-    const shamcashQr = document.getElementById('pm-sham-qr').value.trim();
+    const shamcashQr = document.getElementById('pm-sham-qr')?.value.trim() || '';
     const methods = [
-      { method: 'binance', data: { addr: document.getElementById('pm-binance-addr').value.trim(), uid: document.getElementById('pm-binance-uid').value.trim(), qr: document.getElementById('pm-binance-qr').value.trim() }, active: document.getElementById('pm-binance-active').checked },
-      { method: 'shamcash', data: { num: document.getElementById('pm-sham-num').value.trim(), ownerName: document.getElementById('pm-sham-name').value.trim(), qr: shamcashQr }, active: document.getElementById('pm-sham-active').checked },
-      { method: 'western', data: { ownerName: document.getElementById('pm-wu-name').value.trim(), country: document.getElementById('pm-wu-country').value.trim() }, active: document.getElementById('pm-wu-active').checked }
+      { 
+        method: 'binance', 
+        data: { 
+          addr: document.getElementById('pm-binance-addr')?.value.trim() || '', 
+          uid: document.getElementById('pm-binance-uid')?.value.trim() || '', 
+          qr: document.getElementById('pm-binance-qr')?.value.trim() || '' 
+        }, 
+        active: document.getElementById('pm-binance-active')?.checked || false 
+      },
+      { 
+        method: 'shamcash', 
+        data: { 
+          walletAddress: document.getElementById('pm-sham-num')?.value.trim() || '', 
+          ownerName: document.getElementById('pm-sham-name')?.value.trim() || '',
+          phoneNumber: document.getElementById('pm-sham-phone')?.value.trim() || '',
+          qr: shamcashQr 
+        }, 
+        active: document.getElementById('pm-sham-active')?.checked || false 
+      },
+      { 
+        method: 'western', 
+        data: { 
+          ownerName: document.getElementById('pm-wu-name')?.value.trim() || '', 
+          country: document.getElementById('pm-wu-country')?.value.trim() || '' 
+        }, 
+        active: document.getElementById('pm-wu-active')?.checked || false 
+      }
     ];
     
     for (const m of methods) {
@@ -1363,7 +1453,6 @@ async function savePaymentMethods() {
           
           if (error) {
             console.error(`Error saving ${m.method}:`, error);
-            showToast(`خطأ في حفظ ${m.method}: ${error.message}`, 'error');
           } else {
             console.log(`Successfully saved ${m.method}`);
           }
@@ -1389,11 +1478,22 @@ async function savePaymentMethods() {
 function handleQrUpload(event, type) {
   const file = event.target.files[0];
   if (!file) return;
+  
+  // Check file size (max 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    showToast('حجم الصورة كبير جداً. الحد الأقصى 2 ميجابايت', 'error');
+    return;
+  }
+  
   const reader = new FileReader();
   reader.onload = function(e) {
     const imageUrl = e.target.result;
     if (type === 'shamcash') {
-      document.getElementById('pm-sham-qr').value = imageUrl;
+      const qrInput = document.getElementById('pm-sham-qr');
+      if (qrInput) {
+        qrInput.value = imageUrl;
+        console.log('QR code loaded, length:', imageUrl.length);
+      }
       const previewImg = document.getElementById('shamQrPreviewImg');
       const previewDiv = document.getElementById('shamQrPreview');
       if (previewImg && previewDiv) {
@@ -1403,17 +1503,24 @@ function handleQrUpload(event, type) {
       showToast('تم تحميل الصورة بنجاح ✅', 'success');
     }
   };
+  reader.onerror = function() {
+    showToast('حدث خطأ أثناء تحميل الصورة', 'error');
+  };
   reader.readAsDataURL(file);
 }
 
 function previewQrUrl(type) {
   if (type === 'shamcash') {
-    const url = document.getElementById('pm-sham-qr').value.trim();
+    const url = document.getElementById('pm-sham-qr')?.value.trim() || '';
     const previewImg = document.getElementById('shamQrPreviewImg');
     const previewDiv = document.getElementById('shamQrPreview');
     if (url && previewImg && previewDiv) {
-      previewImg.src = url;
-      previewDiv.style.display = 'block';
+      if (url.startsWith('data:image') || url.startsWith('http')) {
+        previewImg.src = url;
+        previewDiv.style.display = 'block';
+      } else {
+        previewDiv.style.display = 'none';
+      }
     } else if (previewDiv) {
       previewDiv.style.display = 'none';
     }
