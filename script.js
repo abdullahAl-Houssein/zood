@@ -40,7 +40,9 @@ const DEFAULT_DB = {
     binance: { addr: '347c8a4d105019df664d62048e38d986', uid: '', qr: '', active: true },
     shamcash: { walletAddress: 'c8a4d105019df664d62048e38d986', ownerName: 'عبدالحميد محمد الحسين', qr: '', phoneNumber: '0949277889', active: true },
     western: { ownerName: 'Zood Services', country: 'Syria', active: false }
-  }
+  },
+  customServices: [],
+  customCountries: []
 };
 
 let DB = JSON.parse(JSON.stringify(DEFAULT_DB));
@@ -183,7 +185,7 @@ async function initSupabase() {
 async function loadAllDataFromSupabase() {
   showLoadingOverlay('جارٍ تحميل البيانات...');
   try {
-    const [usersRes, numbersRes, socialRes, tgVerifyRes, gamesRes, rechargeRes, ordersRes, transactionsRes, pmRes] = await Promise.all([
+    const [usersRes, numbersRes, socialRes, tgVerifyRes, gamesRes, rechargeRes, ordersRes, transactionsRes, pmRes, servicesRes, countriesRes] = await Promise.all([
       supabase.from('users').select('*'),
       supabase.from('numbers').select('*'),
       supabase.from('social_packages').select('*'),
@@ -192,7 +194,9 @@ async function loadAllDataFromSupabase() {
       supabase.from('recharge_packages').select('*'),
       supabase.from('orders').select('*'),
       supabase.from('transactions').select('*'),
-      supabase.from('payment_methods').select('*')
+      supabase.from('payment_methods').select('*'),
+      supabase.from('custom_services').select('*'),
+      supabase.from('custom_countries').select('*')
     ]);
 
     if (usersRes.data) DB.users = usersRes.data;
@@ -218,6 +222,9 @@ async function loadAllDataFromSupabase() {
       });
     }
     
+    if (servicesRes.data) DB.customServices = servicesRes.data;
+    if (countriesRes.data) DB.customCountries = countriesRes.data;
+    
     saveDB();
   } catch (e) {
     console.error('Error loading data from Supabase:', e);
@@ -237,6 +244,10 @@ async function refreshAllData() {
     if (fresh) currentUser = fresh;
     updateNav();
   }
+  updateCountrySelectors();
+  renderCustomServices();
+  renderCustomCountries();
+  renderCustomServicesOnHome();
 }
 
 function saveDB() {
@@ -258,6 +269,8 @@ function ensureDBSchema() {
   if (!DB.tgVerifyPackages) DB.tgVerifyPackages = DEFAULT_DB.tgVerifyPackages;
   if (!DB.gamePackages) DB.gamePackages = DEFAULT_DB.gamePackages;
   if (!DB.rechargePkgs) DB.rechargePkgs = DEFAULT_DB.rechargePkgs;
+  if (!DB.customServices) DB.customServices = [];
+  if (!DB.customCountries) DB.customCountries = [];
   
   DB.rechargePkgs = DB.rechargePkgs.map(pkg => ({
     ...pkg,
@@ -266,6 +279,240 @@ function ensureDBSchema() {
   }));
 }
 
+// ============================================================
+// CUSTOM SERVICES & COUNTRIES MANAGEMENT
+// ============================================================
+
+async function confirmAddService() {
+    const name = document.getElementById('newServiceName')?.value.trim();
+    const description = document.getElementById('newServiceDesc')?.value.trim() || '';
+    const icon = document.getElementById('newServiceIcon')?.value.trim() || '📱';
+    const color = document.getElementById('newServiceColor')?.value.trim() || '';
+    const page = document.getElementById('newServicePage')?.value || 'home';
+    const note = document.getElementById('newServiceNote')?.value.trim() || '';
+    
+    if (!name) {
+        showToast('الرجاء إدخال اسم الخدمة', 'error');
+        return;
+    }
+    
+    const newService = {
+        id: Date.now(),
+        name: name,
+        description: description,
+        icon: icon,
+        color: color,
+        page: page,
+        note: note,
+        is_active: true,
+        display_order: DB.customServices.length,
+        created_at: new Date().toISOString()
+    };
+    
+    if (useSupabase && supabase) {
+        const { error } = await supabase.from('custom_services').insert(newService);
+        if (error) {
+            console.error('Error adding service:', error);
+            showToast('حدث خطأ أثناء إضافة الخدمة', 'error');
+            return;
+        }
+    }
+    
+    DB.customServices.push(newService);
+    saveDB();
+    
+    closeModal('addServiceModal');
+    renderCustomServices();
+    renderCustomServicesOnHome();
+    showToast('تم إضافة الخدمة بنجاح ✅', 'success');
+}
+
+function openAddService() {
+    document.getElementById('newServiceName').value = '';
+    document.getElementById('newServiceDesc').value = '';
+    document.getElementById('newServiceIcon').value = '';
+    document.getElementById('newServiceColor').value = '';
+    document.getElementById('newServiceNote').value = '';
+    openModal('addServiceModal');
+}
+
+function renderCustomServices() {
+    const container = document.getElementById('customServicesList');
+    if (!container) return;
+    
+    if (DB.customServices.length === 0) {
+        container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">لا توجد خدمات مضافة</div>';
+        return;
+    }
+    
+    container.innerHTML = DB.customServices.map(service => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--dark3);border-radius:10px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <div style="font-size:1.5rem">${service.icon}</div>
+                <div>
+                    <div style="font-weight:700">${service.name}</div>
+                    <div style="font-size:0.75rem;color:var(--text3)">${service.description || 'لا يوجد وصف'}</div>
+                    ${service.note ? `<div style="font-size:0.7rem;color:var(--gold);margin-top:4px">📝 ملاحظة: ${service.note}</div>` : ''}
+                </div>
+            </div>
+            <button class="del-btn" onclick="deleteCustomService(${service.id})">حذف</button>
+        </div>
+    `).join('');
+}
+
+async function deleteCustomService(id) {
+    if (!confirm('هل أنت متأكد من حذف هذه الخدمة؟')) return;
+    
+    if (useSupabase && supabase) {
+        await supabase.from('custom_services').delete().eq('id', id);
+    }
+    
+    DB.customServices = DB.customServices.filter(s => s.id !== id);
+    saveDB();
+    renderCustomServices();
+    renderCustomServicesOnHome();
+    showToast('تم حذف الخدمة', 'success');
+}
+
+function renderCustomServicesOnHome() {
+    const servicesGrid = document.getElementById('servicesGrid');
+    if (!servicesGrid) return;
+    
+    // Remove existing custom services from grid (keep only original ones)
+    const originalServicesCount = 8;
+    while (servicesGrid.children.length > originalServicesCount) {
+        servicesGrid.removeChild(servicesGrid.lastChild);
+    }
+    
+    // Add custom services
+    for (const service of DB.customServices) {
+        const serviceCard = document.createElement('div');
+        serviceCard.className = 'svc-card';
+        serviceCard.setAttribute('onclick', `requireLogin('${service.page}')`);
+        serviceCard.innerHTML = `
+            <div class="svc-icon" style="background:${service.color ? service.color + '22' : 'rgba(245,200,66,0.12)'};color:${service.color || 'var(--gold)'}">${service.icon}</div>
+            <div class="svc-name">${service.name}</div>
+            <div class="svc-desc">${service.description || 'خدمة جديدة من زود'}</div>
+            ${service.note ? `<div class="svc-badge" style="background:rgba(245,200,66,0.15);margin-top:8px">📝 ${service.note.substring(0, 30)}${service.note.length > 30 ? '...' : ''}</div>` : '<div class="svc-badge">✨ جديد</div>'}
+        `;
+        servicesGrid.appendChild(serviceCard);
+    }
+}
+
+async function confirmAddCountry() {
+    const name = document.getElementById('newCountryName')?.value.trim();
+    const flag = document.getElementById('newCountryFlag')?.value.trim() || '🌍';
+    const code = document.getElementById('newCountryCode')?.value.trim() || '';
+    
+    if (!name) {
+        showToast('الرجاء إدخال اسم الدولة', 'error');
+        return;
+    }
+    
+    const newCountry = {
+        id: Date.now(),
+        name: name,
+        flag: flag,
+        code: code,
+        is_active: true,
+        created_at: new Date().toISOString()
+    };
+    
+    if (useSupabase && supabase) {
+        const { error } = await supabase.from('custom_countries').insert(newCountry);
+        if (error) {
+            console.error('Error adding country:', error);
+            showToast('حدث خطأ أثناء إضافة الدولة', 'error');
+            return;
+        }
+    }
+    
+    DB.customCountries.push(newCountry);
+    saveDB();
+    
+    closeModal('addCountryModal');
+    renderCustomCountries();
+    updateCountrySelectors();
+    showToast('تم إضافة الدولة بنجاح ✅', 'success');
+}
+
+function openAddCountry() {
+    document.getElementById('newCountryName').value = '';
+    document.getElementById('newCountryFlag').value = '';
+    document.getElementById('newCountryCode').value = '';
+    openModal('addCountryModal');
+}
+
+function renderCustomCountries() {
+    const container = document.getElementById('customCountriesList');
+    if (!container) return;
+    
+    if (DB.customCountries.length === 0) {
+        container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">لا توجد دول مضافة</div>';
+        return;
+    }
+    
+    container.innerHTML = DB.customCountries.map(country => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--dark3);border-radius:10px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:12px">
+                <div style="font-size:1.5rem">${country.flag}</div>
+                <div>
+                    <div style="font-weight:700">${country.name}</div>
+                    ${country.code ? `<div style="font-size:0.75rem;color:var(--text3)">مفتاح الاتصال: ${country.code}</div>` : ''}
+                </div>
+            </div>
+            <button class="del-btn" onclick="deleteCustomCountry(${country.id})">حذف</button>
+        </div>
+    `).join('');
+}
+
+async function deleteCustomCountry(id) {
+    if (!confirm('هل أنت متأكد من حذف هذه الدولة؟')) return;
+    
+    if (useSupabase && supabase) {
+        await supabase.from('custom_countries').delete().eq('id', id);
+    }
+    
+    DB.customCountries = DB.customCountries.filter(c => c.id !== id);
+    saveDB();
+    renderCustomCountries();
+    updateCountrySelectors();
+    showToast('تم حذف الدولة', 'success');
+}
+
+function updateCountrySelectors() {
+    const baseCountries = [
+        { name: 'سوريا', flag: '🇸🇾', code: '+963' },
+        { name: 'السعودية', flag: '🇸🇦', code: '+966' },
+        { name: 'الإمارات', flag: '🇦🇪', code: '+971' },
+        { name: 'تركيا', flag: '🇹🇷', code: '+90' },
+        { name: 'مصر', flag: '🇪🇬', code: '+20' },
+        { name: 'العراق', flag: '🇮🇶', code: '+964' },
+        { name: 'روسيا', flag: '🇷🇺', code: '+7' }
+    ];
+    
+    const allCountries = [...baseCountries, ...DB.customCountries.map(c => ({ name: c.name, flag: c.flag, code: c.code }))];
+    
+    // Update countryFlags object
+    window.countryFlags = window.countryFlags || {};
+    for (const c of allCountries) {
+        window.countryFlags[c.name] = c.flag;
+    }
+    
+    // Update selectors
+    const selectors = ['numCountryF', 'waCountryF', 'tgCountryF', 'newNumCountry'];
+    for (const selectorId of selectors) {
+        const selector = document.getElementById(selectorId);
+        if (selector) {
+            const currentValue = selector.value;
+            selector.innerHTML = '<option value="">كل الدول</option>' + 
+                allCountries.map(c => `<option value="${c.name}">${c.flag} ${c.name}${c.code ? ` (${c.code})` : ''}</option>`).join('');
+            if (currentValue && allCountries.some(c => c.name === currentValue)) {
+                selector.value = currentValue;
+            }
+        }
+    }
+}
 // ============================================================
 // SESSION & AUTH
 // ============================================================
@@ -397,7 +644,6 @@ function updateNav() {
   if (mmUserSec) mmUserSec.style.display = ok ? '' : 'none';
   if (mmDashBtn2) mmDashBtn2.style.display = admin ? '' : 'none';
 }
-
 // ============================================================
 // PAGE ROUTING
 // ============================================================
@@ -420,7 +666,6 @@ function showPage(name) {
 // ============================================================
 // RENDER FUNCTIONS
 // ============================================================
-const countryFlags = { سوريا: '🇸🇾', السعودية: '🇸🇦', الإمارات: '🇦🇪', تركيا: '🇹🇷', مصر: '🇪🇬', العراق: '🇮🇶', روسيا: '🇷🇺' };
 const socialEmojis = { Instagram: '📸', TikTok: '🎵', Facebook: '👍', YouTube: '▶️', Twitter: '🐦', Snapchat: '👻' };
 const socialColors = { Instagram: '#E1306C', TikTok: '#69C9D0', Facebook: '#1877F2', YouTube: '#FF0000', Twitter: '#1DA1F2', Snapchat: '#FFFC00' };
 
@@ -437,9 +682,10 @@ function renderNumbersByType(type) {
   if (!grid) return;
   if (!nums.length) { grid.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text3);grid-column:1/-1">لا توجد أرقام متاحة</div>'; return; }
   const icons = { phone: '📱', whatsapp: '💬', telegram: '✈️' };
+  const flag = (c) => window.countryFlags?.[c] || '';
   grid.innerHTML = nums.map(n => `
     <div class="product-card">
-      <div class="flag-badge">${countryFlags[n.country] || ''} ${n.country || ''}</div>
+      <div class="flag-badge">${flag(n.country)} ${n.country || ''}</div>
       <div class="pc-header">
         <div><div class="pc-name">${icons[n.type]} ${n.operator || ''}</div></div>
         <span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? '✅ متاح' : '❌ مباع'}</span>
@@ -563,7 +809,6 @@ function renderTxList(type) {
       <div class="tx-amt ${t.type}">${t.type === 'credit' ? '+' : '-'}$${safeToFixed(t.amount)}</div>
     </div>`).join('');
 }
-
 // ============================================================
 // ADD FUNDS WITH QR FROM DATABASE
 // ============================================================
@@ -621,9 +866,6 @@ function afGoStep2() {
     phoneNumber: '0949277889',
     active: true 
   };
-  
-  console.log('ShamCash Data:', pm);
-  console.log('QR URL from DB:', pm.qr);
   
   document.getElementById('afAmtDisplay').textContent = '$' + safeToFixed(amt);
   const walletAddressElement = document.getElementById('afShamNum');
@@ -700,22 +942,6 @@ function afGoStep2() {
   if (step2) step2.style.display = 'block';
   if (step3) step3.style.display = 'none';
   afUpdateProgress(2);
-}
-
-function showFallbackContent(pm, amt) {
-  const fallbackEl = document.getElementById('afQrFallback');
-  if (fallbackEl) {
-    fallbackEl.style.display = 'block';
-    fallbackEl.innerHTML = `
-      <div style="font-size:2rem;margin-bottom:12px">💳</div>
-      <div style="font-weight:bold;margin-bottom:8px">عنوان محفظة شام كاش:</div>
-      <div style="font-size:1rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px;word-break:break-all">${pm.walletAddress || pm.num || 'c8a4d105019df664d62048e38d986'}</div>
-      <div>👤 اسم الحساب: ${pm.ownerName || 'عبدالحميد محمد الحسين'}</div>
-      <div>💵 المبلغ: $${safeToFixed(amt)}</div>
-      <button class="copy-btn" onclick="copyText('${pm.walletAddress || pm.num || 'c8a4d105019df664d62048e38d986'}')" style="margin-top:15px;padding:8px 16px">📋 نسخ العنوان</button>
-      ${pm.phoneNumber ? `<div style="margin-top:10px;font-size:0.8rem;color:var(--text3)">📞 رقم الهاتف (للتأكيد): ${pm.phoneNumber}</div>` : ''}
-    `;
-  }
 }
 
 function afGoStep3() {
@@ -904,7 +1130,6 @@ function doRecharge(region) {
     rcState[region] = {};
   });
 }
-
 // ============================================================
 // DASHBOARD
 // ============================================================
@@ -944,24 +1169,24 @@ function renderDNum() {
   const tb = document.getElementById('dNumBody'); if (!tb) return;
   tb.innerHTML = nums.map(n => `<tr>
     <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td>
-    <td>📱 هاتفي</td><td>${countryFlags[n.country] || ''} ${n.country || ''}</td><td>${n.operator || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td>
-    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>
+    <td>📱 هاتفي<\/td><td>${window.countryFlags?.[n.country] || ''} ${n.country || ''}<\/td><td>${n.operator || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td>
+    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td>
     <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
-    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td>
-  </tr>`).join('');
+    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button><\/td>
+  </table>`).join('');
 }
 
 function renderDWa() {
   const nums = DB.numbers.filter(n => n.type === 'whatsapp');
   const tb = document.getElementById('dWaBody'); if (!tb) return;
-  tb.innerHTML = nums.map(n => `</tr>
-    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td>
-    <td>${countryFlags[n.country] || ''} ${n.country || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td>
-    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>
+  tb.innerHTML = nums.map(n => `<tr>
+    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td>
+    <td>${window.countryFlags?.[n.country] || ''} ${n.country || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td>
+    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td>
     <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
-    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td>
+    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button><\/td>
   </tr>`).join('');
 }
 
@@ -969,42 +1194,42 @@ function renderDTg() {
   const nums = DB.numbers.filter(n => n.type === 'telegram');
   const tb = document.getElementById('dTgBody'); if (!tb) return;
   tb.innerHTML = nums.map(n => `<tr>
-    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td>
-    <td>${countryFlags[n.country] || ''} ${n.country || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td>
-    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>
+    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td>
+    <td>${window.countryFlags?.[n.country] || ''} ${n.country || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td>
+    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td>
     <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
-    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td>
+    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button><\/td>
   </tr>`).join('');
 }
 
 function renderDSoc() {
   const tb = document.getElementById('dSocBody'); if (!tb) return;
   tb.innerHTML = DB.socialPackages.map(p => `<tr>
-    <td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}</td>
-    <td>${p.type || ''}</td><td style="font-weight:700">${safeFormatNumber(p.qty)}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
-    <td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف</button></td>
+    <td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}<\/td>
+    <td>${p.type || ''}<\/td><td style="font-weight:700">${safeFormatNumber(p.qty)}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
+    <td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف</button><\/td>
   </tr>`).join('');
 }
 
 function renderDTgV() {
   const tb = document.getElementById('dTgVerifyBody'); if (!tb) return;
   tb.innerHTML = DB.tgVerifyPackages.map(p => `<tr>
-    <td style="font-weight:600">${p.type || ''}</td>
-    <td style="color:var(--text2);font-size:.82rem">${p.desc || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
-    <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف</button></td>
+    <td style="font-weight:600">${p.type || ''}<\/td>
+    <td style="color:var(--text2);font-size:.82rem">${p.desc || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
+    <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف</button><\/td>
   </tr>`).join('');
 }
 
 function renderDGames() {
   const tb = document.getElementById('dGamesBody'); if (!tb) return;
   tb.innerHTML = DB.gamePackages.map(p => `<tr>
-    <td>${p.icon || '🎮'} ${p.game || ''}</td>
-    <td style="font-weight:600">${p.package || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
-    <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
+    <td>${p.icon || '🎮'} ${p.game || ''}<\/td>
+    <td style="font-weight:600">${p.package || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
+    <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button><\/td>
   </tr>`).join('');
 }
 
@@ -1015,7 +1240,7 @@ function renderDRc() {
   const validPackages = (DB.rechargePkgs || []).filter(pkg => pkg && pkg.id !== undefined);
   
   if (validPackages.length === 0) {
-    tb.innerHTML = '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
     return;
   }
   
@@ -1026,11 +1251,11 @@ function renderDRc() {
     const countryValue = pkg.country || '';
     
     return `<tr>
-      <td style="font-weight:600">${operatorValue}</td>
-      <td>${countryFlags[countryValue] || ''} ${countryValue}</td>
-      <td>${safeFormatNumber(qtyValue)} وحدة</td>
-      <td style="color:var(--gold);font-weight:700">$${safeToFixed(priceValue)}</td>
-      <td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف</button></td>
+      <td style="font-weight:600">${operatorValue}<\/td>
+      <td>${window.countryFlags?.[countryValue] || ''} ${countryValue}<\/td>
+      <td>${safeFormatNumber(qtyValue)} وحدة<\/td>
+      <td style="color:var(--gold);font-weight:700">$${safeToFixed(priceValue)}<\/td>
+      <td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف</button><\/td>
     </tr>`;
   }).join('');
 }
@@ -1038,35 +1263,35 @@ function renderDRc() {
 function renderDUsers() {
   const tb = document.getElementById('dUsersBody'); if (!tb) return;
   tb.innerHTML = DB.users.map(u => `<tr>
-    <td style="font-weight:600">${u.name || ''}</td><td style="color:var(--text2)">${u.email || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(u.balance)}</td>
-    <td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td>
-    <td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}</td>
-    <td>${u.role !== 'admin' ? `<button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')">+ رصيد</button>` : '—'}</td>
+    <td style="font-weight:600">${u.name || ''}<\/td><td style="color:var(--text2)">${u.email || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(u.balance)}<\/td>
+    <td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span><\/td>
+    <td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}<\/td>
+    <td>${u.role !== 'admin' ? `<button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')">+ رصيد</button>` : '—'}<\/td>
   </tr>`).join('');
   
   const pending = DB.orders.filter(o => o.status === 'pending');
   const pb = document.getElementById('dPendingBody');
   if (pb) pb.innerHTML = pending.length ? pending.map((o, idx) => `<tr>
-    <td style="font-weight:600">${o.user || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}</td>
-    <td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}</td>
+    <td style="font-weight:600">${o.user || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}<\/td>
+    <td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}<\/td>
     <td>
       <button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button>
       <button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button>
-    </td>
-  </tr>`).join('') : '<td><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
+     <\/td>
+  </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
 }
 
 function renderDOrders() {
   const tb = document.getElementById('dOrdersBody'); if (!tb) return;
   tb.innerHTML = [...DB.orders].reverse().map(o => `<tr>
-    <td>${o.user || ''}</td>
-    <td><span class="pt pt-avail" style="font-size:.75rem">${o.type || ''}</span></td>
-    <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
-    <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
-  </tr>`).join('') || '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
+    <td>${o.user || ''}<\/td>
+    <td><span class="pt pt-avail" style="font-size:.75rem">${o.type || ''}</span><\/td>
+    <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}<\/td>
+    <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}<\/td>
+  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
 }
 
 function renderDPM() {
@@ -1158,8 +1383,9 @@ function rejectWalletRequest(orderId) {
   renderDashboard();
   showToast('تم رفض الطلب', 'success');
 }
-
+// ============================================================
 // CRUD Operations
+// ============================================================
 async function deleteNum(id) {
   if (useSupabase && supabase) {
     await supabase.from('numbers').delete().eq('id', id);
@@ -1240,6 +1466,7 @@ function openAddNum(type) {
   document.getElementById('addNumType').value = type;
   document.getElementById('addNumTitle').textContent = type === 'whatsapp' ? '💬 إضافة رقم واتساب' : type === 'telegram' ? '✈️ إضافة رقم تلغرام' : '📱 إضافة رقم هاتفي';
   document.getElementById('newNumOpGroup').style.display = type === 'phone' ? '' : 'none';
+  updateCountrySelectors();
   openModal('addNumModal');
 }
 
@@ -1398,9 +1625,8 @@ async function confirmAdminAddBal() {
   renderDashboard();
   showToast('تم إضافة $' + safeToFixed(amt) + ' للحساب ✅', 'success');
 }
-
 // ============================================================
-// PAYMENT METHODS MANAGEMENT - COMPLETE FIXED VERSION
+// PAYMENT METHODS MANAGEMENT
 // ============================================================
 
 let selectedQRFile = null;
@@ -1460,8 +1686,6 @@ async function uploadQRCodeAndGetURL(file) {
         const fileExt = file.name.split('.').pop();
         const fileName = `shamcash_qr_${Date.now()}.${fileExt}`;
         
-        console.log('Uploading file:', fileName);
-        
         const { data, error } = await supabase.storage
             .from('qr-codes')
             .upload(fileName, file, {
@@ -1477,21 +1701,17 @@ async function uploadQRCodeAndGetURL(file) {
             return null;
         }
         
-        console.log('Upload successful:', data);
-        
         const { data: urlData } = supabase.storage
             .from('qr-codes')
             .getPublicUrl(fileName);
         
         const publicUrl = urlData.publicUrl;
-        console.log('Public URL:', publicUrl);
         
         if (previewImg && previewDiv) {
             previewImg.src = publicUrl;
             previewImg.onload = function() {
                 previewDiv.classList.remove('loading');
                 previewImg.style.opacity = '1';
-                previewImg.style.display = 'block';
             };
             previewImg.onerror = function() {
                 previewDiv.classList.remove('loading');
@@ -1544,8 +1764,6 @@ async function savePaymentMethods() {
             if (fileInput) fileInput.value = '';
         }
         
-        console.log('Final QR URL to save:', qrUrl);
-        
         const methods = [
             { 
                 method: 'binance', 
@@ -1593,8 +1811,6 @@ async function savePaymentMethods() {
                     
                     if (error) {
                         console.error(`Error saving ${m.method}:`, error);
-                    } else {
-                        console.log(`Successfully saved ${m.method} with QR:`, m.data.qr);
                     }
                 } catch (err) {
                     console.error(`Exception saving ${m.method}:`, err);
@@ -1606,8 +1822,6 @@ async function savePaymentMethods() {
         closeModal('editPMModal');
         await refreshAllData();
         renderDashboard();
-        
-        console.log('Saved ShamCash data:', DB.paymentMethods.shamcash);
         showToast('تم حفظ الإعدادات بنجاح ✅', 'success');
     } catch (error) {
         console.error('Error in savePaymentMethods:', error);
@@ -1619,8 +1833,6 @@ async function savePaymentMethods() {
 
 function openEditPM() {
     const pm = DB.paymentMethods;
-    
-    console.log('Opening Edit PM - Current ShamCash data:', pm.shamcash);
     
     const binanceAddr = document.getElementById('pm-binance-addr');
     if (binanceAddr) binanceAddr.value = pm.binance?.addr || '';
@@ -1656,7 +1868,6 @@ function openEditPM() {
         if (previewImg && previewDiv) {
             previewImg.src = existingQr;
             previewDiv.style.display = 'block';
-            console.log('Showing existing QR preview:', existingQr);
         }
     } else {
         const previewDiv = document.getElementById('shamQrPreview');
@@ -1728,7 +1939,6 @@ function previewQrUrl(type) {
         }
     }
 }
-
 // ============================================================
 // MOBILE MENU
 // ============================================================
@@ -1783,6 +1993,11 @@ document.addEventListener('DOMContentLoaded', async function() {
   renderSocialPage();
   renderGames();
   renderTgVerify();
+  renderCustomServicesOnHome();
+  updateCountrySelectors();
+  renderCustomServices();
+  renderCustomCountries();
+  
   if (currentUser) {
     const fresh = DB.users.find(u => u.id === currentUser.id);
     if (fresh) currentUser = fresh;
