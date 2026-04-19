@@ -896,7 +896,7 @@ function renderDashboard() {
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
     <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
   </tr>`).join('') ||
-    '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
+    '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
 }
 
 function renderDNum() {
@@ -916,7 +916,7 @@ function renderDNum() {
 function renderDWa() {
   const nums = DB.numbers.filter(n => n.type === 'whatsapp');
   const tb = document.getElementById('dWaBody'); if (!tb) return;
-  tb.innerHTML = nums.map(n => `<tr>
+  tb.innerHTML = nums.map(n => `</tr>
     <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td>
     <td>${countryFlags[n.country] || ''} ${n.country || ''}</td>
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td>
@@ -941,7 +941,7 @@ function renderDTg() {
 
 function renderDSoc() {
   const tb = document.getElementById('dSocBody'); if (!tb) return;
-  tb.innerHTML = DB.socialPackages.map(p => `<tr>
+  tb.innerHTML = DB.socialPackages.map(p => `<td>
     <td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}</td>
     <td>${p.type || ''}</td><td style="font-weight:700">${safeFormatNumber(p.qty)}</td>
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
@@ -1004,7 +1004,7 @@ function renderDUsers() {
     <td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td>
     <td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}</td>
     <td>${u.role !== 'admin' ? `<button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')">+ رصيد</button>` : '—'}</td>
-  </tr>`).join('');
+  <tr>`).join('');
   
   const pending = DB.orders.filter(o => o.status === 'pending');
   const pb = document.getElementById('dPendingBody');
@@ -1027,7 +1027,7 @@ function renderDOrders() {
     <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
     <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
-  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
+  </tr>`).join('') || '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
 }
 
 function renderDPM() {
@@ -1392,7 +1392,7 @@ function initFileUpload() {
                         previewImg.src = evt.target.result;
                         previewDiv.style.display = 'block';
                     }
-                    showToast('تم اختيار الصورة. اضغط "رفع الصورة" لحفظها', 'success');
+                    showToast('تم اختيار الصورة. اضغط "حفظ التغييرات" لرفعها وحفظها', 'success');
                 };
                 reader.readAsDataURL(selectedQRFile);
             }
@@ -1400,29 +1400,24 @@ function initFileUpload() {
     }
 }
 
-// Upload QR code to Supabase Storage
-async function uploadQRCodeToStorage() {
-    if (!selectedQRFile) {
-        showToast('الرجاء اختيار صورة أولاً', 'error');
-        return null;
-    }
+// Upload QR code to Supabase Storage and return URL
+async function uploadQRCodeAndGetURL(file) {
+    if (!file) return null;
     
     if (!useSupabase || !supabase) {
         showToast('قاعدة البيانات غير متصلة', 'error');
         return null;
     }
     
-    showLoadingOverlay('جاري رفع الصورة...');
-    
     try {
-        const fileExt = selectedQRFile.name.split('.').pop();
+        const fileExt = file.name.split('.').pop();
         const fileName = `shamcash_qr_${Date.now()}.${fileExt}`;
         
         console.log('Uploading file:', fileName);
         
         const { data, error } = await supabase.storage
             .from('qr-codes')
-            .upload(fileName, selectedQRFile, {
+            .upload(fileName, file, {
                 cacheControl: '3600',
                 upsert: true
             });
@@ -1430,7 +1425,6 @@ async function uploadQRCodeToStorage() {
         if (error) {
             console.error('Upload error:', error);
             showToast('فشل رفع الصورة: ' + error.message, 'error');
-            hideLoadingOverlay();
             return null;
         }
         
@@ -1443,49 +1437,34 @@ async function uploadQRCodeToStorage() {
         const publicUrl = urlData.publicUrl;
         console.log('Public URL:', publicUrl);
         
-        const qrInput = document.getElementById('pm-sham-qr');
-        if (qrInput) {
-            qrInput.value = publicUrl;
-        }
-        
-        showToast('تم رفع الصورة بنجاح ✅', 'success');
-        
-        selectedQRFile = null;
-        const fileInput = document.getElementById('shamQrFile');
-        if (fileInput) fileInput.value = '';
-        
         return publicUrl;
         
     } catch (error) {
-        console.error('Error:', error);
-        showToast('حدث خطأ أثناء رفع الصورة: ' + error.message, 'error');
+        console.error('Error uploading:', error);
+        showToast('حدث خطأ أثناء رفع الصورة', 'error');
         return null;
-    } finally {
-        hideLoadingOverlay();
     }
 }
 
-// Upload wrapper function for button click
-async function uploadQRCode() {
-    const url = await uploadQRCodeToStorage();
-    if (url) {
-        console.log('Upload completed. URL saved to input field. Click Save to store in database.');
-    }
-}
-
-// Save payment methods
+// Save payment methods - Automatically uploads QR if selected
 async function savePaymentMethods() {
     showLoadingOverlay('جاري حفظ الإعدادات...');
     try {
         let qrUrl = document.getElementById('pm-sham-qr')?.value.trim() || '';
         
-        if (selectedQRFile && !qrUrl) {
-            qrUrl = await uploadQRCodeToStorage();
-            if (!qrUrl) {
-                showToast('فشل رفع الصورة. حاول مرة أخرى', 'error');
-                hideLoadingOverlay();
-                return;
+        // If there's a selected file, upload it first
+        if (selectedQRFile) {
+            qrUrl = await uploadQRCodeAndGetURL(selectedQRFile);
+            if (qrUrl) {
+                const qrInput = document.getElementById('pm-sham-qr');
+                if (qrInput) qrInput.value = qrUrl;
+                showToast('تم رفع الصورة بنجاح ✅', 'success');
+            } else {
+                showToast('فشل رفع الصورة. سيتم حفظ الإعدادات بدون صورة', 'error');
             }
+            selectedQRFile = null;
+            const fileInput = document.getElementById('shamQrFile');
+            if (fileInput) fileInput.value = '';
         }
         
         console.log('Final QR URL to save:', qrUrl);
@@ -1660,7 +1639,7 @@ function handleQrUpload(event, type) {
             }
         };
         reader.readAsDataURL(file);
-        showToast('تم تحديد الصورة. اضغط "رفع الصورة" ثم حفظ', 'success');
+        showToast('تم تحديد الصورة. اضغط "حفظ التغييرات" لرفعها وحفظها', 'success');
     }
 }
 
