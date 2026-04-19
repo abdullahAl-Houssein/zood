@@ -535,7 +535,7 @@ function renderTxList(type) {
 }
 
 // ============================================================
-// ADD FUNDS WITH QR FROM DATABASE - USING SUPABASE STORAGE
+// ADD FUNDS WITH QR FROM DATABASE
 // ============================================================
 let currentAddFundsAmount = 0;
 
@@ -1361,15 +1361,15 @@ async function confirmAdminAddBal() {
 }
 
 // ============================================================
-// QR CODE UPLOAD TO SUPABASE STORAGE - FIXED VERSION
+// PAYMENT METHODS MANAGEMENT - COMPLETE FIXED VERSION
 // ============================================================
+
 let selectedQRFile = null;
 
 // Initialize file upload listener
 function initFileUpload() {
     const fileInput = document.getElementById('shamQrFile');
     if (fileInput) {
-        // Remove existing listener to avoid duplicates
         const newFileInput = fileInput.cloneNode(true);
         fileInput.parentNode.replaceChild(newFileInput, fileInput);
         
@@ -1377,7 +1377,6 @@ function initFileUpload() {
             if (e.target.files && e.target.files.length > 0) {
                 selectedQRFile = e.target.files[0];
                 
-                // Check file size (max 2MB)
                 if (selectedQRFile.size > 2 * 1024 * 1024) {
                     showToast('حجم الصورة كبير جداً. الحد الأقصى 2 ميجابايت', 'error');
                     selectedQRFile = null;
@@ -1385,7 +1384,6 @@ function initFileUpload() {
                     return;
                 }
                 
-                // Preview the image
                 const reader = new FileReader();
                 reader.onload = function(evt) {
                     const previewImg = document.getElementById('shamQrPreviewImg');
@@ -1406,32 +1404,22 @@ function initFileUpload() {
 async function uploadQRCodeToStorage() {
     if (!selectedQRFile) {
         showToast('الرجاء اختيار صورة أولاً', 'error');
-        return;
+        return null;
     }
     
     if (!useSupabase || !supabase) {
-        showToast('قاعدة البيانات غير متصلة. سيتم حفظ الصورة محلياً', 'error');
-        // Fallback: save as base64
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            const qrInput = document.getElementById('pm-sham-qr');
-            if (qrInput) {
-                qrInput.value = evt.target.result;
-                showToast('تم حفظ الصورة محلياً. اضغط حفظ لحفظ الإعدادات', 'success');
-            }
-        };
-        reader.readAsDataURL(selectedQRFile);
-        return;
+        showToast('قاعدة البيانات غير متصلة', 'error');
+        return null;
     }
     
     showLoadingOverlay('جاري رفع الصورة...');
     
     try {
-        // Generate unique filename
         const fileExt = selectedQRFile.name.split('.').pop();
         const fileName = `shamcash_qr_${Date.now()}.${fileExt}`;
         
-        // Upload to Supabase Storage
+        console.log('Uploading file:', fileName);
+        
         const { data, error } = await supabase.storage
             .from('qr-codes')
             .upload(fileName, selectedQRFile, {
@@ -1443,12 +1431,11 @@ async function uploadQRCodeToStorage() {
             console.error('Upload error:', error);
             showToast('فشل رفع الصورة: ' + error.message, 'error');
             hideLoadingOverlay();
-            return;
+            return null;
         }
         
         console.log('Upload successful:', data);
         
-        // Get public URL
         const { data: urlData } = supabase.storage
             .from('qr-codes')
             .getPublicUrl(fileName);
@@ -1456,7 +1443,6 @@ async function uploadQRCodeToStorage() {
         const publicUrl = urlData.publicUrl;
         console.log('Public URL:', publicUrl);
         
-        // Set the URL in the input field
         const qrInput = document.getElementById('pm-sham-qr');
         if (qrInput) {
             qrInput.value = publicUrl;
@@ -1464,26 +1450,45 @@ async function uploadQRCodeToStorage() {
         
         showToast('تم رفع الصورة بنجاح ✅', 'success');
         
-        // Clear the selected file
         selectedQRFile = null;
         const fileInput = document.getElementById('shamQrFile');
         if (fileInput) fileInput.value = '';
         
+        return publicUrl;
+        
     } catch (error) {
         console.error('Error:', error);
         showToast('حدث خطأ أثناء رفع الصورة: ' + error.message, 'error');
+        return null;
     } finally {
         hideLoadingOverlay();
     }
 }
 
-// Save payment methods - FIXED VERSION
+// Upload wrapper function for button click
+async function uploadQRCode() {
+    const url = await uploadQRCodeToStorage();
+    if (url) {
+        console.log('Upload completed. URL saved to input field. Click Save to store in database.');
+    }
+}
+
+// Save payment methods
 async function savePaymentMethods() {
     showLoadingOverlay('جاري حفظ الإعدادات...');
     try {
-        // Get QR URL from input
-        const qrUrl = document.getElementById('pm-sham-qr')?.value.trim() || '';
-        console.log('Saving QR URL:', qrUrl);
+        let qrUrl = document.getElementById('pm-sham-qr')?.value.trim() || '';
+        
+        if (selectedQRFile && !qrUrl) {
+            qrUrl = await uploadQRCodeToStorage();
+            if (!qrUrl) {
+                showToast('فشل رفع الصورة. حاول مرة أخرى', 'error');
+                hideLoadingOverlay();
+                return;
+            }
+        }
+        
+        console.log('Final QR URL to save:', qrUrl);
         
         const methods = [
             { 
@@ -1516,10 +1521,8 @@ async function savePaymentMethods() {
         ];
         
         for (const m of methods) {
-            // Update local DB first
             DB.paymentMethods[m.method] = { ...m.data, active: m.active };
             
-            // Then try to update Supabase if available
             if (useSupabase && supabase) {
                 try {
                     const { error } = await supabase
@@ -1535,7 +1538,7 @@ async function savePaymentMethods() {
                     if (error) {
                         console.error(`Error saving ${m.method}:`, error);
                     } else {
-                        console.log(`Successfully saved ${m.method}`);
+                        console.log(`Successfully saved ${m.method} with QR:`, m.data.qr);
                     }
                 } catch (err) {
                     console.error(`Exception saving ${m.method}:`, err);
@@ -1547,6 +1550,8 @@ async function savePaymentMethods() {
         closeModal('editPMModal');
         await refreshAllData();
         renderDashboard();
+        
+        console.log('Saved ShamCash data:', DB.paymentMethods.shamcash);
         showToast('تم حفظ الإعدادات بنجاح ✅', 'success');
     } catch (error) {
         console.error('Error in savePaymentMethods:', error);
@@ -1556,9 +1561,11 @@ async function savePaymentMethods() {
     }
 }
 
-// Modified openEditPM to initialize file upload
+// Open Edit Payment Methods Modal
 function openEditPM() {
     const pm = DB.paymentMethods;
+    
+    console.log('Opening Edit PM - Current ShamCash data:', pm.shamcash);
     
     // Binance fields
     const binanceAddr = document.getElementById('pm-binance-addr');
@@ -1591,12 +1598,14 @@ function openEditPM() {
     if (wuActive) wuActive.checked = pm.western?.active || false;
     
     // Show QR preview if exists
-    if (pm.shamcash?.qr && pm.shamcash.qr.startsWith('http')) {
+    const existingQr = pm.shamcash?.qr;
+    if (existingQr && existingQr !== '' && (existingQr.startsWith('http') || existingQr.startsWith('https'))) {
         const previewImg = document.getElementById('shamQrPreviewImg');
         const previewDiv = document.getElementById('shamQrPreview');
         if (previewImg && previewDiv) {
-            previewImg.src = pm.shamcash.qr;
+            previewImg.src = existingQr;
             previewDiv.style.display = 'block';
+            console.log('Showing existing QR preview:', existingQr);
         }
     } else {
         const previewDiv = document.getElementById('shamQrPreview');
@@ -1614,58 +1623,65 @@ function openEditPM() {
     openModal('editPMModal');
 }
 
+// Switch between payment method tabs
 function switchPMTab(key, el) {
-  document.querySelectorAll('#editPMModal .tab-btn').forEach(btn => btn.classList.remove('active'));
-  el.classList.add('active');
-  document.querySelectorAll('#editPMModal .tab-content').forEach(content => content.classList.remove('active'));
-  const target = document.getElementById('pmt-' + key);
-  if (target) target.classList.add('active');
-}
-
-function handleQrUpload(event, type) {
-  const file = event.target.files[0];
-  if (!file) return;
-  
-  if (file.size > 2 * 1024 * 1024) {
-    showToast('حجم الصورة كبير جداً. الحد الأقصى 2 ميجابايت', 'error');
-    return;
-  }
-  
-  if (type === 'shamcash') {
-    // Preview the image
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const previewImg = document.getElementById('shamQrPreviewImg');
-      const previewDiv = document.getElementById('shamQrPreview');
-      if (previewImg && previewDiv) {
-        previewImg.src = e.target.result;
-        previewDiv.style.display = 'block';
-      }
-    };
-    reader.readAsDataURL(file);
-    
-    showToast('تم تحديد الصورة. اضغط حفظ لحفظها', 'success');
-  }
-}
-
-function previewQrUrl(type) {
-  if (type === 'shamcash') {
-    const url = document.getElementById('pm-sham-qr')?.value.trim() || '';
-    const previewImg = document.getElementById('shamQrPreviewImg');
-    const previewDiv = document.getElementById('shamQrPreview');
-    if (url && previewImg && previewDiv) {
-      if (url.startsWith('http') || url.startsWith('data:image')) {
-        previewImg.src = url;
-        previewDiv.style.display = 'block';
-      } else {
-        previewDiv.style.display = 'none';
-      }
-    } else if (previewDiv) {
-      previewDiv.style.display = 'none';
+    const buttons = document.querySelectorAll('#editPMModal .tab-btn');
+    if (buttons) {
+        buttons.forEach(btn => btn.classList.remove('active'));
     }
-  }
+    if (el) el.classList.add('active');
+    
+    const contents = document.querySelectorAll('#editPMModal .tab-content');
+    if (contents) {
+        contents.forEach(content => content.classList.remove('active'));
+    }
+    const target = document.getElementById('pmt-' + key);
+    if (target) target.classList.add('active');
 }
 
+// Handle QR file selection (for preview only)
+function handleQrUpload(event, type) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('حجم الصورة كبير جداً. الحد الأقصى 2 ميجابايت', 'error');
+        return;
+    }
+    
+    if (type === 'shamcash') {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewImg = document.getElementById('shamQrPreviewImg');
+            const previewDiv = document.getElementById('shamQrPreview');
+            if (previewImg && previewDiv) {
+                previewImg.src = e.target.result;
+                previewDiv.style.display = 'block';
+            }
+        };
+        reader.readAsDataURL(file);
+        showToast('تم تحديد الصورة. اضغط "رفع الصورة" ثم حفظ', 'success');
+    }
+}
+
+// Preview QR from URL
+function previewQrUrl(type) {
+    if (type === 'shamcash') {
+        const url = document.getElementById('pm-sham-qr')?.value.trim() || '';
+        const previewImg = document.getElementById('shamQrPreviewImg');
+        const previewDiv = document.getElementById('shamQrPreview');
+        if (url && previewImg && previewDiv) {
+            if (url.startsWith('http') || url.startsWith('https') || url.startsWith('data:image')) {
+                previewImg.src = url;
+                previewDiv.style.display = 'block';
+            } else {
+                previewDiv.style.display = 'none';
+            }
+        } else if (previewDiv) {
+            previewDiv.style.display = 'none';
+        }
+    }
+}
 
 // ============================================================
 // MOBILE MENU
