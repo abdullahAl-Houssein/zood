@@ -37,13 +37,28 @@ const DEFAULT_DB = {
   orders: [],
   transactions: [],
   paymentMethods: {
-    binance: { addr: '', uid: '', qr: '', active: false },
+    binance: { addr: '347c8a4d105019df664d62048e38d986', uid: '', qr: '', active: true },
     shamcash: { num: '0949277889', ownerName: 'عبدالحميد محمد الحسين', qr: '', active: true },
     western: { ownerName: 'Zood Services', country: 'Syria', active: false }
   }
 };
 
 let DB = JSON.parse(JSON.stringify(DEFAULT_DB));
+
+// ============================================================
+// SAFE NUMBER FORMATTING FUNCTIONS
+// ============================================================
+function safeFormatNumber(value) {
+  if (value === undefined || value === null) return '0';
+  const num = Number(value);
+  return isNaN(num) ? '0' : num.toLocaleString();
+}
+
+function safeToFixed(value, decimals = 2) {
+  if (value === undefined || value === null) return '0.00';
+  const num = Number(value);
+  return isNaN(num) ? '0.00' : num.toFixed(decimals);
+}
 
 // ============================================================
 // UTILITIES
@@ -98,17 +113,6 @@ function closeModal(id) {
   if (modal) modal.classList.remove('open');
 }
 
-// Helper function to safely format numbers
-function safeFormatNumber(value) {
-  if (value === undefined || value === null) return '0';
-  return Number(value).toLocaleString();
-}
-
-function safeToFixed(value, decimals = 2) {
-  if (value === undefined || value === null) return '0.00';
-  return Number(value).toFixed(decimals);
-}
-
 // ============================================================
 // SUPABASE FUNCTIONS
 // ============================================================
@@ -117,7 +121,6 @@ async function initSupabase() {
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
     supabase = createClient(SUPA_URL, SUPA_KEY);
     
-    // Test connection
     const { error } = await supabase.from('users').select('count', { count: 'exact', head: true });
     if (!error) {
       useSupabase = true;
@@ -168,7 +171,6 @@ async function loadAllDataFromSupabase() {
     if (tgVerifyRes.data) DB.tgVerifyPackages = tgVerifyRes.data;
     if (gamesRes.data) DB.gamePackages = gamesRes.data;
     if (rechargeRes.data) {
-      // Ensure all recharge packages have valid qty and price
       DB.rechargePkgs = rechargeRes.data.map(pkg => ({
         ...pkg,
         qty: pkg.qty || 0,
@@ -178,9 +180,12 @@ async function loadAllDataFromSupabase() {
     if (ordersRes.data) DB.orders = ordersRes.data;
     if (transactionsRes.data) DB.transactions = transactionsRes.data;
     
+    // Load payment methods from Supabase
     if (pmRes.data && pmRes.data.length > 0) {
       pmRes.data.forEach(pm => {
-        if (pm.method && pm.data) DB.paymentMethods[pm.method] = { ...pm.data, active: pm.active };
+        if (pm.method && pm.data) {
+          DB.paymentMethods[pm.method] = { ...pm.data, active: pm.active };
+        }
       });
     }
     
@@ -225,7 +230,6 @@ function ensureDBSchema() {
   if (!DB.gamePackages) DB.gamePackages = DEFAULT_DB.gamePackages;
   if (!DB.rechargePkgs) DB.rechargePkgs = DEFAULT_DB.rechargePkgs;
   
-  // Ensure all recharge packages have valid qty and price
   DB.rechargePkgs = DB.rechargePkgs.map(pkg => ({
     ...pkg,
     qty: pkg.qty || 0,
@@ -234,7 +238,7 @@ function ensureDBSchema() {
 }
 
 // ============================================================
-// SESSION
+// SESSION & AUTH
 // ============================================================
 let currentUser = null;
 
@@ -256,9 +260,6 @@ function clearSession() {
   try { localStorage.removeItem('zoodSession_v2'); } catch (e) { }
 }
 
-// ============================================================
-// AUTH
-// ============================================================
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim().toLowerCase();
   const pass = document.getElementById('loginPass').value;
@@ -572,6 +573,7 @@ function afGoStep2() {
   }
   currentAddFundsAmount = amt;
   
+  // Get ShamCash payment method from database
   const pm = DB.paymentMethods.shamcash || { num: '0949277889', ownerName: 'عبدالحميد محمد الحسين', qr: '', active: true };
   
   document.getElementById('afAmtDisplay').textContent = '$' + safeToFixed(amt);
@@ -835,7 +837,7 @@ function renderDashboard() {
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
     <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
   </tr>`).join('') ||
-    '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
+    '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
 }
 
 function renderDNum() {
@@ -905,33 +907,32 @@ function renderDGames() {
     <td style="font-weight:600">${p.package || ''}</td>
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
     <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
-  <tr>`).join('');
+  </tr>`).join('');
 }
 
 function renderDRc() {
   const tb = document.getElementById('dRcBody'); 
   if (!tb) return;
   
-  // Ensure all recharge packages have valid data
-  const validPackages = DB.rechargePkgs.filter(p => p && (p.qty !== undefined || p.price !== undefined));
+  const validPackages = (DB.rechargePkgs || []).filter(pkg => pkg && pkg.id !== undefined);
   
   if (validPackages.length === 0) {
     tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن</td></tr>';
     return;
   }
   
-  tb.innerHTML = validPackages.map(p => {
-    const qtyValue = (p.qty !== undefined && p.qty !== null) ? p.qty : 0;
-    const priceValue = (p.price !== undefined && p.price !== null) ? p.price : 0;
-    const operatorValue = p.operator || '';
-    const countryValue = p.country || '';
+  tb.innerHTML = validPackages.map(pkg => {
+    const qtyValue = (pkg.qty !== undefined && pkg.qty !== null) ? pkg.qty : 0;
+    const priceValue = (pkg.price !== undefined && pkg.price !== null) ? pkg.price : 0;
+    const operatorValue = pkg.operator || '';
+    const countryValue = pkg.country || '';
     
     return `<tr>
       <td style="font-weight:600">${operatorValue}</td>
       <td>${countryFlags[countryValue] || ''} ${countryValue}</td>
       <td>${safeFormatNumber(qtyValue)} وحدة</td>
       <td style="color:var(--gold);font-weight:700">$${safeToFixed(priceValue)}</td>
-      <td><button class="del-btn" onclick="deleteRcPkg(${p.id})">حذف</button></td>
+      <td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف</button></td>
     </tr>`;
   }).join('');
 }
@@ -977,7 +978,9 @@ function renderDPM() {
     { key: 'shamcash', icon: '💳', name: 'شام كاش', rows: [['رقم المحفظة', pm.shamcash?.num], ['صاحب الحساب', pm.shamcash?.ownerName]], qr: pm.shamcash?.qr, active: pm.shamcash?.active, color: '#00C851' },
     { key: 'western', icon: '🌐', name: 'Western Union', rows: [['الاسم', pm.western?.ownerName], ['الدولة', pm.western?.country]], active: pm.western?.active, color: '#FFDD00' },
   ];
-  const el = document.getElementById('pmGrid'); if (!el) return;
+  const el = document.getElementById('pmGrid'); 
+  if (!el) return;
+  
   el.innerHTML = cards.map(c => `
     <div class="pm-card ${c.active ? 'active-pm' : 'inactive-pm'}">
       <div class="pm-header">
@@ -1298,7 +1301,7 @@ async function confirmAdminAddBal() {
   showToast('تم إضافة $' + safeToFixed(amt) + ' للحساب ✅', 'success');
 }
 
-// Payment Methods Management
+// Payment Methods Management - THE FIXED VERSION
 function openEditPM() {
   const pm = DB.paymentMethods;
   document.getElementById('pm-binance-addr').value = pm.binance?.addr || '';
@@ -1343,23 +1346,41 @@ async function savePaymentMethods() {
     ];
     
     for (const m of methods) {
+      // Update local DB first
       DB.paymentMethods[m.method] = { ...m.data, active: m.active };
+      
+      // Then try to update Supabase if available
       if (useSupabase && supabase) {
         try {
-          const { error } = await supabase.from('payment_methods').upsert({ method: m.method, data: m.data, active: m.active }, { onConflict: 'method' });
-          if (error) console.error('Error saving', m.method, error);
+          const { error } = await supabase
+            .from('payment_methods')
+            .upsert({ 
+              method: m.method, 
+              data: m.data, 
+              active: m.active 
+            }, { 
+              onConflict: 'method' 
+            });
+          
+          if (error) {
+            console.error(`Error saving ${m.method}:`, error);
+            showToast(`خطأ في حفظ ${m.method}: ${error.message}`, 'error');
+          } else {
+            console.log(`Successfully saved ${m.method}`);
+          }
         } catch (err) {
-          console.error('Supabase error for', m.method, err);
+          console.error(`Exception saving ${m.method}:`, err);
         }
       }
     }
+    
     saveDB();
     closeModal('editPMModal');
     await refreshAllData();
     renderDashboard();
     showToast('تم حفظ الإعدادات بنجاح ✅', 'success');
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in savePaymentMethods:', error);
     showToast('حدث خطأ أثناء الحفظ', 'error');
   } finally {
     hideLoadingOverlay();
