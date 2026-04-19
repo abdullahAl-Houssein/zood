@@ -1035,6 +1035,8 @@ function renderDRc() {
   }).join('');
 }
 
+
+
 function renderDUsers() {
     const tb = document.getElementById('dUsersBody');
     if (!tb) return;
@@ -1046,12 +1048,12 @@ function renderDUsers() {
             <td style="color:var(--gold);font-weight:700">$${safeToFixed(u.balance)}</td>
             <td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td>
             <td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}</td>
-            <td>
+            <td style="white-space: nowrap;">
                 ${u.role !== 'admin' ? `
-                    <button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')" style="background:rgba(0,224,154,0.1);color:var(--green);margin-bottom:5px">💰 إضافة</button>
-                    <button class="edit-btn" onclick="quickDeductBal(${u.id},'${u.name || ''}')" style="background:rgba(255,77,109,0.1);color:var(--red);border-color:rgba(255,77,109,0.2)">💸 خصم</button>
+                    <button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')" style="background:rgba(0,224,154,0.15);color:var(--green);margin:2px">💰 إضافة</button>
+                    <button class="edit-btn" onclick="quickDeductBal(${u.id},'${u.name || ''}')" style="background:rgba(255,77,109,0.15);color:var(--red);margin:2px">💸 خصم</button>
                 ` : '—'}
-            </td>
+            <\/td>
         </tr>
     `).join('');
     
@@ -1059,19 +1061,25 @@ function renderDUsers() {
     const pending = DB.orders.filter(o => o.status === 'pending');
     const pb = document.getElementById('dPendingBody');
     if (pb) {
-        pb.innerHTML = pending.length ? pending.map((o, idx) => `
-            <tr>
-                <td style="font-weight:600">${o.user || ''}</td>
-                <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}</td>
-                <td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}</td>
-                <td>
-                    <button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button>
-                    <button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button>
-                </td>
-            </tr>
-        `).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
+        if (pending.length) {
+            pb.innerHTML = pending.map((o, idx) => `
+                <tr>
+                    <td style="font-weight:600">${o.user || ''}</td>
+                    <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}</td>
+                    <td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}</td>
+                    <td>
+                        <button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button>
+                        <button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button>
+                    <\/td>
+                </tr>
+            `).join('');
+        } else {
+            pb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
+        }
     }
 }
+
+
 // خصم رصيد من مستخدم
 async function quickDeductBal(uid, name) {
     const amt = parseFloat(prompt('💰 أدخل المبلغ لخصمه من رصيد ' + name + ' ($):'));
@@ -1080,7 +1088,7 @@ async function quickDeductBal(uid, name) {
         return;
     }
     
-    // البحث عن المستخدم وجلب رصيده الحالي
+    // البحث عن المستخدم
     let currentBalance = 0;
     let userIndex = -1;
     
@@ -1121,7 +1129,6 @@ async function quickDeductBal(uid, name) {
             return;
         }
         
-        // تسجيل المعاملة
         await supabase.from('transactions').insert({
             user_id: uid,
             type: 'debit',
@@ -1130,7 +1137,6 @@ async function quickDeductBal(uid, name) {
             transaction_date: new Date().toLocaleString('ar')
         });
         
-        // تسجيل الأمر
         await supabase.from('orders').insert({
             user: name,
             user_id: uid,
@@ -1169,6 +1175,7 @@ async function quickDeductBal(uid, name) {
     renderDashboard();
     showToast(`✅ تم خصم $${amt.toFixed(2)} من رصيد ${name}`, 'success');
 }
+
 function renderDOrders() {
   const tb = document.getElementById('dOrdersBody'); if (!tb) return;
   tb.innerHTML = [...DB.orders].reverse().map(o => `<tr>
