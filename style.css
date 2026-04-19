@@ -2974,3 +2974,59 @@ html, body {
         width: 100%;
     }
 }
+/* Loading spinner for QR upload */
+.qr-loading {
+    position: relative;
+    display: inline-block;
+}
+
+.qr-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    margin: -15px 0 0 -15px;
+    border: 3px solid rgba(245,200,66,0.2);
+    border-top: 3px solid var(--gold);
+    border-radius: 50%;
+    animation: qrSpin 0.8s linear infinite;
+}
+
+@keyframes qrSpin {
+    to { transform: rotate(360deg); }
+}
+
+.af-qr-box.loading {
+    background: rgba(0,0,0,0.3);
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.af-qr-box.loading img {
+    display: none !important;
+}
+
+.af-qr-box.loading::before {
+    content: '🔄 جاري تحميل الباركود...';
+    display: block;
+    text-align: center;
+    color: var(--gold);
+    font-size: 0.85rem;
+    padding: 20px;
+}
+
+/* Image loading state */
+.af-qr-box img.loading {
+    opacity: 0.3;
+    filter: blur(2px);
+}
+
+.af-qr-box img.loaded {
+    opacity: 1;
+    filter: blur(0);
+    transition: all 0.3s ease;
+}
