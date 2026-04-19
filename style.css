@@ -2915,3 +2915,62 @@ html, body {
         z-index: 10;
     }
 }
+/* Fix for QR image display */
+.af-qr-box img {
+    max-width: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: 200px !important;
+    display: block !important;
+    margin: 0 auto !important;
+    object-fit: contain !important;
+}
+
+/* Fix for scrolling */
+.modal-ov {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+.modal-box {
+    overflow-y: visible !important;
+}
+
+.af-step {
+    overflow-y: visible !important;
+}
+
+/* Ensure buttons are visible */
+.af-step-footer {
+    margin-top: 20px;
+    padding-bottom: 10px;
+}
+
+/* Fix for mobile */
+@media (max-width: 768px) {
+    .modal-box {
+        max-height: 90vh !important;
+        overflow-y: auto !important;
+    }
+    
+    .af-progress {
+        position: sticky;
+        top: 0;
+        background: var(--dark3);
+        z-index: 10;
+        padding: 12px;
+    }
+    
+    .af-step {
+        padding-bottom: 30px;
+    }
+    
+    .af-step-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .af-step-footer button {
+        width: 100%;
+    }
+}
