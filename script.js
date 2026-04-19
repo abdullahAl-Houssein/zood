@@ -114,6 +114,36 @@ function closeModal(id) {
 }
 
 // ============================================================
+// QR LOADING INDICATORS
+// ============================================================
+function showQrLoading(show) {
+    const qrBox = document.getElementById('afQrBox');
+    const imgEl = document.getElementById('afQrImg');
+    const fallbackEl = document.getElementById('afQrFallback');
+    
+    if (qrBox) {
+        if (show) {
+            qrBox.classList.add('loading');
+            if (imgEl) imgEl.style.display = 'none';
+            if (fallbackEl) fallbackEl.style.display = 'none';
+        } else {
+            qrBox.classList.remove('loading');
+        }
+    }
+}
+
+function setImageLoading(imgElement, isLoading) {
+    if (!imgElement) return;
+    if (isLoading) {
+        imgElement.classList.add('loading');
+        imgElement.classList.remove('loaded');
+    } else {
+        imgElement.classList.remove('loading');
+        imgElement.classList.add('loaded');
+    }
+}
+
+// ============================================================
 // SUPABASE FUNCTIONS
 // ============================================================
 async function initSupabase() {
@@ -613,20 +643,28 @@ function afGoStep2() {
   const fallbackEl = document.getElementById('afQrFallback');
   const qrUrl = pm.qr || '';
   
+  showQrLoading(true);
+  
   if (imgEl && fallbackEl) {
     if (qrUrl && qrUrl !== '' && (qrUrl.startsWith('http') || qrUrl.startsWith('https'))) {
       imgEl.style.display = 'block';
       imgEl.style.maxWidth = '100%';
       imgEl.style.height = 'auto';
+      
+      setImageLoading(imgEl, true);
+      
       imgEl.src = qrUrl + '?t=' + Date.now();
       imgEl.onload = function() {
         console.log('QR image loaded successfully');
-        this.style.opacity = '1';
+        setImageLoading(imgEl, false);
+        showQrLoading(false);
         fallbackEl.style.display = 'none';
       };
       imgEl.onerror = function() {
         console.log('QR image failed to load');
-        this.style.display = 'none';
+        setImageLoading(imgEl, false);
+        showQrLoading(false);
+        imgEl.style.display = 'none';
         fallbackEl.style.display = 'block';
         fallbackEl.innerHTML = `
           <div style="font-size:2rem;margin-bottom:12px">💳</div>
@@ -640,6 +678,7 @@ function afGoStep2() {
       };
     } else {
       console.log('No valid QR URL, showing fallback');
+      showQrLoading(false);
       imgEl.style.display = 'none';
       fallbackEl.style.display = 'block';
       fallbackEl.innerHTML = `
@@ -941,7 +980,7 @@ function renderDTg() {
 
 function renderDSoc() {
   const tb = document.getElementById('dSocBody'); if (!tb) return;
-  tb.innerHTML = DB.socialPackages.map(p => `<td>
+  tb.innerHTML = DB.socialPackages.map(p => `<tr>
     <td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}</td>
     <td>${p.type || ''}</td><td style="font-weight:700">${safeFormatNumber(p.qty)}</td>
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
@@ -976,7 +1015,7 @@ function renderDRc() {
   const validPackages = (DB.rechargePkgs || []).filter(pkg => pkg && pkg.id !== undefined);
   
   if (validPackages.length === 0) {
-    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
+    tb.innerHTML = '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
     return;
   }
   
@@ -1004,7 +1043,7 @@ function renderDUsers() {
     <td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td>
     <td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}</td>
     <td>${u.role !== 'admin' ? `<button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')">+ رصيد</button>` : '—'}</td>
-  <tr>`).join('');
+  </tr>`).join('');
   
   const pending = DB.orders.filter(o => o.status === 'pending');
   const pb = document.getElementById('dPendingBody');
@@ -1366,7 +1405,6 @@ async function confirmAdminAddBal() {
 
 let selectedQRFile = null;
 
-// Initialize file upload listener
 function initFileUpload() {
     const fileInput = document.getElementById('shamQrFile');
     if (fileInput) {
@@ -1400,7 +1438,6 @@ function initFileUpload() {
     }
 }
 
-// Upload QR code to Supabase Storage and return URL
 async function uploadQRCodeAndGetURL(file) {
     if (!file) return null;
     
@@ -1408,6 +1445,16 @@ async function uploadQRCodeAndGetURL(file) {
         showToast('قاعدة البيانات غير متصلة', 'error');
         return null;
     }
+    
+    const previewDiv = document.getElementById('shamQrPreview');
+    const previewImg = document.getElementById('shamQrPreviewImg');
+    
+    if (previewDiv && previewImg) {
+        previewDiv.classList.add('loading');
+        previewImg.style.opacity = '0.3';
+    }
+    
+    showLoadingOverlay('جاري رفع الصورة...');
     
     try {
         const fileExt = file.name.split('.').pop();
@@ -1425,6 +1472,8 @@ async function uploadQRCodeAndGetURL(file) {
         if (error) {
             console.error('Upload error:', error);
             showToast('فشل رفع الصورة: ' + error.message, 'error');
+            if (previewDiv) previewDiv.classList.remove('loading');
+            if (previewImg) previewImg.style.opacity = '1';
             return null;
         }
         
@@ -1437,24 +1486,52 @@ async function uploadQRCodeAndGetURL(file) {
         const publicUrl = urlData.publicUrl;
         console.log('Public URL:', publicUrl);
         
+        if (previewImg && previewDiv) {
+            previewImg.src = publicUrl;
+            previewImg.onload = function() {
+                previewDiv.classList.remove('loading');
+                previewImg.style.opacity = '1';
+                previewImg.style.display = 'block';
+            };
+            previewImg.onerror = function() {
+                previewDiv.classList.remove('loading');
+                previewImg.style.opacity = '1';
+            };
+        }
+        
         return publicUrl;
         
     } catch (error) {
         console.error('Error uploading:', error);
         showToast('حدث خطأ أثناء رفع الصورة', 'error');
+        if (previewDiv) previewDiv.classList.remove('loading');
+        if (previewImg) previewImg.style.opacity = '1';
         return null;
+    } finally {
+        hideLoadingOverlay();
     }
 }
 
-// Save payment methods - Automatically uploads QR if selected
 async function savePaymentMethods() {
     showLoadingOverlay('جاري حفظ الإعدادات...');
     try {
         let qrUrl = document.getElementById('pm-sham-qr')?.value.trim() || '';
         
-        // If there's a selected file, upload it first
         if (selectedQRFile) {
+            const saveBtn = document.querySelector('#editPMModal .m-confirm');
+            const originalText = saveBtn?.innerHTML;
+            if (saveBtn) {
+                saveBtn.innerHTML = '<span class="loading-spinner-small"></span> جاري الرفع...';
+                saveBtn.disabled = true;
+            }
+            
             qrUrl = await uploadQRCodeAndGetURL(selectedQRFile);
+            
+            if (saveBtn) {
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            }
+            
             if (qrUrl) {
                 const qrInput = document.getElementById('pm-sham-qr');
                 if (qrInput) qrInput.value = qrUrl;
@@ -1540,13 +1617,11 @@ async function savePaymentMethods() {
     }
 }
 
-// Open Edit Payment Methods Modal
 function openEditPM() {
     const pm = DB.paymentMethods;
     
     console.log('Opening Edit PM - Current ShamCash data:', pm.shamcash);
     
-    // Binance fields
     const binanceAddr = document.getElementById('pm-binance-addr');
     if (binanceAddr) binanceAddr.value = pm.binance?.addr || '';
     const binanceUid = document.getElementById('pm-binance-uid');
@@ -1556,7 +1631,6 @@ function openEditPM() {
     const binanceActive = document.getElementById('pm-binance-active');
     if (binanceActive) binanceActive.checked = pm.binance?.active || false;
     
-    // ShamCash fields
     const shamNum = document.getElementById('pm-sham-num');
     if (shamNum) shamNum.value = pm.shamcash?.walletAddress || pm.shamcash?.num || '';
     const shamName = document.getElementById('pm-sham-name');
@@ -1568,7 +1642,6 @@ function openEditPM() {
     const shamActive = document.getElementById('pm-sham-active');
     if (shamActive) shamActive.checked = pm.shamcash?.active || false;
     
-    // Western Union fields
     const wuName = document.getElementById('pm-wu-name');
     if (wuName) wuName.value = pm.western?.ownerName || '';
     const wuCountry = document.getElementById('pm-wu-country');
@@ -1576,7 +1649,6 @@ function openEditPM() {
     const wuActive = document.getElementById('pm-wu-active');
     if (wuActive) wuActive.checked = pm.western?.active || false;
     
-    // Show QR preview if exists
     const existingQr = pm.shamcash?.qr;
     if (existingQr && existingQr !== '' && (existingQr.startsWith('http') || existingQr.startsWith('https'))) {
         const previewImg = document.getElementById('shamQrPreviewImg');
@@ -1591,18 +1663,15 @@ function openEditPM() {
         if (previewDiv) previewDiv.style.display = 'none';
     }
     
-    // Reset file selection
     selectedQRFile = null;
     const fileInput = document.getElementById('shamQrFile');
     if (fileInput) fileInput.value = '';
     
-    // Initialize file upload listener
     initFileUpload();
     
     openModal('editPMModal');
 }
 
-// Switch between payment method tabs
 function switchPMTab(key, el) {
     const buttons = document.querySelectorAll('#editPMModal .tab-btn');
     if (buttons) {
@@ -1618,7 +1687,6 @@ function switchPMTab(key, el) {
     if (target) target.classList.add('active');
 }
 
-// Handle QR file selection (for preview only)
 function handleQrUpload(event, type) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1643,7 +1711,6 @@ function handleQrUpload(event, type) {
     }
 }
 
-// Preview QR from URL
 function previewQrUrl(type) {
     if (type === 'shamcash') {
         const url = document.getElementById('pm-sham-qr')?.value.trim() || '';
