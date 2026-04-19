@@ -535,7 +535,7 @@ function renderTxList(type) {
 }
 
 // ============================================================
-// ADD FUNDS WITH QR FROM DATABASE - COMPLETELY FIXED
+// ADD FUNDS WITH QR FROM DATABASE - USING SUPABASE STORAGE
 // ============================================================
 let currentAddFundsAmount = 0;
 
@@ -612,7 +612,7 @@ function afGoStep2() {
   console.log('QR URL:', qrUrl);
   
   if (imgEl) {
-    if (qrUrl && qrUrl !== '' && (qrUrl.startsWith('http') || qrUrl.startsWith('https') || qrUrl.startsWith('data:image'))) {
+    if (qrUrl && qrUrl !== '' && (qrUrl.startsWith('http') || qrUrl.startsWith('https'))) {
       imgEl.style.display = 'block';
       imgEl.style.maxWidth = '100%';
       imgEl.style.height = 'auto';
@@ -878,7 +878,7 @@ function renderDashboard() {
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
     <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
   </tr>`).join('') ||
-    '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
+    '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
 }
 
 function renderDNum() {
@@ -923,7 +923,7 @@ function renderDTg() {
 
 function renderDSoc() {
   const tb = document.getElementById('dSocBody'); if (!tb) return;
-  tb.innerHTML = DB.socialPackages.map(p => `<td>
+  tb.innerHTML = DB.socialPackages.map(p => `<tr>
     <td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}</td>
     <td>${p.type || ''}</td><td style="font-weight:700">${safeFormatNumber(p.qty)}</td>
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
@@ -938,7 +938,7 @@ function renderDTgV() {
     <td style="color:var(--text2);font-size:.82rem">${p.desc || ''}</td>
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
     <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف</button></td>
-  </tr>`).join('');
+  <tr>`).join('');
 }
 
 function renderDGames() {
@@ -948,7 +948,7 @@ function renderDGames() {
     <td style="font-weight:600">${p.package || ''}</td>
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
     <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
-  <tr>`).join('');
+  </tr>`).join('');
 }
 
 function renderDRc() {
@@ -958,7 +958,7 @@ function renderDRc() {
   const validPackages = (DB.rechargePkgs || []).filter(pkg => pkg && pkg.id !== undefined);
   
   if (validPackages.length === 0) {
-    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن</td></tr>';
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
     return;
   }
   
@@ -997,8 +997,8 @@ function renderDUsers() {
     <td>
       <button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button>
       <button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button>
-      </td>
-  </tr>`).join('') : '<td><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة</td></tr>';
+    </td>
+  </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
 }
 
 function renderDOrders() {
@@ -1009,7 +1009,7 @@ function renderDOrders() {
     <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
     <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
-  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
+  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
 }
 
 function renderDPM() {
@@ -1343,7 +1343,7 @@ async function confirmAdminAddBal() {
 }
 
 // ============================================================
-// PAYMENT METHODS MANAGEMENT - COMPLETELY FIXED
+// PAYMENT METHODS MANAGEMENT - WITH SUPABASE STORAGE
 // ============================================================
 
 function openEditPM() {
@@ -1380,7 +1380,7 @@ function openEditPM() {
   if (wuActive) wuActive.checked = pm.western?.active || false;
   
   // Show QR preview if exists
-  if (pm.shamcash?.qr) {
+  if (pm.shamcash?.qr && pm.shamcash.qr.startsWith('http')) {
     const previewImg = document.getElementById('shamQrPreviewImg');
     const previewDiv = document.getElementById('shamQrPreview');
     if (previewImg && previewDiv) {
@@ -1403,7 +1403,49 @@ function switchPMTab(key, el) {
 async function savePaymentMethods() {
   showLoadingOverlay('جاري حفظ الإعدادات...');
   try {
-    const shamcashQr = document.getElementById('pm-sham-qr')?.value.trim() || '';
+    // Handle QR upload if there's a file
+    const qrFileInput = document.getElementById('shamQrFile');
+    let qrUrl = document.getElementById('pm-sham-qr')?.value.trim() || '';
+    
+    if (qrFileInput && qrFileInput.files && qrFileInput.files.length > 0) {
+      const file = qrFileInput.files[0];
+      
+      if (useSupabase && supabase) {
+        // Upload to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `shamcash_qr_${Date.now()}.${fileExt}`;
+        const filePath = `public/${fileName}`;
+        
+        const { data, error } = await supabase.storage
+          .from('qr-codes')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+        
+        if (error) {
+          console.error('Upload error:', error);
+          showToast('فشل رفع الصورة: ' + error.message, 'error');
+        } else {
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('qr-codes')
+            .getPublicUrl(filePath);
+          
+          qrUrl = urlData.publicUrl;
+          console.log('Uploaded QR URL:', qrUrl);
+          showToast('تم رفع الصورة بنجاح ✅', 'success');
+        }
+      } else {
+        // Fallback to base64 for local storage
+        const reader = new FileReader();
+        qrUrl = await new Promise((resolve) => {
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(file);
+        });
+      }
+    }
+    
     const methods = [
       { 
         method: 'binance', 
@@ -1420,7 +1462,7 @@ async function savePaymentMethods() {
           walletAddress: document.getElementById('pm-sham-num')?.value.trim() || '', 
           ownerName: document.getElementById('pm-sham-name')?.value.trim() || '',
           phoneNumber: document.getElementById('pm-sham-phone')?.value.trim() || '',
-          qr: shamcashQr 
+          qr: qrUrl 
         }, 
         active: document.getElementById('pm-sham-active')?.checked || false 
       },
@@ -1475,38 +1517,30 @@ async function savePaymentMethods() {
   }
 }
 
-function handleQrUpload(event, type) {
+async function handleQrUpload(event, type) {
   const file = event.target.files[0];
   if (!file) return;
   
-  // Check file size (max 2MB)
   if (file.size > 2 * 1024 * 1024) {
     showToast('حجم الصورة كبير جداً. الحد الأقصى 2 ميجابايت', 'error');
     return;
   }
   
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const imageUrl = e.target.result;
-    if (type === 'shamcash') {
-      const qrInput = document.getElementById('pm-sham-qr');
-      if (qrInput) {
-        qrInput.value = imageUrl;
-        console.log('QR code loaded, length:', imageUrl.length);
-      }
+  if (type === 'shamcash') {
+    // Preview the image
+    const reader = new FileReader();
+    reader.onload = function(e) {
       const previewImg = document.getElementById('shamQrPreviewImg');
       const previewDiv = document.getElementById('shamQrPreview');
       if (previewImg && previewDiv) {
-        previewImg.src = imageUrl;
+        previewImg.src = e.target.result;
         previewDiv.style.display = 'block';
       }
-      showToast('تم تحميل الصورة بنجاح ✅', 'success');
-    }
-  };
-  reader.onerror = function() {
-    showToast('حدث خطأ أثناء تحميل الصورة', 'error');
-  };
-  reader.readAsDataURL(file);
+    };
+    reader.readAsDataURL(file);
+    
+    showToast('تم تحديد الصورة. اضغط حفظ لحفظها', 'success');
+  }
 }
 
 function previewQrUrl(type) {
@@ -1515,7 +1549,7 @@ function previewQrUrl(type) {
     const previewImg = document.getElementById('shamQrPreviewImg');
     const previewDiv = document.getElementById('shamQrPreview');
     if (url && previewImg && previewDiv) {
-      if (url.startsWith('data:image') || url.startsWith('http')) {
+      if (url.startsWith('http') || url.startsWith('data:image')) {
         previewImg.src = url;
         previewDiv.style.display = 'block';
       } else {
