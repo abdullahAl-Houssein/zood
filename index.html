@@ -2365,19 +2365,26 @@ function afGoStep2() {
     return; 
   }
   
-  const pm = DB.paymentMethods.shamcash;
+  // جلب البيانات من DB
+  const pm = DB.paymentMethods.shamcash || { 
+    num: '0949277889', 
+    ownerName: 'عبدالحميد محمد الحسين', 
+    qr: '' 
+  };
   const qrUrl = pm.qr || '';
   
+  console.log('ShamCash data from DB:', pm);
+  
   document.getElementById('afAmtDisplay').textContent = '$' + amt.toFixed(2);
-  document.getElementById('afShamNum').textContent = pm.num || '0949277889';
-  document.getElementById('afShamName').textContent = pm.ownerName || 'عبدالحميد محمد الحسين';
+  document.getElementById('afShamNum').textContent = pm.num;
+  document.getElementById('afShamName').textContent = pm.ownerName;
   document.getElementById('afShamAmt').textContent = '$' + amt.toFixed(2) + ' USD';
   
   const imgEl = document.getElementById('afQrImg');
   const fallbackEl = document.getElementById('afQrFallback');
   
   if (imgEl && fallbackEl) {
-    if (qrUrl && qrUrl !== '') {
+    if (qrUrl && qrUrl !== '' && (qrUrl.startsWith('http') || qrUrl.startsWith('data:image'))) {
       imgEl.style.display = 'block';
       imgEl.style.opacity = '0.5';
       imgEl.onload = function() {
@@ -2387,23 +2394,13 @@ function afGoStep2() {
       imgEl.onerror = function() {
         this.style.display = 'none';
         fallbackEl.style.display = 'block';
-        fallbackEl.innerHTML = `
-          <div style="font-size:2rem;margin-bottom:12px">💳</div>
-          <div>رقم محفظة شام كاش:</div>
-          <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0">${pm.num || '0949277889'}</div>
-          <button class="copy-btn" onclick="copyText('${pm.num || '0949277889'}')">📋 نسخ الرقم</button>
-        `;
+        showFallbackContent(fallbackEl, pm, amt);
       };
-      imgEl.src = qrUrl + '?t=' + Date.now(); // إضافة timestamp لتجنب الكاش
+      imgEl.src = qrUrl + '?t=' + Date.now();
     } else {
       imgEl.style.display = 'none';
       fallbackEl.style.display = 'block';
-      fallbackEl.innerHTML = `
-        <div style="font-size:2rem;margin-bottom:12px">💳</div>
-        <div>رقم محفظة شام كاش:</div>
-        <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0">${pm.num || '0949277889'}</div>
-        <button class="copy-btn" onclick="copyText('${pm.num || '0949277889'}')">📋 نسخ الرقم</button>
-      `;
+      showFallbackContent(fallbackEl, pm, amt);
     }
   }
   
@@ -2411,6 +2408,21 @@ function afGoStep2() {
   document.getElementById('afStep2').style.display = 'block';
   document.getElementById('afStep3').style.display = 'none';
   afUpdateProgress(2);
+}
+
+function showFallbackContent(container, pm, amt) {
+  container.innerHTML = `
+    <div style="font-size:2rem;margin-bottom:12px">💳</div>
+    <div style="font-weight:bold;margin-bottom:8px">رقم محفظة شام كاش:</div>
+    <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px">
+      ${pm.num || '0949277889'}
+    </div>
+    <div>👤 اسم الحساب: ${pm.ownerName || 'عبدالحميد محمد الحسين'}</div>
+    <div>💵 المبلغ: $${amt.toFixed(2)}</div>
+    <button class="copy-btn" onclick="copyText('${pm.num || '0949277889'}')" style="margin-top:15px;padding:8px 16px">
+      📋 نسخ الرقم
+    </button>
+  `;
 }
 function afGoStep3(){
   const amt=parseFloat(document.getElementById('addFundsAmt').value)||0;
@@ -3295,36 +3307,73 @@ function switchPMTab(key, el) {
   if (targetContent) targetContent.classList.add('active');
 }
 
-function savePaymentMethods() {
-  // تحديث البيانات من الحقول
-  DB.paymentMethods.binance = {
-    addr: document.getElementById('pm-binance-addr').value.trim(),
-    uid: document.getElementById('pm-binance-uid').value.trim(),
-    qr: document.getElementById('pm-binance-qr').value.trim(),
-    active: document.getElementById('pm-binance-active').checked
-  };
+async function savePaymentMethods() {
+  showLoadingOverlay('جاري حفظ الإعدادات...');
   
-  DB.paymentMethods.shamcash = {
-    num: document.getElementById('pm-sham-num').value.trim(),
-    ownerName: document.getElementById('pm-sham-name').value.trim(),
-    qr: document.getElementById('pm-sham-qr').value.trim(),
-    active: document.getElementById('pm-sham-active').checked
-  };
-  
-  DB.paymentMethods.western = {
-    ownerName: document.getElementById('pm-wu-name').value.trim(),
-    country: document.getElementById('pm-wu-country').value.trim(),
-    active: document.getElementById('pm-wu-active').checked
-  };
-  
-  // حفظ في localStorage
-  saveDB();
-  
-  // تحديث واجهة المستخدم
-  renderDPM();
-  
-  closeModal('editPMModal');
-  showToast('تم حفظ إعدادات الدفع بنجاح ✅', 'success');
+  try {
+    const shamcashQr = document.getElementById('pm-sham-qr').value.trim();
+    
+    // تجهيز البيانات
+    const methods = [
+      { 
+        method: 'binance', 
+        data: { 
+          addr: document.getElementById('pm-binance-addr').value.trim(), 
+          uid: document.getElementById('pm-binance-uid').value.trim(), 
+          qr: document.getElementById('pm-binance-qr').value.trim() 
+        }, 
+        active: document.getElementById('pm-binance-active').checked 
+      },
+      { 
+        method: 'shamcash', 
+        data: { 
+          num: document.getElementById('pm-sham-num').value.trim(), 
+          ownerName: document.getElementById('pm-sham-name').value.trim(), 
+          qr: shamcashQr 
+        }, 
+        active: document.getElementById('pm-sham-active').checked 
+      },
+      { 
+        method: 'western', 
+        data: { 
+          ownerName: document.getElementById('pm-wu-name').value.trim(), 
+          country: document.getElementById('pm-wu-country').value.trim() 
+        }, 
+        active: document.getElementById('pm-wu-active').checked 
+      }
+    ];
+    
+    // حفظ كل طريقة دفع
+    for (const m of methods) {
+      const { error } = await supabase
+        .from('payment_methods')
+        .upsert({ 
+          method: m.method, 
+          data: m.data, 
+          active: m.active 
+        }, { 
+          onConflict: 'method' 
+        });
+      
+      if (error) {
+        console.error('Error saving:', m.method, error);
+        showToast(`خطأ في حفظ ${m.method}`, 'error');
+      }
+    }
+    
+    // تحديث البيانات المحلية
+    await refreshAllData();
+    
+    closeModal('editPMModal');
+    renderDashboard();
+    showToast('تم حفظ الإعدادات بنجاح ✅', 'success');
+    
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('حدث خطأ أثناء الحفظ', 'error');
+  } finally {
+    hideLoadingOverlay();
+  }
 }
 
 function handleQrUpload(event, type) {
