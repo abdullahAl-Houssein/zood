@@ -792,35 +792,42 @@
       </div>
     </div>
     <!-- ShamCash -->
-    <div id="pmt-shamcash" class="tab-content">
-      <div class="fg"><label class="fl">رقم المحفظة شام كاش</label><input type="text" class="fi" id="pm-sham-num" placeholder="09XX XXX XXX"></div>
-      <div class="fg"><label class="fl">اسم صاحب المحفظة</label><input type="text" class="fi" id="pm-sham-name" placeholder="محمد أحمد"></div>
-      <div class="fg">
+    <!-- ShamCash -->
+<div id="pmt-shamcash" class="tab-content">
+    <div class="fg">
+        <label class="fl">عنوان محفظة شام كاش</label>
+        <input type="text" class="fi" id="pm-sham-num" placeholder="c8a4d105019df664d62048e38d986">
+    </div>
+    <div class="fg">
+        <label class="fl">اسم صاحب المحفظة</label>
+        <input type="text" class="fi" id="pm-sham-name" placeholder="عبدالحميد محمد الحسين">
+    </div>
+    <div class="fg">
         <label class="fl">رقم الهاتف (اختياري)</label>
-          <input type="text" class="fi" id="pm-sham-phone" placeholder="0949277889">
+        <input type="text" class="fi" id="pm-sham-phone" placeholder="0949277889">
     </div>
-      <div class="fg">
-    <label class="fl">صورة الباركود QR</label>
-    <div style="display:flex;flex-direction:column;gap:10px">
-        <div style="display:flex;gap:10px;align-items:center">
-            <label style="flex:1;padding:12px;background:var(--dark4);border:1.5px dashed rgba(245,200,66,0.3);border-radius:10px;cursor:pointer;text-align:center;font-size:0.85rem;color:var(--text2)">
-                📁 اختر صورة الباركود
-                <input type="file" id="shamQrFile" accept="image/*" style="display:none" onchange="handleQrUpload(event,'shamcash')">
-            </label>
+    <div class="fg">
+        <label class="fl">صورة الباركود QR</label>
+        <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <label style="flex:1;padding:12px;background:var(--dark4);border:1.5px dashed rgba(245,200,66,0.3);border-radius:10px;cursor:pointer;text-align:center;font-size:0.85rem;color:var(--text2);min-width:120px">
+                    📁 اختيار صورة
+                    <input type="file" id="shamQrFile" accept="image/*" style="display:none">
+                </label>
+                <button type="button" class="edit-btn" onclick="uploadQRCodeToStorage()" style="padding:12px 20px">📤 رفع الصورة</button>
+            </div>
+            <div id="shamQrPreview" style="display:none;text-align:center">
+                <img id="shamQrPreviewImg" src="" style="max-width:120px;border-radius:10px;border:2px solid rgba(245,200,66,0.4)">
+                <br><small style="color:var(--text3);font-size:0.75rem">الصورة المرفوعة</small>
+            </div>
+            <input type="text" class="fi" id="pm-sham-qr" placeholder="رابط الصورة (سيظهر تلقائياً)" readonly style="background:var(--dark4);direction:ltr">
         </div>
-        <div id="shamQrPreview" style="display:none;text-align:center">
-            <img id="shamQrPreviewImg" src="" style="max-width:120px;border-radius:10px;border:2px solid rgba(245,200,66,0.4)">
-            <br><small style="color:var(--text3);font-size:0.75rem">معاينة الباركود</small>
-        </div>
-        <input type="text" class="fi" id="pm-sham-qr" placeholder="أو الصق رابط الصورة هنا" oninput="previewQrUrl('shamcash')">
     </div>
-</div>
-      </div>
-      <div class="fg" style="display:flex;align-items:center;gap:12px">
+    <div class="fg" style="display:flex;align-items:center;gap:12px">
         <label class="fl" style="margin:0">تفعيل طريقة الدفع</label>
         <input type="checkbox" id="pm-sham-active" style="width:18px;height:18px;cursor:pointer">
-      </div>
     </div>
+</div>
     <!-- Western Union -->
     <div id="pmt-western" class="tab-content">
       <div class="fg"><label class="fl">الاسم الكامل</label><input type="text" class="fi" id="pm-wu-name" placeholder="Full Name"></div>
