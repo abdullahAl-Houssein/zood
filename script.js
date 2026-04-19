@@ -180,7 +180,6 @@ async function loadAllDataFromSupabase() {
     if (ordersRes.data) DB.orders = ordersRes.data;
     if (transactionsRes.data) DB.transactions = transactionsRes.data;
     
-    // Load payment methods from Supabase
     if (pmRes.data && pmRes.data.length > 0) {
       pmRes.data.forEach(pm => {
         if (pm.method && pm.data) {
@@ -536,7 +535,7 @@ function renderTxList(type) {
 }
 
 // ============================================================
-// ADD FUNDS WITH QR FROM DATABASE
+// ADD FUNDS WITH QR FROM DATABASE - FIXED
 // ============================================================
 let currentAddFundsAmount = 0;
 
@@ -586,7 +585,7 @@ function afGoStep2() {
   const qrUrl = pm.qr || '';
   
   if (imgEl && fallbackEl) {
-    if (qrUrl && qrUrl !== '' && (qrUrl.startsWith('http') || qrUrl.startsWith('data:image'))) {
+    if (qrUrl && qrUrl !== '' && (qrUrl.startsWith('http') || qrUrl.startsWith('https') || qrUrl.startsWith('data:image'))) {
       imgEl.style.display = 'block';
       imgEl.style.opacity = '0.5';
       imgEl.onload = function() {
@@ -837,7 +836,7 @@ function renderDashboard() {
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
     <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
   </tr>`).join('') ||
-    '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
+    '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
 }
 
 function renderDNum() {
@@ -956,7 +955,7 @@ function renderDUsers() {
     <td>
       <button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button>
       <button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button>
-      </td>
+    </td>
   </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة</td></tr>';
 }
 
@@ -974,7 +973,7 @@ function renderDOrders() {
 function renderDPM() {
   const pm = DB.paymentMethods;
   const cards = [
-    { key: 'binance', icon: '₿', name: 'Binance Pay / USDT', rows: [['العنوان', pm.binance?.addr], ['UID', pm.binance?.uid]], qr: pm.binance?.qr, active: pm.binance?.active, color: '#F0B90B' },
+    { key: 'binance', icon: '₿', name: 'Binance Pay / USDT', rows: [['عنوان المحفظة (TRC20)', pm.binance?.addr], ['UID', pm.binance?.uid]], qr: pm.binance?.qr, active: pm.binance?.active, color: '#F0B90B' },
     { key: 'shamcash', icon: '💳', name: 'شام كاش', rows: [['رقم المحفظة', pm.shamcash?.num], ['صاحب الحساب', pm.shamcash?.ownerName]], qr: pm.shamcash?.qr, active: pm.shamcash?.active, color: '#00C851' },
     { key: 'western', icon: '🌐', name: 'Western Union', rows: [['الاسم', pm.western?.ownerName], ['الدولة', pm.western?.country]], active: pm.western?.active, color: '#FFDD00' },
   ];
@@ -990,7 +989,7 @@ function renderDPM() {
       <div class="pm-details">
         ${c.rows.map(r => `<div class="pm-detail-row"><span>${r[0]}</span><span>${r[1] || '—'}</span></div>`).join('')}
       </div>
-      ${c.qr ? `<div class="pm-qr"><img src="${c.qr}" alt="QR" onerror="this.style.display='none'"></div>` : ''}
+      ${c.qr ? `<div class="pm-qr"><img src="${c.qr}" alt="QR" onerror="this.style.display='none'" style="max-width:100px;border-radius:8px;border:2px solid rgba(245,200,66,0.3)"></div>` : ''}
     </div>`).join('');
 }
 
