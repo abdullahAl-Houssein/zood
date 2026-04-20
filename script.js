@@ -30,9 +30,9 @@ const DEFAULT_DB = {
     { id: 1, game: 'PUBG Mobile', icon: '🎯', package: '60 UC', price: 0.99 },
   ],
   rechargePkgs: [
-    { id: 1, country: 'سوريا', operator: 'سيريتل', qty: 500, price: 1.99 },
-    { id: 2, country: 'سوريا', operator: 'MTN سوريا', qty: 1000, price: 3.59 },
-    { id: 3, country: 'العراق', operator: 'Zain العراق', qty: 5000, price: 3.99 },
+    { id: 1, country: 'سوريا', operator: 'سيريتل', quantity: 500, price: 1.99 },
+    { id: 2, country: 'سوريا', operator: 'MTN سوريا', quantity: 1000, price: 3.59 },
+    { id: 3, country: 'العراق', operator: 'Zain العراق', quantity: 5000, price: 3.99 },
   ],
   orders: [],
   transactions: [],
@@ -111,6 +111,76 @@ function openModal(id) {
 function closeModal(id) { 
   const modal = document.getElementById(id);
   if (modal) modal.classList.remove('open');
+}
+
+// ============================================================
+// CONFIRMATION MODAL FOR PURCHASE
+// ============================================================
+let pendingOrderData = null;
+
+function showPurchaseConfirmation(orderData) {
+    pendingOrderData = orderData;
+    
+    // إنشاء نافذة تأكيد مخصصة
+    const confirmModal = document.createElement('div');
+    confirmModal.className = 'modal-ov';
+    confirmModal.id = 'purchaseConfirmModal';
+    confirmModal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    
+    confirmModal.innerHTML = `
+        <div class="modal-box" style="max-width:450px;text-align:center;">
+            <div style="font-size:3rem;margin-bottom:15px">🛍️</div>
+            <div class="modal-title" style="margin-bottom:10px">تأكيد الشراء</div>
+            <div class="modal-sub" style="margin-bottom:20px">يرجى تأكيد معلومات الطلب</div>
+            
+            <div style="background:var(--dark3);border-radius:12px;padding:20px;margin-bottom:20px;text-align:right">
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+                    <span style="color:var(--text2)">الخدمة:</span>
+                    <span style="font-weight:600">${orderData.type}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+                    <span style="color:var(--text2)">التفاصيل:</span>
+                    <span style="font-weight:600">${orderData.detail}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+                    <span style="color:var(--text2)">السعر:</span>
+                    <span style="color:var(--gold);font-weight:700">$${orderData.price.toFixed(2)}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between">
+                    <span style="color:var(--text2)">رصيدك الحالي:</span>
+                    <span style="color:var(--green);font-weight:700">$${safeToFixed(currentUser?.balance)}</span>
+                </div>
+            </div>
+            
+            <div style="background:rgba(245,200,66,0.1);border-radius:10px;padding:12px;margin-bottom:20px;font-size:0.85rem;color:var(--text2)">
+                ⚠️ ملاحظة: سيتم إرسال طلبك إلى فريق الدعم وسيتم التواصل معك عبر واتساب خلال دقائق
+            </div>
+            
+            <div style="display:flex;gap:10px;justify-content:center">
+                <button class="m-cancel" onclick="closePurchaseConfirm()" style="padding:12px 24px">إلغاء</button>
+                <button class="m-confirm" onclick="confirmPurchase()" style="padding:12px 24px">تأكيد الشراء</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(confirmModal);
+    setTimeout(() => confirmModal.classList.add('open'), 10);
+}
+
+function closePurchaseConfirm() {
+    const modal = document.getElementById('purchaseConfirmModal');
+    if (modal) {
+        modal.classList.remove('open');
+        setTimeout(() => modal.remove(), 300);
+    }
+    pendingOrderData = null;
+}
+
+function confirmPurchase() {
+    if (pendingOrderData) {
+        closePurchaseConfirm();
+        sendWhatsAppOrderRequest(pendingOrderData);
+    }
 }
 
 // ============================================================
@@ -200,20 +270,15 @@ async function loadAllDataFromSupabase() {
     if (socialRes.data) DB.socialPackages = socialRes.data;
     if (tgVerifyRes.data) DB.tgVerifyPackages = tgVerifyRes.data;
     if (gamesRes.data) DB.gamePackages = gamesRes.data;
+    
     if (rechargeRes.data) {
       DB.rechargePkgs = rechargeRes.data.map(pkg => ({
         ...pkg,
-        qty: pkg.qty || 0,
+        quantity: pkg.quantity || 0,
         price: pkg.price || 0
       }));
     }
-    if (rechargeRes.data) {
-    DB.rechargePkgs = rechargeRes.data.map(pkg => ({
-        ...pkg,
-        qty: pkg.quantity || 0,  // تعيين qty من quantity للتوافق مع الكود الحالي
-        price: pkg.price || 0
-    }));
-}
+    
     if (ordersRes.data) DB.orders = ordersRes.data;
     if (transactionsRes.data) DB.transactions = transactionsRes.data;
     
@@ -268,7 +333,7 @@ function ensureDBSchema() {
   
   DB.rechargePkgs = DB.rechargePkgs.map(pkg => ({
     ...pkg,
-    qty: pkg.qty || 0,
+    quantity: pkg.quantity || 0,
     price: pkg.price || 0
   }));
 }
@@ -451,10 +516,12 @@ function renderNumbersByType(type) {
         <div><div class="pc-name">${icons[n.type]} ${n.operator || ''}</div></div>
         <span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? '✅ متاح' : '❌ مباع'}</span>
       </div>
-      <div class="pc-num">${n.phone || ''}</div>
+      <div class="pc-num" style="background:var(--dark4);color:var(--text3);font-style:italic">
+        🔒 الرقم متاح بعد الشراء
+      </div>
       <div class="pc-price">$${safeToFixed(n.price)} <span>/ رقم واحد</span></div>
       <button class="buy-btn" ${n.status !== 'available' ? 'disabled' : ''} onclick="openBuyNum(${n.id})">
-        ${n.status === 'available' ? '🛒 شراء الآن' : 'تم البيع'}
+        ${n.status === 'available' ? '📞 طلب الشراء عبر واتساب' : 'تم البيع'}
       </button>
     </div>`).join('');
 }
@@ -629,9 +696,6 @@ function afGoStep2() {
     active: true 
   };
   
-  console.log('ShamCash Data:', pm);
-  console.log('QR URL from DB:', pm.qr);
-  
   document.getElementById('afAmtDisplay').textContent = '$' + safeToFixed(amt);
   const walletAddressElement = document.getElementById('afShamNum');
   if (walletAddressElement) {
@@ -657,18 +721,14 @@ function afGoStep2() {
       imgEl.style.display = 'block';
       imgEl.style.maxWidth = '100%';
       imgEl.style.height = 'auto';
-      
       setImageLoading(imgEl, true);
-      
       imgEl.src = qrUrl + '?t=' + Date.now();
       imgEl.onload = function() {
-        console.log('QR image loaded successfully');
         setImageLoading(imgEl, false);
         showQrLoading(false);
         fallbackEl.style.display = 'none';
       };
       imgEl.onerror = function() {
-        console.log('QR image failed to load');
         setImageLoading(imgEl, false);
         showQrLoading(false);
         imgEl.style.display = 'none';
@@ -680,11 +740,10 @@ function afGoStep2() {
           <div>👤 اسم الحساب: ${pm.ownerName}</div>
           <div>💵 المبلغ: $${safeToFixed(amt)}</div>
           <button class="copy-btn" onclick="copyText('${pm.walletAddress || pm.num}')" style="margin-top:15px;padding:8px 16px">📋 نسخ العنوان</button>
-          ${pm.phoneNumber ? `<div style="margin-top:10px;font-size:0.8rem;color:var(--text3)">📞 رقم الهاتف (للتأكيد): ${pm.phoneNumber}</div>` : ''}
+          ${pm.phoneNumber ? `<div style="margin-top:10px;font-size:0.8rem;color:var(--text3)">📞 رقم الهاتف: ${pm.phoneNumber}</div>` : ''}
         `;
       };
     } else {
-      console.log('No valid QR URL, showing fallback');
       showQrLoading(false);
       imgEl.style.display = 'none';
       fallbackEl.style.display = 'block';
@@ -695,7 +754,7 @@ function afGoStep2() {
         <div>👤 اسم الحساب: ${pm.ownerName}</div>
         <div>💵 المبلغ: $${safeToFixed(amt)}</div>
         <button class="copy-btn" onclick="copyText('${pm.walletAddress || pm.num}')" style="margin-top:15px;padding:8px 16px">📋 نسخ العنوان</button>
-        ${pm.phoneNumber ? `<div style="margin-top:10px;font-size:0.8rem;color:var(--text3)">📞 رقم الهاتف (للتأكيد): ${pm.phoneNumber}</div>` : ''}
+        ${pm.phoneNumber ? `<div style="margin-top:10px;font-size:0.8rem;color:var(--text3)">📞 رقم الهاتف: ${pm.phoneNumber}</div>` : ''}
       `;
     }
   }
@@ -707,22 +766,6 @@ function afGoStep2() {
   if (step2) step2.style.display = 'block';
   if (step3) step3.style.display = 'none';
   afUpdateProgress(2);
-}
-
-function showFallbackContent(pm, amt) {
-  const fallbackEl = document.getElementById('afQrFallback');
-  if (fallbackEl) {
-    fallbackEl.style.display = 'block';
-    fallbackEl.innerHTML = `
-      <div style="font-size:2rem;margin-bottom:12px">💳</div>
-      <div style="font-weight:bold;margin-bottom:8px">عنوان محفظة شام كاش:</div>
-      <div style="font-size:1rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px;word-break:break-all">${pm.walletAddress || pm.num || 'c8a4d105019df664d62048e38d986'}</div>
-      <div>👤 اسم الحساب: ${pm.ownerName || 'عبدالحميد محمد الحسين'}</div>
-      <div>💵 المبلغ: $${safeToFixed(amt)}</div>
-      <button class="copy-btn" onclick="copyText('${pm.walletAddress || pm.num || 'c8a4d105019df664d62048e38d986'}')" style="margin-top:15px;padding:8px 16px">📋 نسخ العنوان</button>
-      ${pm.phoneNumber ? `<div style="margin-top:10px;font-size:0.8rem;color:var(--text3)">📞 رقم الهاتف (للتأكيد): ${pm.phoneNumber}</div>` : ''}
-    `;
-  }
 }
 
 function afGoStep3() {
@@ -778,22 +821,16 @@ async function confirmAddFundsRequest() {
 }
 
 // ============================================================
-// BUY LOGIC
-// ============================================================
-let pendingBuy = null;
-
-// ============================================================
-// MODIFIED BUY LOGIC - SEND WHATSAPP REQUEST INSTEAD
+// MODIFIED BUY LOGIC - WITH CONFIRMATION MODAL
 // ============================================================
 
-// فتح شراء رقم - إرسال طلب واتساب بدلاً من الشراء المباشر
 function openBuyNum(id) {
     if (!currentUser) { showPage('login'); return; }
     const n = DB.numbers.find(x => x.id === id);
     if (!n || n.status !== 'available') { showToast('هذا الرقم غير متاح', 'error'); return; }
     
-    // إرسال طلب شراء عبر واتساب
-    sendWhatsAppOrderRequest({
+    // عرض نافذة التأكيد بدلاً من الإرسال المباشر
+    showPurchaseConfirmation({
         type: 'رقم ' + (n.type === 'phone' ? 'هاتفي' : n.type === 'whatsapp' ? 'واتساب' : 'تلغرام'),
         detail: n.operator ? n.operator + ' - ' + n.country : n.country,
         price: n.price,
@@ -802,12 +839,11 @@ function openBuyNum(id) {
     });
 }
 
-// فتح شراء خدمة مباشرة - إرسال طلب واتساب
 function openBuyDirect(desc, price, cb, category, pkgId) {
     if (!currentUser) { showPage('login'); return; }
     
-    // إرسال طلب شراء عبر واتساب
-    sendWhatsAppOrderRequest({
+    // عرض نافذة التأكيد بدلاً من الإرسال المباشر
+    showPurchaseConfirmation({
         type: category === 'social' ? 'باقة سوشيال ميديا' :
                category === 'tgverify' ? 'توثيق تلغرام' :
                category === 'game' ? 'شحن لعبة' : 'خدمة',
@@ -818,7 +854,6 @@ function openBuyDirect(desc, price, cb, category, pkgId) {
     });
 }
 
-// دالة إرسال طلب الشراء عبر واتساب
 function sendWhatsAppOrderRequest(orderData) {
     if (!currentUser) {
         showPage('login');
@@ -834,33 +869,20 @@ function sendWhatsAppOrderRequest(orderData) {
     message += `📝 *تفاصيل الخدمة:* ${orderData.detail}\n`;
     message += `💰 *السعر:* $${orderData.price.toFixed(2)}\n`;
     message += `📅 *تاريخ الطلب:* ${new Date().toLocaleString('ar')}\n\n`;
-    message += `🔗 *للتواصل مع العميل:* يرجى الرد على هذا الرقم\n`;
-    message += `📞 *رقم العميل:* متوفر في حساب الإدارة\n\n`;
     message += `✅ *يرجى تأكيد الطلب وتزويد العميل بالبيانات المطلوبة*`;
     
-    // إضافة معلومات إضافية حسب نوع الخدمة
-   // if (orderData.phone) {
-      //  message += `\n📱 *الرقم المطلوب:* ${orderData.phone}`;
- //   }
-    
-    // ترميز الرسالة للـ URL
     const encodedMessage = encodeURIComponent(message);
-    
-    // رقم واتساب الإدارة (يمكن تغييره)
     const adminWhatsApp = '963949277889';
     
-    // فتح واتساب مع الرسالة
     window.open(`https://wa.me/${adminWhatsApp}?text=${encodedMessage}`, '_blank');
     
-    // تسجيل الطلب في قاعدة البيانات كـ "قيد الانتظار"
     saveOrderToDatabase(orderData);
-    
     showToast('✅ تم إرسال طلبك! سيتم التواصل معك عبر واتساب خلال دقائق', 'success');
 }
 
-// حفظ الطلب في قاعدة البيانات
 async function saveOrderToDatabase(orderData) {
     const order = {
+        id: Date.now(),
         user: currentUser.name,
         user_id: currentUser.id,
         type: orderData.type,
@@ -875,47 +897,9 @@ async function saveOrderToDatabase(orderData) {
     if (useSupabase && supabase) {
         await supabase.from('orders').insert(order);
     } else {
-        DB.orders.push({ ...order, id: Date.now() });
+        DB.orders.push(order);
         saveDB();
     }
-}
-
-// تحديث دالة showBuyModal - إزالة التأكيد المباشر
-function showBuyModal(desc, price, onConfirm) {
-    // هذه الدالة لم تعد مستخدمة بشكل مباشر، لكن نحتفظ بها للتوافق
-    sendWhatsAppOrderRequest({
-        type: 'خدمة',
-        detail: desc,
-        price: price
-    });
-}
-
-async function executeBuy() {
-  if (!pendingBuy) return;
-  const { price, _onConfirm } = pendingBuy;
-  if ((currentUser.balance || 0) < price) { showToast('رصيدك غير كافٍ! يرجى شحن المحفظة أولاً', 'error'); closeModal('buyModal'); return; }
-  
-  currentUser.balance = (currentUser.balance || 0) - price;
-  if (useSupabase && supabase) {
-    await supabase.from('users').update({ balance: currentUser.balance }).eq('id', currentUser.id);
-  } else {
-    const ui = DB.users.findIndex(u => u.id === currentUser.id);
-    if (ui !== -1) DB.users[ui].balance = currentUser.balance;
-    saveDB();
-  }
-  
-  const tx = { user_id: currentUser.id, type: 'debit', description: pendingBuy.desc || 'شراء خدمة', amount: price, transaction_date: new Date().toLocaleString('ar') };
-  if (useSupabase && supabase) {
-    await supabase.from('transactions').insert(tx);
-  } else {
-    DB.transactions.push({ ...tx, id: Date.now() });
-    saveDB();
-  }
-  
-  updateNav();
-  closeModal('buyModal');
-  if (_onConfirm) await _onConfirm();
-  pendingBuy = null;
 }
 
 // ============================================================
@@ -929,6 +913,7 @@ function switchRcTab(tab, el) {
   document.querySelectorAll('#page-recharge .tab-content').forEach(t => t.classList.remove('active'));
   document.getElementById('rc-' + tab).classList.add('active');
 }
+
 function selectRcOp(op, region) {
     rcState[region] = { op, pkg: null };
     const pkgs = DB.rechargePkgs.filter(p => p.operator === op);
@@ -936,7 +921,6 @@ function selectRcOp(op, region) {
     const g = document.getElementById('rcGrid' + cap);
     if (g) {
         g.innerHTML = pkgs.map(p => {
-            // استخدام quantity أو qty حسب ما هو متوفر
             const qtyValue = p.quantity || p.qty || 0;
             return `
                 <div class="rc-card" onclick="selectRcPkg('${region}',${p.id},this)">
@@ -951,6 +935,7 @@ function selectRcOp(op, region) {
     const d = document.getElementById('rcPkgs' + cap);
     if (d) d.style.display = 'block';
 }
+
 function selectRcPkg(region, pkgId, el) {
   const pkg = DB.rechargePkgs.find(p => p.id === pkgId);
   if (!rcState[region]) rcState[region] = {};
@@ -959,27 +944,21 @@ function selectRcPkg(region, pkgId, el) {
   document.querySelectorAll('#rcGrid' + cap + ' .rc-card').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
 }
+
 function doRecharge(region) {
   const st = rcState[region];
   if (!st || !st.op || !st.pkg) { showToast('اختر الشبكة والفئة أولاً', 'error'); return; }
   const cap = region.charAt(0).toUpperCase() + region.slice(1);
   const num = document.getElementById('rcNum' + cap)?.value.trim();
   if (!num) { showToast('أدخل رقم الهاتف', 'error'); return; }
-  openBuyDirect('شحن ' + safeFormatNumber(st.pkg.qty) + ' وحدة - ' + st.op + ' - ' + num, st.pkg.price, async () => {
-    const order = { user: currentUser.name, user_id: currentUser.id, type: 'شحن رصيد', detail: st.op + ' | ' + num + ' | ' + safeFormatNumber(st.pkg.qty) + ' وحدة', amount: st.pkg.price, status: 'done', order_time: new Date().toLocaleString('ar') };
-    if (useSupabase && supabase) {
-      await supabase.from('orders').insert(order);
-    } else {
-      DB.orders.push({ ...order, id: Date.now() });
-      saveDB();
-    }
-    showToast('تم شحن ' + safeFormatNumber(st.pkg.qty) + ' وحدة ✅', 'success');
-    rcState[region] = {};
-  });
+  
+  const qtyValue = st.pkg.quantity || st.pkg.qty || 0;
+  openBuyDirect('شحن ' + qtyValue.toLocaleString() + ' وحدة - ' + st.op + ' - ' + num, st.pkg.price);
+  rcState[region] = {};
 }
 
 // ============================================================
-// DASHBOARD
+// DASHBOARD (المختصر)
 // ============================================================
 function renderDashboard() {
   const avail = DB.numbers.filter(n => n.status === 'available').length;
@@ -1000,15 +979,6 @@ function renderDashboard() {
   
   renderDNum(); renderDWa(); renderDTg(); renderDSoc();
   renderDTgV(); renderDGames(); renderDRc(); renderDUsers(); renderDOrders(); renderDPM();
-  
-  const rb = document.getElementById('ovOrdersBody');
-  if (rb) rb.innerHTML = [...DB.orders].reverse().slice(0, 8).map(o => `
-    <tr><td style="font-weight:600">${o.user || ''}</td><td style="color:var(--text2);font-size:.75rem">${o.type || ''}</span></td>
-    <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
-    <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
-  </tr>`).join('') ||
-    '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
 }
 
 function renderDNum() {
@@ -1017,24 +987,24 @@ function renderDNum() {
   const tb = document.getElementById('dNumBody'); if (!tb) return;
   tb.innerHTML = nums.map(n => `<tr>
     <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td>
-    <td>📱 هاتفي</td><td>${countryFlags[n.country] || ''} ${n.country || ''}</td><td>${n.operator || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td>
-    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>
-    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
-    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td>
-  </tr>`).join('');
+    <td>📱 هاتفي<\/td><td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td><td>${n.operator || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td>
+    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td>
+    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف<\/button>
+    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}<\/button><\/td>
+  </table>`).join('');
 }
 
 function renderDWa() {
   const nums = DB.numbers.filter(n => n.type === 'whatsapp');
   const tb = document.getElementById('dWaBody'); if (!tb) return;
-  tb.innerHTML = nums.map(n => `</tr>
-    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td>
-    <td>${countryFlags[n.country] || ''} ${n.country || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td>
-    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>
-    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
-    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td>
+  tb.innerHTML = nums.map(n => `<tr>
+    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td>
+    <td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td>
+    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td>
+    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف<\/button>
+    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}<\/button><\/td>
   </tr>`).join('');
 }
 
@@ -1042,42 +1012,42 @@ function renderDTg() {
   const nums = DB.numbers.filter(n => n.type === 'telegram');
   const tb = document.getElementById('dTgBody'); if (!tb) return;
   tb.innerHTML = nums.map(n => `<tr>
-    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td>
-    <td>${countryFlags[n.country] || ''} ${n.country || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td>
-    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td>
-    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button>
-    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td>
+    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td>
+    <td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td>
+    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td>
+    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف<\/button>
+    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}<\/button><\/td>
   </tr>`).join('');
 }
 
 function renderDSoc() {
   const tb = document.getElementById('dSocBody'); if (!tb) return;
   tb.innerHTML = DB.socialPackages.map(p => `<tr>
-    <td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}</td>
-    <td>${p.type || ''}</td><td style="font-weight:700">${safeFormatNumber(p.qty)}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
-    <td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف</button></td>
-  </tr>`).join('');
+    <td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}<\/td>
+    <td>${p.type || ''}<\/td><td style="font-weight:700">${safeFormatNumber(p.qty)}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
+    <td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف<\/button><\/td>
+  <tr>`).join('');
 }
 
 function renderDTgV() {
   const tb = document.getElementById('dTgVerifyBody'); if (!tb) return;
   tb.innerHTML = DB.tgVerifyPackages.map(p => `<tr>
-    <td style="font-weight:600">${p.type || ''}</td>
-    <td style="color:var(--text2);font-size:.82rem">${p.desc || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
-    <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف</button></td>
+    <td style="font-weight:600">${p.type || ''}<\/td>
+    <td style="color:var(--text2);font-size:.82rem">${p.desc || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
+    <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف<\/button><\/td>
   </tr>`).join('');
 }
 
 function renderDGames() {
   const tb = document.getElementById('dGamesBody'); if (!tb) return;
   tb.innerHTML = DB.gamePackages.map(p => `<tr>
-    <td>${p.icon || '🎮'} ${p.game || ''}</td>
-    <td style="font-weight:600">${p.package || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
-    <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
+    <td>${p.icon || '🎮'} ${p.game || ''}<\/td>
+    <td style="font-weight:600">${p.package || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
+    <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف<\/button><\/td>
   </tr>`).join('');
 }
 
@@ -1085,14 +1055,12 @@ function renderDRc() {
     const tb = document.getElementById('dRcBody'); 
     if (!tb) return;
     
-    // التأكد من وجود البيانات
     if (!DB.rechargePkgs || DB.rechargePkgs.length === 0) {
         tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
         return;
     }
     
     tb.innerHTML = DB.rechargePkgs.map(pkg => {
-        // استخدام quantity بدلاً من qty
         const qtyValue = (pkg.quantity !== undefined && pkg.quantity !== null) ? pkg.quantity : 0;
         const priceValue = (pkg.price !== undefined && pkg.price !== null) ? pkg.price : 0;
         const operatorValue = pkg.operator || 'غير محدد';
@@ -1109,8 +1077,6 @@ function renderDRc() {
         `;
     }).join('');
 }
-
-
 
 function renderDUsers() {
     const tb = document.getElementById('dUsersBody');
@@ -1131,124 +1097,6 @@ function renderDUsers() {
             <\/td>
         </tr>
     `).join('');
-    
-    // طلبات شحن المحفظة المعلقة
-    const pending = DB.orders.filter(o => o.status === 'pending');
-    const pb = document.getElementById('dPendingBody');
-    if (pb) {
-        if (pending.length) {
-            pb.innerHTML = pending.map((o, idx) => `
-                <tr>
-                    <td style="font-weight:600">${o.user || ''}</td>
-                    <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}</td>
-                    <td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}</td>
-                    <td>
-                        <button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button>
-                        <button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button>
-                    <\/td>
-                </tr>
-            `).join('');
-        } else {
-            pb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
-        }
-    }
-}
-
-
-// خصم رصيد من مستخدم
-async function quickDeductBal(uid, name) {
-    const amt = parseFloat(prompt('💰 أدخل المبلغ لخصمه من رصيد ' + name + ' ($):'));
-    if (!amt || amt <= 0 || isNaN(amt)) {
-        showToast('الرجاء إدخال مبلغ صحيح', 'error');
-        return;
-    }
-    
-    // البحث عن المستخدم
-    let currentBalance = 0;
-    let userIndex = -1;
-    
-    if (useSupabase && supabase) {
-        const { data: user } = await supabase.from('users').select('balance').eq('id', uid).single();
-        if (!user) {
-            showToast('المستخدم غير موجود', 'error');
-            return;
-        }
-        currentBalance = user.balance || 0;
-    } else {
-        userIndex = DB.users.findIndex(u => u.id === uid);
-        if (userIndex === -1) {
-            showToast('المستخدم غير موجود', 'error');
-            return;
-        }
-        currentBalance = DB.users[userIndex].balance || 0;
-    }
-    
-    // التحقق من كفاية الرصيد
-    if (currentBalance < amt) {
-        showToast(`❌ رصيد المستخدم غير كافٍ! الرصيد الحالي: $${currentBalance.toFixed(2)}`, 'error');
-        return;
-    }
-    
-    // تأكيد العملية
-    if (!confirm(`⚠️ هل أنت متأكد من خصم $${amt.toFixed(2)} من رصيد ${name}؟\n\n📊 الرصيد الحالي: $${currentBalance.toFixed(2)}\n📉 الرصيد بعد الخصم: $${(currentBalance - amt).toFixed(2)}`)) {
-        return;
-    }
-    
-    const newBalance = currentBalance - amt;
-    
-    if (useSupabase && supabase) {
-        const { error } = await supabase.from('users').update({ balance: newBalance }).eq('id', uid);
-        if (error) {
-            console.error('Error deducting balance:', error);
-            showToast('حدث خطأ أثناء خصم الرصيد', 'error');
-            return;
-        }
-        
-        await supabase.from('transactions').insert({
-            user_id: uid,
-            type: 'debit',
-            description: `💸 خصم رصيد من الإدارة - مبلغ: $${amt.toFixed(2)}`,
-            amount: amt,
-            transaction_date: new Date().toLocaleString('ar')
-        });
-        
-        await supabase.from('orders').insert({
-            user: name,
-            user_id: uid,
-            type: 'خصم رصيد (أدمن)',
-            detail: `💸 تم خصم $${amt.toFixed(2)} من الرصيد`,
-            amount: amt,
-            status: 'done',
-            order_time: new Date().toLocaleString('ar')
-        });
-    } else {
-        DB.users[userIndex].balance = newBalance;
-        
-        DB.transactions.push({
-            id: Date.now(),
-            user_id: uid,
-            type: 'debit',
-            description: `💸 خصم رصيد من الإدارة - مبلغ: $${amt.toFixed(2)}`,
-            amount: amt,
-            date: new Date().toLocaleString('ar')
-        });
-        
-        DB.orders.push({
-            id: Date.now(),
-            user: name,
-            user_id: uid,
-            type: 'خصم رصيد (أدمن)',
-            detail: `💸 تم خصم $${amt.toFixed(2)} من الرصيد`,
-            amount: amt,
-            status: 'done',
-            time: new Date().toLocaleString('ar')
-        });
-        saveDB();
-    }
-    
-    await refreshAllData();
-    renderDashboard();
-    showToast(`✅ تم خصم $${amt.toFixed(2)} من رصيد ${name}`, 'success');
 }
 
 function renderDOrders() {
@@ -1259,7 +1107,7 @@ function renderDOrders() {
     <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
     <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
     <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
-  </tr>`).join('') || '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
+  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
 }
 
 function renderDPM() {
@@ -1318,38 +1166,50 @@ async function quickAddBal(uid, name) {
   showToast('تم إضافة $' + safeToFixed(amt) + ' لـ ' + name + ' ✅', 'success');
 }
 
-async function approveWalletRequest(orderId) {
-  const order = DB.orders.find(o => o.id === orderId);
-  if (!order) return;
-  const amt = order.requested_amt || 0;
-  
-  if (useSupabase && supabase) {
-    await supabase.from('orders').update({ status: 'approved', amount: amt }).eq('id', orderId);
-    const { data: user } = await supabase.from('users').select('balance').eq('id', order.user_id).single();
-    await supabase.from('users').update({ balance: (user?.balance || 0) + amt }).eq('id', order.user_id);
-    await supabase.from('transactions').insert({ user_id: order.user_id, type: 'credit', description: 'إضافة رصيد — تمت الموافقة', amount: amt, transaction_date: new Date().toLocaleString('ar') });
-  } else {
-    const ui = DB.users.findIndex(u => u.id === order.user_id);
-    if (ui !== -1) {
-      DB.users[ui].balance = (DB.users[ui].balance || 0) + amt;
-      order.status = 'approved';
-      order.amount = amt;
-      DB.transactions.push({ id: Date.now(), user_id: order.user_id, type: 'credit', description: 'إضافة رصيد — تمت الموافقة', amount: amt, date: new Date().toLocaleString('ar') });
-      saveDB();
+async function quickDeductBal(uid, name) {
+    const amt = parseFloat(prompt('💰 أدخل المبلغ لخصمه من رصيد ' + name + ' ($):'));
+    if (!amt || amt <= 0 || isNaN(amt)) {
+        showToast('الرجاء إدخال مبلغ صحيح', 'error');
+        return;
     }
-  }
-  
-  await refreshAllData();
-  renderDashboard();
-  showToast('تمت الموافقة وإضافة $' + safeToFixed(amt) + ' لـ ' + order.user + ' ✅', 'success');
-}
-
-function rejectWalletRequest(orderId) {
-  const order = DB.orders.find(o => o.id === orderId);
-  if (order) order.status = 'rejected';
-  saveDB();
-  renderDashboard();
-  showToast('تم رفض الطلب', 'success');
+    
+    let currentBalance = 0;
+    if (useSupabase && supabase) {
+        const { data: user } = await supabase.from('users').select('balance').eq('id', uid).single();
+        if (!user) { showToast('المستخدم غير موجود', 'error'); return; }
+        currentBalance = user.balance || 0;
+    } else {
+        const userIndex = DB.users.findIndex(u => u.id === uid);
+        if (userIndex === -1) { showToast('المستخدم غير موجود', 'error'); return; }
+        currentBalance = DB.users[userIndex].balance || 0;
+    }
+    
+    if (currentBalance < amt) {
+        showToast(`❌ رصيد المستخدم غير كافٍ! الرصيد الحالي: $${currentBalance.toFixed(2)}`, 'error');
+        return;
+    }
+    
+    if (!confirm(`⚠️ هل أنت متأكد من خصم $${amt.toFixed(2)} من رصيد ${name}؟\n\nالرصيد الحالي: $${currentBalance.toFixed(2)}\nالرصيد بعد الخصم: $${(currentBalance - amt).toFixed(2)}`)) {
+        return;
+    }
+    
+    const newBalance = currentBalance - amt;
+    
+    if (useSupabase && supabase) {
+        await supabase.from('users').update({ balance: newBalance }).eq('id', uid);
+        await supabase.from('transactions').insert({ user_id: uid, type: 'debit', description: `💸 خصم رصيد من الإدارة - مبلغ: $${amt.toFixed(2)}`, amount: amt, transaction_date: new Date().toLocaleString('ar') });
+        await supabase.from('orders').insert({ user: name, user_id: uid, type: 'خصم رصيد (أدمن)', detail: `💸 تم خصم $${amt.toFixed(2)} من الرصيد`, amount: amt, status: 'done', order_time: new Date().toLocaleString('ar') });
+    } else {
+        const userIndex = DB.users.findIndex(u => u.id === uid);
+        DB.users[userIndex].balance = newBalance;
+        DB.transactions.push({ id: Date.now(), user_id: uid, type: 'debit', description: `💸 خصم رصيد من الإدارة - مبلغ: $${amt.toFixed(2)}`, amount: amt, date: new Date().toLocaleString('ar') });
+        DB.orders.push({ id: Date.now(), user: name, user_id: uid, type: 'خصم رصيد (أدمن)', detail: `💸 تم خصم $${amt.toFixed(2)} من الرصيد`, amount: amt, status: 'done', time: new Date().toLocaleString('ar') });
+        saveDB();
+    }
+    
+    await refreshAllData();
+    renderDashboard();
+    showToast(`✅ تم خصم $${amt.toFixed(2)} من رصيد ${name}`, 'success');
 }
 
 // CRUD Operations
@@ -1428,56 +1288,21 @@ async function deleteRcPkg(id) {
   showToast('تم حذف الباقة', 'success');
 }
 
-// تحديث دالة openAddNum - جعل الدولة حقل نصي
+// Modal Open Functions
 function openAddNum(type) {
     document.getElementById('addNumType').value = type;
     document.getElementById('addNumTitle').textContent = type === 'whatsapp' ? '💬 إضافة رقم واتساب' : type === 'telegram' ? '✈️ إضافة رقم تلغرام' : '📱 إضافة رقم هاتفي';
     document.getElementById('newNumOpGroup').style.display = type === 'phone' ? '' : 'none';
-    
-    // تغيير حقل الدولة من قائمة منسدلة إلى حقل نصي
-    const countryField = document.getElementById('newNumCountry');
-    if (countryField) {
-        // تحويل select إلى input
-        const countryContainer = countryField.parentElement;
-        const countryValue = countryField.value;
-        
-        const newInput = document.createElement('input');
-        newInput.type = 'text';
-        newInput.className = 'fi';
-        newInput.id = 'newNumCountry';
-        newInput.placeholder = 'اكتب اسم الدولة (مثال: الأردن، المغرب، عمان)';
-        newInput.value = countryValue;
-        newInput.setAttribute('list', 'countrySuggestions');
-        
-        // إضافة datalist للاقتراحات
-        let datalist = document.getElementById('countrySuggestions');
-        if (!datalist) {
-            datalist = document.createElement('datalist');
-            datalist.id = 'countrySuggestions';
-            document.body.appendChild(datalist);
-        }
-        
-        // تحديث الاقتراحات
-        const countries = ['سوريا', 'السعودية', 'الإمارات', 'عمان', 'الكويت', 'قطر', 'البحرين', 'مصر', 'العراق', 'الأردن', 'المغرب', 'الجزائر', 'تونس', 'ليبيا', 'تركيا', 'روسيا'];
-        datalist.innerHTML = countries.map(c => `<option value="${c}">`).join('');
-        
-        countryContainer.replaceChild(newInput, countryField);
-    }
-    
     openModal('addNumModal');
 }
 
-// تحديث دالة confirmAddNum لاستخدام الحقل النصي
 async function confirmAddNum() {
     const type = document.getElementById('addNumType').value;
     const phone = document.getElementById('newNumPhone').value.trim();
-    const country = document.getElementById('newNumCountry').value.trim(); // أصبح نصياً
+    const country = document.getElementById('newNumCountry').value;
     const op = document.getElementById('newNumOp').value;
     const price = parseFloat(document.getElementById('newNumPrice').value);
-    
     if (!phone || !price) { showToast('أدخل جميع البيانات', 'error'); return; }
-    if (!country) { showToast('أدخل اسم الدولة', 'error'); return; }
-    
     const newNum = { id: Date.now(), type, phone, country, operator: op, price, status: 'available' };
     
     if (useSupabase && supabase) {
@@ -1490,47 +1315,9 @@ async function confirmAddNum() {
     closeModal('addNumModal');
     document.getElementById('newNumPhone').value = '';
     document.getElementById('newNumPrice').value = '';
-    document.getElementById('newNumCountry').value = '';
-    
     await refreshAllData();
     renderDashboard();
     showToast('تم إضافة الرقم ✅', 'success');
-}
-
-// تحديث دالة renderNumbersByType - إخفاء الرقم عن المستخدم
-function renderNumbersByType(type) {
-    let gridId, countryFilterId;
-    if (type === 'phone') { gridId = 'numbersGrid'; countryFilterId = 'numCountryF'; }
-    else if (type === 'whatsapp') { gridId = 'waGrid'; countryFilterId = 'waCountryF'; }
-    else { gridId = 'tgGrid'; countryFilterId = 'tgCountryF'; }
-    
-    const cf = document.getElementById(countryFilterId)?.value || '';
-    const ofEl = document.getElementById('numOpF');
-    const of2 = ofEl && type === 'phone' ? ofEl.value : '';
-    let nums = DB.numbers.filter(n => n.type === type && (!cf || n.country === cf) && (!of2 || n.operator === of2));
-    const grid = document.getElementById(gridId);
-    if (!grid) return;
-    if (!nums.length) { grid.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text3);grid-column:1/-1">لا توجد أرقام متاحة</div>'; return; }
-    
-    const icons = { phone: '📱', whatsapp: '💬', telegram: '✈️' };
-    
-    grid.innerHTML = nums.map(n => `
-        <div class="product-card">
-            <div class="flag-badge">${window.countryFlags?.[n.country] || '🌍'} ${n.country || ''}</div>
-            <div class="pc-header">
-                <div><div class="pc-name">${icons[n.type]} ${n.operator || ''}</div></div>
-                <span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? '✅ متاح' : '❌ مباع'}</span>
-            </div>
-            <!-- تم إخفاء الرقم - لن يظهر للمستخدم -->
-            <div class="pc-num" style="background:var(--dark4);color:var(--text3);font-style:italic">
-                🔒 الرقم متاح بعد الشراء
-            </div>
-            <div class="pc-price">$${safeToFixed(n.price)} <span>/ رقم واحد</span></div>
-            <button class="buy-btn" ${n.status !== 'available' ? 'disabled' : ''} onclick="openBuyNum(${n.id})">
-                ${n.status === 'available' ? '📞 طلب الشراء عبر واتساب' : 'تم البيع'}
-            </button>
-        </div>
-    `).join('');
 }
 
 function openAddSocial() { openModal('addSocialModal'); }
@@ -1608,58 +1395,31 @@ async function confirmAddGame() {
 }
 
 function openAddRcPkg() { openModal('addRcPkgModal'); }
-// تحديث دالة إضافة باقة شحن - استخدام quantity بدلاً من qty
 async function confirmAddRcPkg() {
-    const qty = parseInt(document.getElementById('nRcQty').value);
+    const quantity = parseInt(document.getElementById('nRcQty').value);
     const price = parseFloat(document.getElementById('nRcPrice').value);
     const country = document.getElementById('nRcCountry').value;
     const operator = document.getElementById('nRcOp').value.trim();
     
-    if (!qty || !price || !operator) {
+    if (!quantity || !price || !operator) {
         showToast('أدخل جميع البيانات (الكمية، السعر، اسم الشبكة)', 'error');
         return;
     }
     
-    if (isNaN(qty) || qty <= 0) {
-        showToast('الكمية يجب أن تكون رقماً موجباً', 'error');
-        return;
-    }
-    
-    if (isNaN(price) || price <= 0) {
-        showToast('السعر يجب أن يكون رقماً موجباً', 'error');
-        return;
-    }
-    
-    // ملاحظة: استخدام quantity بدلاً من qty لتتناسب مع هيكل الجدول
     const newPackage = {
         id: Date.now(),
         country: country,
         operator: operator,
-        quantity: qty,  // ← changed from 'qty' to 'quantity'
+        quantity: quantity,
         price: price,
         is_active: true,
         created_at: new Date().toISOString()
     };
     
-    console.log('Adding package:', newPackage);
-    
     if (useSupabase && supabase) {
-        try {
-            const { data, error } = await supabase
-                .from('recharge_packages')
-                .insert(newPackage)
-                .select();
-            
-            if (error) {
-                console.error('Supabase error:', error);
-                showToast('خطأ في قاعدة البيانات: ' + error.message, 'error');
-                return;
-            }
-            
-            console.log('Package added successfully:', data);
-        } catch (err) {
-            console.error('Exception:', err);
-            showToast('حدث خطأ أثناء إضافة الباقة', 'error');
+        const { error } = await supabase.from('recharge_packages').insert(newPackage);
+        if (error) {
+            showToast('خطأ: ' + error.message, 'error');
             return;
         }
     } else {
@@ -1670,12 +1430,9 @@ async function confirmAddRcPkg() {
     closeModal('addRcPkgModal');
     await refreshAllData();
     renderDashboard();
-    
-    // تنظيف الحقول
     document.getElementById('nRcOp').value = '';
     document.getElementById('nRcQty').value = '';
     document.getElementById('nRcPrice').value = '';
-    
     showToast('تمت إضافة الباقة بنجاح ✅', 'success');
 }
 
@@ -1715,7 +1472,7 @@ async function confirmAdminAddBal() {
 }
 
 // ============================================================
-// PAYMENT METHODS MANAGEMENT - COMPLETE FIXED VERSION
+// PAYMENT METHODS MANAGEMENT
 // ============================================================
 
 let selectedQRFile = null;
@@ -1755,7 +1512,6 @@ function initFileUpload() {
 
 async function uploadQRCodeAndGetURL(file) {
     if (!file) return null;
-    
     if (!useSupabase || !supabase) {
         showToast('قاعدة البيانات غير متصلة', 'error');
         return null;
@@ -1763,7 +1519,6 @@ async function uploadQRCodeAndGetURL(file) {
     
     const previewDiv = document.getElementById('shamQrPreview');
     const previewImg = document.getElementById('shamQrPreviewImg');
-    
     if (previewDiv && previewImg) {
         previewDiv.classList.add('loading');
         previewImg.style.opacity = '0.3';
@@ -1774,8 +1529,6 @@ async function uploadQRCodeAndGetURL(file) {
     try {
         const fileExt = file.name.split('.').pop();
         const fileName = `shamcash_qr_${Date.now()}.${fileExt}`;
-        
-        console.log('Uploading file:', fileName);
         
         const { data, error } = await supabase.storage
             .from('qr-codes')
@@ -1792,35 +1545,24 @@ async function uploadQRCodeAndGetURL(file) {
             return null;
         }
         
-        console.log('Upload successful:', data);
-        
         const { data: urlData } = supabase.storage
             .from('qr-codes')
             .getPublicUrl(fileName);
         
         const publicUrl = urlData.publicUrl;
-        console.log('Public URL:', publicUrl);
         
         if (previewImg && previewDiv) {
             previewImg.src = publicUrl;
             previewImg.onload = function() {
                 previewDiv.classList.remove('loading');
                 previewImg.style.opacity = '1';
-                previewImg.style.display = 'block';
-            };
-            previewImg.onerror = function() {
-                previewDiv.classList.remove('loading');
-                previewImg.style.opacity = '1';
             };
         }
         
         return publicUrl;
-        
     } catch (error) {
         console.error('Error uploading:', error);
         showToast('حدث خطأ أثناء رفع الصورة', 'error');
-        if (previewDiv) previewDiv.classList.remove('loading');
-        if (previewImg) previewImg.style.opacity = '1';
         return null;
     } finally {
         hideLoadingOverlay();
@@ -1859,61 +1601,16 @@ async function savePaymentMethods() {
             if (fileInput) fileInput.value = '';
         }
         
-        console.log('Final QR URL to save:', qrUrl);
-        
         const methods = [
-            { 
-                method: 'binance', 
-                data: { 
-                    addr: document.getElementById('pm-binance-addr')?.value.trim() || '', 
-                    uid: document.getElementById('pm-binance-uid')?.value.trim() || '', 
-                    qr: document.getElementById('pm-binance-qr')?.value.trim() || '' 
-                }, 
-                active: document.getElementById('pm-binance-active')?.checked || false 
-            },
-            { 
-                method: 'shamcash', 
-                data: { 
-                    walletAddress: document.getElementById('pm-sham-num')?.value.trim() || 'c8a4d105019df664d62048e38d986', 
-                    ownerName: document.getElementById('pm-sham-name')?.value.trim() || 'عبدالحميد محمد الحسين',
-                    phoneNumber: document.getElementById('pm-sham-phone')?.value.trim() || '0949277889',
-                    qr: qrUrl 
-                }, 
-                active: document.getElementById('pm-sham-active')?.checked || true 
-            },
-            { 
-                method: 'western', 
-                data: { 
-                    ownerName: document.getElementById('pm-wu-name')?.value.trim() || '', 
-                    country: document.getElementById('pm-wu-country')?.value.trim() || '' 
-                }, 
-                active: document.getElementById('pm-wu-active')?.checked || false 
-            }
+            { method: 'binance', data: { addr: document.getElementById('pm-binance-addr')?.value.trim() || '', uid: document.getElementById('pm-binance-uid')?.value.trim() || '', qr: document.getElementById('pm-binance-qr')?.value.trim() || '' }, active: document.getElementById('pm-binance-active')?.checked || false },
+            { method: 'shamcash', data: { walletAddress: document.getElementById('pm-sham-num')?.value.trim() || 'c8a4d105019df664d62048e38d986', ownerName: document.getElementById('pm-sham-name')?.value.trim() || 'عبدالحميد محمد الحسين', phoneNumber: document.getElementById('pm-sham-phone')?.value.trim() || '0949277889', qr: qrUrl }, active: document.getElementById('pm-sham-active')?.checked || true },
+            { method: 'western', data: { ownerName: document.getElementById('pm-wu-name')?.value.trim() || '', country: document.getElementById('pm-wu-country')?.value.trim() || '' }, active: document.getElementById('pm-wu-active')?.checked || false }
         ];
         
         for (const m of methods) {
             DB.paymentMethods[m.method] = { ...m.data, active: m.active };
-            
             if (useSupabase && supabase) {
-                try {
-                    const { error } = await supabase
-                        .from('payment_methods')
-                        .upsert({ 
-                            method: m.method, 
-                            data: m.data, 
-                            active: m.active 
-                        }, { 
-                            onConflict: 'method' 
-                        });
-                    
-                    if (error) {
-                        console.error(`Error saving ${m.method}:`, error);
-                    } else {
-                        console.log(`Successfully saved ${m.method} with QR:`, m.data.qr);
-                    }
-                } catch (err) {
-                    console.error(`Exception saving ${m.method}:`, err);
-                }
+                await supabase.from('payment_methods').upsert({ method: m.method, data: m.data, active: m.active }, { onConflict: 'method' });
             }
         }
         
@@ -1921,8 +1618,6 @@ async function savePaymentMethods() {
         closeModal('editPMModal');
         await refreshAllData();
         renderDashboard();
-        
-        console.log('Saved ShamCash data:', DB.paymentMethods.shamcash);
         showToast('تم حفظ الإعدادات بنجاح ✅', 'success');
     } catch (error) {
         console.error('Error in savePaymentMethods:', error);
@@ -1935,34 +1630,20 @@ async function savePaymentMethods() {
 function openEditPM() {
     const pm = DB.paymentMethods;
     
-    console.log('Opening Edit PM - Current ShamCash data:', pm.shamcash);
+    document.getElementById('pm-binance-addr').value = pm.binance?.addr || '';
+    document.getElementById('pm-binance-uid').value = pm.binance?.uid || '';
+    document.getElementById('pm-binance-qr').value = pm.binance?.qr || '';
+    document.getElementById('pm-binance-active').checked = pm.binance?.active || false;
     
-    const binanceAddr = document.getElementById('pm-binance-addr');
-    if (binanceAddr) binanceAddr.value = pm.binance?.addr || '';
-    const binanceUid = document.getElementById('pm-binance-uid');
-    if (binanceUid) binanceUid.value = pm.binance?.uid || '';
-    const binanceQr = document.getElementById('pm-binance-qr');
-    if (binanceQr) binanceQr.value = pm.binance?.qr || '';
-    const binanceActive = document.getElementById('pm-binance-active');
-    if (binanceActive) binanceActive.checked = pm.binance?.active || false;
+    document.getElementById('pm-sham-num').value = pm.shamcash?.walletAddress || pm.shamcash?.num || '';
+    document.getElementById('pm-sham-name').value = pm.shamcash?.ownerName || '';
+    document.getElementById('pm-sham-phone').value = pm.shamcash?.phoneNumber || '';
+    document.getElementById('pm-sham-qr').value = pm.shamcash?.qr || '';
+    document.getElementById('pm-sham-active').checked = pm.shamcash?.active || false;
     
-    const shamNum = document.getElementById('pm-sham-num');
-    if (shamNum) shamNum.value = pm.shamcash?.walletAddress || pm.shamcash?.num || '';
-    const shamName = document.getElementById('pm-sham-name');
-    if (shamName) shamName.value = pm.shamcash?.ownerName || '';
-    const shamPhone = document.getElementById('pm-sham-phone');
-    if (shamPhone) shamPhone.value = pm.shamcash?.phoneNumber || '';
-    const shamQr = document.getElementById('pm-sham-qr');
-    if (shamQr) shamQr.value = pm.shamcash?.qr || '';
-    const shamActive = document.getElementById('pm-sham-active');
-    if (shamActive) shamActive.checked = pm.shamcash?.active || false;
-    
-    const wuName = document.getElementById('pm-wu-name');
-    if (wuName) wuName.value = pm.western?.ownerName || '';
-    const wuCountry = document.getElementById('pm-wu-country');
-    if (wuCountry) wuCountry.value = pm.western?.country || '';
-    const wuActive = document.getElementById('pm-wu-active');
-    if (wuActive) wuActive.checked = pm.western?.active || false;
+    document.getElementById('pm-wu-name').value = pm.western?.ownerName || '';
+    document.getElementById('pm-wu-country').value = pm.western?.country || '';
+    document.getElementById('pm-wu-active').checked = pm.western?.active || false;
     
     const existingQr = pm.shamcash?.qr;
     if (existingQr && existingQr !== '' && (existingQr.startsWith('http') || existingQr.startsWith('https'))) {
@@ -1971,7 +1652,6 @@ function openEditPM() {
         if (previewImg && previewDiv) {
             previewImg.src = existingQr;
             previewDiv.style.display = 'block';
-            console.log('Showing existing QR preview:', existingQr);
         }
     } else {
         const previewDiv = document.getElementById('shamQrPreview');
@@ -1981,23 +1661,14 @@ function openEditPM() {
     selectedQRFile = null;
     const fileInput = document.getElementById('shamQrFile');
     if (fileInput) fileInput.value = '';
-    
     initFileUpload();
-    
     openModal('editPMModal');
 }
 
 function switchPMTab(key, el) {
-    const buttons = document.querySelectorAll('#editPMModal .tab-btn');
-    if (buttons) {
-        buttons.forEach(btn => btn.classList.remove('active'));
-    }
-    if (el) el.classList.add('active');
-    
-    const contents = document.querySelectorAll('#editPMModal .tab-content');
-    if (contents) {
-        contents.forEach(content => content.classList.remove('active'));
-    }
+    document.querySelectorAll('#editPMModal .tab-btn').forEach(btn => btn.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('#editPMModal .tab-content').forEach(content => content.classList.remove('active'));
     const target = document.getElementById('pmt-' + key);
     if (target) target.classList.add('active');
 }
@@ -2005,12 +1676,10 @@ function switchPMTab(key, el) {
 function handleQrUpload(event, type) {
     const file = event.target.files[0];
     if (!file) return;
-    
     if (file.size > 2 * 1024 * 1024) {
         showToast('حجم الصورة كبير جداً. الحد الأقصى 2 ميجابايت', 'error');
         return;
     }
-    
     if (type === 'shamcash') {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -2104,87 +1773,3 @@ document.addEventListener('DOMContentLoaded', async function() {
     updateNav();
   }
 });
-
-
-
-
-// تحديث دوال التصفية لتعمل مع الحقل النصي
-function updateCountryFilters() {
-    const countries = [...new Set(DB.numbers.map(n => n.country).filter(Boolean))];
-    
-    const selectors = ['numCountryF', 'waCountryF', 'tgCountryF'];
-    for (const selectorId of selectors) {
-        const selector = document.getElementById(selectorId);
-        if (selector) {
-            const currentValue = selector.value;
-            selector.innerHTML = '<option value="">كل الدول</option>' + 
-                countries.map(c => `<option value="${c}">${window.countryFlags?.[c] || '🌍'} ${c}</option>`).join('');
-            if (currentValue && countries.includes(currentValue)) {
-                selector.value = currentValue;
-            }
-        }
-    }
-}
-
-// عرض طلبات الشراء المعلقة في لوحة التحكم
-function renderPendingOrders() {
-    const pendingOrders = DB.orders.filter(o => o.status === 'pending_approval');
-    const container = document.getElementById('pendingOrdersList');
-    if (!container) return;
-    
-    if (pendingOrders.length === 0) {
-        container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">لا توجد طلبات معلقة</div>';
-        return;
-    }
-    
-    container.innerHTML = pendingOrders.map(order => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--dark3);border-radius:10px;margin-bottom:8px">
-            <div>
-                <div style="font-weight:700">${order.user}</div>
-                <div style="font-size:0.75rem;color:var(--text3)">${order.type} - ${order.detail}</div>
-                <div style="font-size:0.7rem;color:var(--gold)">💰 $${order.amount.toFixed(2)}</div>
-            </div>
-            <div>
-                <button class="edit-btn" onclick="approveOrder(${order.id})">✅ تم التنفيذ</button>
-                <button class="del-btn" onclick="rejectOrder(${order.id})">❌ رفض</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-// تأكيد تنفيذ الطلب
-async function approveOrder(orderId) {
-    const order = DB.orders.find(o => o.id === orderId);
-    if (!order) return;
-    
-    order.status = 'completed';
-    order.completed_at = new Date().toLocaleString('ar');
-    
-    if (useSupabase && supabase) {
-        await supabase.from('orders').update({ status: 'completed' }).eq('id', orderId);
-    } else {
-        saveDB();
-    }
-    
-    renderPendingOrders();
-    showToast('تم تأكيد تنفيذ الطلب', 'success');
-}
-
-// رفض الطلب
-async function rejectOrder(orderId) {
-    if (!confirm('هل أنت متأكد من رفض هذا الطلب؟')) return;
-    
-    const order = DB.orders.find(o => o.id === orderId);
-    if (!order) return;
-    
-    order.status = 'rejected';
-    
-    if (useSupabase && supabase) {
-        await supabase.from('orders').update({ status: 'rejected' }).eq('id', orderId);
-    } else {
-        saveDB();
-    }
-    
-    renderPendingOrders();
-    showToast('تم رفض الطلب', 'success');
-}
