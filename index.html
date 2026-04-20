@@ -852,14 +852,28 @@
     <input type="hidden" id="addNumType">
     <div class="fg"><label class="fl">رقم الهاتف</label><input type="text" class="fi" id="newNumPhone" placeholder="+963 944 123 456"></div>
     <div class="grid2">
-      <div class="fg"><label class="fl">الدولة</label>
-        <select class="fi" id="newNumCountry">
-          <option value="سوريا">🇸🇾 سوريا</option><option value="السعودية">🇸🇦 السعودية</option>
-          <option value="الإمارات">🇦🇪 الإمارات</option><option value="تركيا">🇹🇷 تركيا</option>
-          <option value="مصر">🇪🇬 مصر</option><option value="العراق">🇮🇶 العراق</option>
-          <option value="روسيا">🇷🇺 روسيا</option>
-        </select>
-      </div>
+      <div class="fg">
+    <label class="fl">الدولة</label>
+    <input type="text" class="fi" id="newNumCountry" placeholder="اكتب اسم الدولة (مثال: الأردن، المغرب، عمان)" list="countrySuggestions">
+    <datalist id="countrySuggestions">
+        <option value="سوريا">
+        <option value="السعودية">
+        <option value="الإمارات">
+        <option value="عمان">
+        <option value="الكويت">
+        <option value="قطر">
+        <option value="البحرين">
+        <option value="مصر">
+        <option value="العراق">
+        <option value="الأردن">
+        <option value="المغرب">
+        <option value="الجزائر">
+        <option value="تونس">
+        <option value="ليبيا">
+        <option value="تركيا">
+        <option value="روسيا">
+    </datalist>
+</div>
       <div class="fg" id="newNumOpGroup"><label class="fl">الشبكة</label>
         <select class="fi" id="newNumOp">
           <option value="سيريتل">سيريتل</option><option value="MTN">MTN</option>
