@@ -927,19 +927,24 @@ async function addCustomService() {
         created_at: new Date().toISOString()
     };
     
+    console.log('Adding Custom Service:', newService);
+    
     if (useSupabase && supabase) {
-        const { error } = await supabase.from('custom_services').insert(newService);
+        const { data, error } = await supabase.from('custom_services').insert(newService).select();
         if (error) {
-            showToast('حدث خطأ أثناء إضافة الخدمة', 'error');
+            console.error('Supabase error:', error);
+            showToast('خطأ: ' + error.message, 'error');
             return;
         }
+        console.log('Added successfully:', data);
+    } else {
+        if (!DB.customServices) DB.customServices = [];
+        DB.customServices.push(newService);
+        saveDB();
     }
     
-    if (!DB.customServices) DB.customServices = [];
-    DB.customServices.push(newService);
-    saveDB();
-    
     closeModal('addCustomServiceModal');
+    await refreshAllData();
     renderCustomServicesOnHome();
     renderCustomServicesList();
     showToast('تم إضافة الخدمة بنجاح ✅', 'success');
@@ -949,11 +954,13 @@ function renderCustomServicesOnHome() {
     const servicesGrid = document.getElementById('servicesGrid');
     if (!servicesGrid) return;
     
+    // إزالة الخدمات المخصصة القديمة (تبدأ من الطفل التاسع)
     while (servicesGrid.children.length > 8) {
         servicesGrid.removeChild(servicesGrid.lastChild);
     }
     
-    if (DB.customServices) {
+    // إضافة الخدمات الجديدة
+    if (DB.customServices && DB.customServices.length > 0) {
         DB.customServices.forEach(service => {
             const card = document.createElement('div');
             card.className = 'svc-card';
@@ -981,7 +988,11 @@ function renderCustomServicesList() {
     
     container.innerHTML = services.map(service => `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--dark3);border-radius:10px;margin-bottom:8px">
-            <div><div style="font-weight:700">${service.icon} ${service.name}</div><div style="font-size:0.75rem;color:var(--text3)">${service.description || ''}</div>${service.note ? `<div style="font-size:0.7rem;color:var(--gold)">📝 ${service.note}</div>` : ''}</div>
+            <div>
+                <div style="font-weight:700">${service.icon} ${service.name}</div>
+                <div style="font-size:0.75rem;color:var(--text3)">${service.description || ''}</div>
+                ${service.note ? `<div style="font-size:0.7rem;color:var(--gold)">📝 ${service.note}</div>` : ''}
+            </div>
             <button class="del-btn" onclick="deleteCustomService(${service.id})">حذف</button>
         </div>
     `).join('');
@@ -1052,23 +1063,64 @@ function renderDSoc() {
 }
 
 function renderDTgV() {
-  const tb = document.getElementById('dTgVerifyBody'); if (!tb) return;
-  tb.innerHTML = DB.tgVerifyPackages.map(p => `<tr><td style="font-weight:600">${p.type || ''}</td><td style="color:var(--text2);font-size:.82rem">${p.desc || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td><td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف</button></td></tr>`).join('');
+    const tb = document.getElementById('dTgVerifyBody');
+    if (!tb) return;
+    
+    if (!DB.tgVerifyPackages || DB.tgVerifyPackages.length === 0) {
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات<\/td><\/tr>';
+        return;
+    }
+    
+    tb.innerHTML = DB.tgVerifyPackages.map(p => `
+        <tr>
+            <td style="font-weight:600">${p.type || ''}</td>
+            <td style="color:var(--text2);font-size:.82rem">${p.description || ''}</td>
+            <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
+            <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف</button></td>
+        </tr>
+    `).join('');
 }
 
 function renderDGames() {
-  const tb = document.getElementById('dGamesBody'); if (!tb) return;
-  tb.innerHTML = DB.gamePackages.map(p => `<tr><td>${p.icon || '🎮'} ${p.game || ''}</td><td style="font-weight:600">${p.package || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td><td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td></tr>`).join('');
+    const tb = document.getElementById('dGamesBody');
+    if (!tb) return;
+    
+    if (!DB.gamePackages || DB.gamePackages.length === 0) {
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات<\/td><\/tr>';
+        return;
+    }
+    
+    tb.innerHTML = DB.gamePackages.map(p => `
+        <tr>
+            <td>${p.icon || '🎮'} ${p.game || ''}</td>
+            <td style="font-weight:600">${p.package_name || ''}</td>
+            <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
+            <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
+        </tr>
+    `).join('');
 }
 
 function renderDRc() {
     const tb = document.getElementById('dRcBody'); 
     if (!tb) return;
+    
     if (!DB.rechargePkgs || DB.rechargePkgs.length === 0) {
-        tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن</td></tr>';
+        tb.innerHTML = '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
         return;
     }
-    tb.innerHTML = DB.rechargePkgs.map(pkg => `<tr><td style="font-weight:600">${pkg.operator || 'غير محدد'}</td><td>${countryFlags[pkg.country] || '🌍'} ${pkg.country || 'غير محدد'}</td><td>${(pkg.quantity || 0).toLocaleString()} وحدة</td><td style="color:var(--gold);font-weight:700">$${(pkg.price || 0).toFixed(2)}</td><td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف</button></td></tr>`).join('');
+    
+    tb.innerHTML = DB.rechargePkgs.map(pkg => {
+        const qtyValue = (pkg.quantity !== undefined && pkg.quantity !== null) ? pkg.quantity : 0;
+        return `
+            <tr>
+                <td style="font-weight:600">${pkg.operator || 'غير محدد'}<\/td>
+                <td>${countryFlags[pkg.country] || '🌍'} ${pkg.country || 'غير محدد'}<\/td>
+                <td>${qtyValue.toLocaleString()} وحدة<\/td>
+                <td style="color:var(--gold);font-weight:700">$${(pkg.price || 0).toFixed(2)}<\/td>
+                <td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف<\/button><\/td>
+            </tr>
+        `;
+    }).join('');
 }
 
 function renderDUsers() {
@@ -1243,39 +1295,57 @@ async function deleteSoc(id) {
 }
 
 async function deleteTgV(id) {
-  if (useSupabase && supabase) {
-    await supabase.from('tg_verify_packages').delete().eq('id', id);
-  } else {
-    DB.tgVerifyPackages = DB.tgVerifyPackages.filter(p => p.id !== id);
-    saveDB();
-  }
-  await refreshAllData();
-  renderDashboard();
-  showToast('تم الحذف', 'success');
+    if (!confirm('هل أنت متأكد من حذف هذه الباقة؟')) return;
+    
+    if (useSupabase && supabase) {
+        const { error } = await supabase.from('tg_verify_packages').delete().eq('id', id);
+        if (error) {
+            showToast('خطأ في الحذف: ' + error.message, 'error');
+            return;
+        }
+    } else {
+        DB.tgVerifyPackages = DB.tgVerifyPackages.filter(p => p.id !== id);
+        saveDB();
+    }
+    await refreshAllData();
+    renderDashboard();
+    showToast('تم الحذف', 'success');
 }
 
 async function deleteGame(id) {
-  if (useSupabase && supabase) {
-    await supabase.from('game_packages').delete().eq('id', id);
-  } else {
-    DB.gamePackages = DB.gamePackages.filter(p => p.id !== id);
-    saveDB();
-  }
-  await refreshAllData();
-  renderDashboard();
-  showToast('تم الحذف', 'success');
+    if (!confirm('هل أنت متأكد من حذف هذه الباقة؟')) return;
+    
+    if (useSupabase && supabase) {
+        const { error } = await supabase.from('game_packages').delete().eq('id', id);
+        if (error) {
+            showToast('خطأ في الحذف: ' + error.message, 'error');
+            return;
+        }
+    } else {
+        DB.gamePackages = DB.gamePackages.filter(p => p.id !== id);
+        saveDB();
+    }
+    await refreshAllData();
+    renderDashboard();
+    showToast('تم الحذف', 'success');
 }
 
 async function deleteRcPkg(id) {
-  if (useSupabase && supabase) {
-    await supabase.from('recharge_packages').delete().eq('id', id);
-  } else {
-    DB.rechargePkgs = DB.rechargePkgs.filter(p => p.id !== id);
-    saveDB();
-  }
-  await refreshAllData();
-  renderDashboard();
-  showToast('تم حذف الباقة', 'success');
+    if (!confirm('هل أنت متأكد من حذف هذه الباقة؟')) return;
+    
+    if (useSupabase && supabase) {
+        const { error } = await supabase.from('recharge_packages').delete().eq('id', id);
+        if (error) {
+            showToast('خطأ في الحذف: ' + error.message, 'error');
+            return;
+        }
+    } else {
+        DB.rechargePkgs = DB.rechargePkgs.filter(p => p.id !== id);
+        saveDB();
+    }
+    await refreshAllData();
+    renderDashboard();
+    showToast('تم حذف الباقة', 'success');
 }
 // ============================================================
 // Modal Open Functions
@@ -1333,69 +1403,161 @@ async function confirmAddSocial() {
 }
 
 function openAddTgVerify() { openModal('addTgVerifyModal'); }
+
 async function confirmAddTgVerify() {
-  const price = parseFloat(document.getElementById('nTgVPrice').value);
-  if (!price) { showToast('أدخل السعر', 'error'); return; }
-  const p = { id: Date.now(), type: document.getElementById('nTgVType').value, desc: document.getElementById('nTgVDesc').value, price };
-  if (useSupabase && supabase) {
-    await supabase.from('tg_verify_packages').insert(p);
-  } else {
-    DB.tgVerifyPackages.push(p);
-    saveDB();
-  }
-  closeModal('addTgVerifyModal');
-  await refreshAllData();
-  renderDashboard();
-  document.getElementById('nTgVDesc').value = '';
-  document.getElementById('nTgVPrice').value = '';
-  showToast('تمت الإضافة ✅', 'success');
+    const type = document.getElementById('nTgVType').value;
+    const description = document.getElementById('nTgVDesc').value.trim();
+    const price = parseFloat(document.getElementById('nTgVPrice').value);
+    
+    if (!price || isNaN(price)) {
+        showToast('أدخل السعر بشكل صحيح', 'error');
+        return;
+    }
+    
+    const p = { 
+        id: Date.now(), 
+        type: type, 
+        description: description || 'خدمة توثيق تلغرام', 
+        price: price,
+        created_at: new Date().toISOString()
+    };
+    
+    console.log('Adding TG Verify Package:', p);
+    
+    if (useSupabase && supabase) {
+        const { data, error } = await supabase.from('tg_verify_packages').insert(p).select();
+        if (error) {
+            console.error('Supabase error:', error);
+            showToast('خطأ: ' + error.message, 'error');
+            return;
+        }
+        console.log('Added successfully:', data);
+    } else {
+        DB.tgVerifyPackages.push(p);
+        saveDB();
+    }
+    
+    closeModal('addTgVerifyModal');
+    await refreshAllData();
+    renderDashboard();
+    renderTgVerify();
+    
+    document.getElementById('nTgVDesc').value = '';
+    document.getElementById('nTgVPrice').value = '';
+    showToast('تمت الإضافة ✅', 'success');
 }
 
 function openAddGame() {
-  document.getElementById('nGameName').value = '';
-  document.getElementById('nGameIcon').value = '🎮';
-  document.getElementById('nGamePkg').value = '';
-  document.getElementById('nGamePrice').value = '';
-  openModal('addGameModal');
+    document.getElementById('nGameName').value = '';
+    document.getElementById('nGameIcon').value = '🎮';
+    document.getElementById('nGamePkg').value = '';
+    document.getElementById('nGamePrice').value = '';
+    openModal('addGameModal');
 }
+
 async function confirmAddGame() {
-  const gameName = document.getElementById('nGameName').value.trim();
-  const gameIcon = document.getElementById('nGameIcon').value.trim() || '🎮';
-  const price = parseFloat(document.getElementById('nGamePrice').value);
-  const pkg = document.getElementById('nGamePkg').value.trim();
-  if (!gameName || !price || !pkg) { showToast('أدخل جميع البيانات', 'error'); return; }
-  const p = { id: Date.now(), game: gameName, icon: gameIcon, package: pkg, price };
-  if (useSupabase && supabase) {
-    await supabase.from('game_packages').insert(p);
-  } else {
-    DB.gamePackages.push(p);
-    saveDB();
-  }
-  closeModal('addGameModal');
-  await refreshAllData();
-  renderDashboard();
-  renderGames();
-  showToast('تمت الإضافة ✅', 'success');
+    const gameName = document.getElementById('nGameName').value.trim();
+    const gameIcon = document.getElementById('nGameIcon').value.trim() || '🎮';
+    const price = parseFloat(document.getElementById('nGamePrice').value);
+    const packageName = document.getElementById('nGamePkg').value.trim();
+    
+    if (!gameName || !price || !packageName) {
+        showToast('أدخل جميع البيانات (اسم اللعبة، السعر، اسم الباقة)', 'error');
+        return;
+    }
+    
+    if (isNaN(price) || price <= 0) {
+        showToast('السعر يجب أن يكون رقماً موجباً', 'error');
+        return;
+    }
+    
+    const p = { 
+        id: Date.now(), 
+        game: gameName, 
+        icon: gameIcon, 
+        package_name: packageName,  // ملاحظة: package_name وليس package
+        price: price,
+        created_at: new Date().toISOString()
+    };
+    
+    console.log('Adding Game Package:', p);
+    
+    if (useSupabase && supabase) {
+        const { data, error } = await supabase.from('game_packages').insert(p).select();
+        if (error) {
+            console.error('Supabase error:', error);
+            showToast('خطأ: ' + error.message, 'error');
+            return;
+        }
+        console.log('Added successfully:', data);
+    } else {
+        DB.gamePackages.push(p);
+        saveDB();
+    }
+    
+    closeModal('addGameModal');
+    await refreshAllData();
+    renderDashboard();
+    renderGames();
+    
+    document.getElementById('nGameName').value = '';
+    document.getElementById('nGameIcon').value = '';
+    document.getElementById('nGamePkg').value = '';
+    document.getElementById('nGamePrice').value = '';
+    showToast('تمت الإضافة ✅', 'success');
 }
 
 function openAddRcPkg() { openModal('addRcPkgModal'); }
+
 async function confirmAddRcPkg() {
     const quantity = parseInt(document.getElementById('nRcQty').value);
     const price = parseFloat(document.getElementById('nRcPrice').value);
     const country = document.getElementById('nRcCountry').value;
     const operator = document.getElementById('nRcOp').value.trim();
-    if (!quantity || !price || !operator) { showToast('أدخل جميع البيانات', 'error'); return; }
-    const newPackage = { id: Date.now(), country: country, operator: operator, quantity: quantity, price: price };
+    
+    if (!quantity || !price || !operator) {
+        showToast('أدخل جميع البيانات (الكمية، السعر، اسم الشبكة)', 'error');
+        return;
+    }
+    
+    if (isNaN(quantity) || quantity <= 0) {
+        showToast('الكمية يجب أن تكون رقماً موجباً', 'error');
+        return;
+    }
+    
+    if (isNaN(price) || price <= 0) {
+        showToast('السعر يجب أن يكون رقماً موجباً', 'error');
+        return;
+    }
+    
+    const newPackage = { 
+        id: Date.now(), 
+        country: country, 
+        operator: operator, 
+        quantity: quantity,  // استخدام quantity
+        price: price,
+        created_at: new Date().toISOString()
+    };
+    
+    console.log('Adding Recharge Package:', newPackage);
+    
     if (useSupabase && supabase) {
-        const { error } = await supabase.from('recharge_packages').insert(newPackage);
-        if (error) { showToast('خطأ: ' + error.message, 'error'); return; }
+        const { data, error } = await supabase.from('recharge_packages').insert(newPackage).select();
+        if (error) {
+            console.error('Supabase error:', error);
+            showToast('خطأ: ' + error.message, 'error');
+            return;
+        }
+        console.log('Added successfully:', data);
     } else {
         DB.rechargePkgs.push(newPackage);
         saveDB();
     }
+    
     closeModal('addRcPkgModal');
     await refreshAllData();
     renderDashboard();
+    
     document.getElementById('nRcOp').value = '';
     document.getElementById('nRcQty').value = '';
     document.getElementById('nRcPrice').value = '';
