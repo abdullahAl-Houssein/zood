@@ -15,24 +15,24 @@ const DEFAULT_DB = {
   numbers: [
     { id: 1, type: 'phone', phone: '+963 944 123 456', country: 'سوريا', operator: 'سيريتل', price: 3.99, status: 'available' },
     { id: 2, type: 'phone', phone: '+963 988 654 321', country: 'سوريا', operator: 'MTN', price: 2.99, status: 'available' },
-    { id: 3, type: 'phone', phone: '+966 50 123 4567', country: 'السعودية', operator: 'STC', price: 8.99, status: 'available' },
-    { id: 4, type: 'whatsapp', phone: '+963 933 111 200', country: 'سوريا', operator: 'سيريتل', price: 4.99, status: 'available' },
-    { id: 5, type: 'telegram', phone: '+90 532 123 4567', country: 'تركيا', operator: 'Turkcell', price: 5.99, status: 'available' },
+    { id: 3, type: 'whatsapp', phone: '+963 933 111 200', country: 'سوريا', operator: 'سيريتل', price: 4.99, status: 'available' },
+    { id: 4, type: 'telegram', phone: '+90 532 123 4567', country: 'تركيا', operator: 'Turkcell', price: 5.99, status: 'available' },
   ],
   socialPackages: [
     { id: 1, platform: 'Instagram', type: 'متابعين', qty: 1000, price: 4.99 },
     { id: 2, platform: 'TikTok', type: 'متابعين', qty: 1000, price: 3.99 },
+    { id: 3, platform: 'Facebook', type: 'متابعين', qty: 1000, price: 5.99 },
   ],
   tgVerifyPackages: [
     { id: 1, type: 'توثيق حساب شخصي', desc: 'إضافة علامة التحقق للحساب الشخصي', price: 49.99 },
   ],
   gamePackages: [
     { id: 1, game: 'PUBG Mobile', icon: '🎯', package: '60 UC', price: 0.99 },
+    { id: 2, game: 'Free Fire', icon: '🔥', package: '100 Diamond', price: 0.99 },
   ],
   rechargePkgs: [
     { id: 1, country: 'سوريا', operator: 'سيريتل', quantity: 500, price: 1.99 },
     { id: 2, country: 'سوريا', operator: 'MTN سوريا', quantity: 1000, price: 3.59 },
-    { id: 3, country: 'العراق', operator: 'Zain العراق', quantity: 5000, price: 3.99 },
   ],
   orders: [],
   transactions: [],
@@ -40,7 +40,8 @@ const DEFAULT_DB = {
     binance: { addr: '347c8a4d105019df664d62048e38d986', uid: '', qr: '', active: true },
     shamcash: { walletAddress: 'c8a4d105019df664d62048e38d986', ownerName: 'عبدالحميد محمد الحسين', qr: '', phoneNumber: '0949277889', active: true },
     western: { ownerName: 'Zood Services', country: 'Syria', active: false }
-  }
+  },
+  customServices: []
 };
 
 let DB = JSON.parse(JSON.stringify(DEFAULT_DB));
@@ -112,107 +113,6 @@ function closeModal(id) {
   const modal = document.getElementById(id);
   if (modal) modal.classList.remove('open');
 }
-
-// ============================================================
-// CONFIRMATION MODAL FOR PURCHASE
-// ============================================================
-let pendingOrderData = null;
-
-function showPurchaseConfirmation(orderData) {
-    pendingOrderData = orderData;
-    
-    // إنشاء نافذة تأكيد مخصصة
-    const confirmModal = document.createElement('div');
-    confirmModal.className = 'modal-ov';
-    confirmModal.id = 'purchaseConfirmModal';
-    confirmModal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;';
-    
-    confirmModal.innerHTML = `
-        <div class="modal-box" style="max-width:450px;text-align:center;">
-            <div style="font-size:3rem;margin-bottom:15px">🛍️</div>
-            <div class="modal-title" style="margin-bottom:10px">تأكيد الشراء</div>
-            <div class="modal-sub" style="margin-bottom:20px">يرجى تأكيد معلومات الطلب</div>
-            
-            <div style="background:var(--dark3);border-radius:12px;padding:20px;margin-bottom:20px;text-align:right">
-                <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-                    <span style="color:var(--text2)">الخدمة:</span>
-                    <span style="font-weight:600">${orderData.type}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-                    <span style="color:var(--text2)">التفاصيل:</span>
-                    <span style="font-weight:600">${orderData.detail}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-                    <span style="color:var(--text2)">السعر:</span>
-                    <span style="color:var(--gold);font-weight:700">$${orderData.price.toFixed(2)}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between">
-                    <span style="color:var(--text2)">رصيدك الحالي:</span>
-                    <span style="color:var(--green);font-weight:700">$${safeToFixed(currentUser?.balance)}</span>
-                </div>
-            </div>
-            
-            <div style="background:rgba(245,200,66,0.1);border-radius:10px;padding:12px;margin-bottom:20px;font-size:0.85rem;color:var(--text2)">
-                ⚠️ ملاحظة: سيتم إرسال طلبك إلى فريق الدعم وسيتم التواصل معك عبر واتساب خلال دقائق
-            </div>
-            
-            <div style="display:flex;gap:10px;justify-content:center">
-                <button class="m-cancel" onclick="closePurchaseConfirm()" style="padding:12px 24px">إلغاء</button>
-                <button class="m-confirm" onclick="confirmPurchase()" style="padding:12px 24px">تأكيد الشراء</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(confirmModal);
-    setTimeout(() => confirmModal.classList.add('open'), 10);
-}
-
-function closePurchaseConfirm() {
-    const modal = document.getElementById('purchaseConfirmModal');
-    if (modal) {
-        modal.classList.remove('open');
-        setTimeout(() => modal.remove(), 300);
-    }
-    pendingOrderData = null;
-}
-
-function confirmPurchase() {
-    if (pendingOrderData) {
-        closePurchaseConfirm();
-        sendWhatsAppOrderRequest(pendingOrderData);
-    }
-}
-
-// ============================================================
-// QR LOADING INDICATORS
-// ============================================================
-function showQrLoading(show) {
-    const qrBox = document.getElementById('afQrBox');
-    const imgEl = document.getElementById('afQrImg');
-    const fallbackEl = document.getElementById('afQrFallback');
-    
-    if (qrBox) {
-        if (show) {
-            qrBox.classList.add('loading');
-            if (imgEl) imgEl.style.display = 'none';
-            if (fallbackEl) fallbackEl.style.display = 'none';
-        } else {
-            qrBox.classList.remove('loading');
-        }
-    }
-}
-
-function setImageLoading(imgElement, isLoading) {
-    if (!imgElement) return;
-    if (isLoading) {
-        imgElement.classList.add('loading');
-        imgElement.classList.remove('loaded');
-    } else {
-        imgElement.classList.remove('loading');
-        imgElement.classList.add('loaded');
-    }
-}
-
 // ============================================================
 // SUPABASE FUNCTIONS
 // ============================================================
@@ -253,7 +153,7 @@ async function initSupabase() {
 async function loadAllDataFromSupabase() {
   showLoadingOverlay('جارٍ تحميل البيانات...');
   try {
-    const [usersRes, numbersRes, socialRes, tgVerifyRes, gamesRes, rechargeRes, ordersRes, transactionsRes, pmRes] = await Promise.all([
+    const [usersRes, numbersRes, socialRes, tgVerifyRes, gamesRes, rechargeRes, ordersRes, transactionsRes, pmRes, servicesRes] = await Promise.all([
       supabase.from('users').select('*'),
       supabase.from('numbers').select('*'),
       supabase.from('social_packages').select('*'),
@@ -262,7 +162,8 @@ async function loadAllDataFromSupabase() {
       supabase.from('recharge_packages').select('*'),
       supabase.from('orders').select('*'),
       supabase.from('transactions').select('*'),
-      supabase.from('payment_methods').select('*')
+      supabase.from('payment_methods').select('*'),
+      supabase.from('custom_services').select('*')
     ]);
 
     if (usersRes.data) DB.users = usersRes.data;
@@ -270,7 +171,6 @@ async function loadAllDataFromSupabase() {
     if (socialRes.data) DB.socialPackages = socialRes.data;
     if (tgVerifyRes.data) DB.tgVerifyPackages = tgVerifyRes.data;
     if (gamesRes.data) DB.gamePackages = gamesRes.data;
-    
     if (rechargeRes.data) {
       DB.rechargePkgs = rechargeRes.data.map(pkg => ({
         ...pkg,
@@ -278,10 +178,8 @@ async function loadAllDataFromSupabase() {
         price: pkg.price || 0
       }));
     }
-    
     if (ordersRes.data) DB.orders = ordersRes.data;
     if (transactionsRes.data) DB.transactions = transactionsRes.data;
-    
     if (pmRes.data && pmRes.data.length > 0) {
       pmRes.data.forEach(pm => {
         if (pm.method && pm.data) {
@@ -289,6 +187,7 @@ async function loadAllDataFromSupabase() {
         }
       });
     }
+    if (servicesRes.data) DB.customServices = servicesRes.data;
     
     saveDB();
   } catch (e) {
@@ -309,6 +208,8 @@ async function refreshAllData() {
     if (fresh) currentUser = fresh;
     updateNav();
   }
+  renderCustomServicesOnHome();
+  renderCustomServicesList();
 }
 
 function saveDB() {
@@ -330,6 +231,7 @@ function ensureDBSchema() {
   if (!DB.tgVerifyPackages) DB.tgVerifyPackages = DEFAULT_DB.tgVerifyPackages;
   if (!DB.gamePackages) DB.gamePackages = DEFAULT_DB.gamePackages;
   if (!DB.rechargePkgs) DB.rechargePkgs = DEFAULT_DB.rechargePkgs;
+  if (!DB.customServices) DB.customServices = [];
   
   DB.rechargePkgs = DB.rechargePkgs.map(pkg => ({
     ...pkg,
@@ -337,7 +239,35 @@ function ensureDBSchema() {
     price: pkg.price || 0
   }));
 }
+// ============================================================
+// QR LOADING INDICATORS
+// ============================================================
+function showQrLoading(show) {
+    const qrBox = document.getElementById('afQrBox');
+    const imgEl = document.getElementById('afQrImg');
+    const fallbackEl = document.getElementById('afQrFallback');
+    
+    if (qrBox) {
+        if (show) {
+            qrBox.classList.add('loading');
+            if (imgEl) imgEl.style.display = 'none';
+            if (fallbackEl) fallbackEl.style.display = 'none';
+        } else {
+            qrBox.classList.remove('loading');
+        }
+    }
+}
 
+function setImageLoading(imgElement, isLoading) {
+    if (!imgElement) return;
+    if (isLoading) {
+        imgElement.classList.add('loading');
+        imgElement.classList.remove('loaded');
+    } else {
+        imgElement.classList.remove('loading');
+        imgElement.classList.add('loaded');
+    }
+}
 // ============================================================
 // SESSION & AUTH
 // ============================================================
@@ -469,7 +399,6 @@ function updateNav() {
   if (mmUserSec) mmUserSec.style.display = ok ? '' : 'none';
   if (mmDashBtn2) mmDashBtn2.style.display = admin ? '' : 'none';
 }
-
 // ============================================================
 // PAGE ROUTING
 // ============================================================
@@ -492,7 +421,7 @@ function showPage(name) {
 // ============================================================
 // RENDER FUNCTIONS
 // ============================================================
-const countryFlags = { سوريا: '🇸🇾', السعودية: '🇸🇦', الإمارات: '🇦🇪', تركيا: '🇹🇷', مصر: '🇪🇬', العراق: '🇮🇶', روسيا: '🇷🇺' };
+const countryFlags = { سوريا: '🇸🇾', السعودية: '🇸🇦', الإمارات: '🇦🇪', تركيا: '🇹🇷', مصر: '🇪🇬', العراق: '🇮🇶', روسيا: '🇷🇺', عمان: '🇴🇲', الكويت: '🇰🇼', قطر: '🇶🇦', البحرين: '🇧🇭', الأردن: '🇯🇴', المغرب: '🇲🇦', الجزائر: '🇩🇿', تونس: '🇹🇳' };
 const socialEmojis = { Instagram: '📸', TikTok: '🎵', Facebook: '👍', YouTube: '▶️', Twitter: '🐦', Snapchat: '👻' };
 const socialColors = { Instagram: '#E1306C', TikTok: '#69C9D0', Facebook: '#1877F2', YouTube: '#FF0000', Twitter: '#1DA1F2', Snapchat: '#FFFC00' };
 
@@ -511,18 +440,14 @@ function renderNumbersByType(type) {
   const icons = { phone: '📱', whatsapp: '💬', telegram: '✈️' };
   grid.innerHTML = nums.map(n => `
     <div class="product-card">
-      <div class="flag-badge">${countryFlags[n.country] || ''} ${n.country || ''}</div>
+      <div class="flag-badge">${countryFlags[n.country] || '🌍'} ${n.country || ''}</div>
       <div class="pc-header">
         <div><div class="pc-name">${icons[n.type]} ${n.operator || ''}</div></div>
         <span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? '✅ متاح' : '❌ مباع'}</span>
       </div>
-      <div class="pc-num" style="background:var(--dark4);color:var(--text3);font-style:italic">
-        🔒 الرقم متاح بعد الشراء
-      </div>
+      <div class="pc-num" style="background:var(--dark4);color:var(--text3);font-style:italic">🔒 الرقم متاح بعد الشراء</div>
       <div class="pc-price">$${safeToFixed(n.price)} <span>/ رقم واحد</span></div>
-      <button class="buy-btn" ${n.status !== 'available' ? 'disabled' : ''} onclick="openBuyNum(${n.id})">
-        ${n.status === 'available' ? '📞 طلب الشراء عبر واتساب' : 'تم البيع'}
-      </button>
+      <button class="buy-btn" ${n.status !== 'available' ? 'disabled' : ''} onclick="openBuyNum(${n.id})">${n.status === 'available' ? '📞 طلب الشراء عبر واتساب' : 'تم البيع'}</button>
     </div>`).join('');
 }
 
@@ -637,7 +562,6 @@ function renderTxList(type) {
       <div class="tx-amt ${t.type}">${t.type === 'credit' ? '+' : '-'}$${safeToFixed(t.amount)}</div>
     </div>`).join('');
 }
-
 // ============================================================
 // ADD FUNDS WITH QR FROM DATABASE
 // ============================================================
@@ -698,17 +622,11 @@ function afGoStep2() {
   
   document.getElementById('afAmtDisplay').textContent = '$' + safeToFixed(amt);
   const walletAddressElement = document.getElementById('afShamNum');
-  if (walletAddressElement) {
-    walletAddressElement.textContent = pm.walletAddress || pm.num || 'c8a4d105019df664d62048e38d986';
-  }
+  if (walletAddressElement) walletAddressElement.textContent = pm.walletAddress || pm.num || 'c8a4d105019df664d62048e38d986';
   const ownerNameElement = document.getElementById('afShamName');
-  if (ownerNameElement) {
-    ownerNameElement.textContent = pm.ownerName || 'عبدالحميد محمد الحسين';
-  }
+  if (ownerNameElement) ownerNameElement.textContent = pm.ownerName || 'عبدالحميد محمد الحسين';
   const shamAmtElement = document.getElementById('afShamAmt');
-  if (shamAmtElement) {
-    shamAmtElement.textContent = '$' + safeToFixed(amt) + ' USD';
-  }
+  if (shamAmtElement) shamAmtElement.textContent = '$' + safeToFixed(amt) + ' USD';
   
   const imgEl = document.getElementById('afQrImg');
   const fallbackEl = document.getElementById('afQrFallback');
@@ -733,29 +651,13 @@ function afGoStep2() {
         showQrLoading(false);
         imgEl.style.display = 'none';
         fallbackEl.style.display = 'block';
-        fallbackEl.innerHTML = `
-          <div style="font-size:2rem;margin-bottom:12px">💳</div>
-          <div style="font-weight:bold;margin-bottom:8px">عنوان محفظة شام كاش:</div>
-          <div style="font-size:1rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px;word-break:break-all">${pm.walletAddress || pm.num}</div>
-          <div>👤 اسم الحساب: ${pm.ownerName}</div>
-          <div>💵 المبلغ: $${safeToFixed(amt)}</div>
-          <button class="copy-btn" onclick="copyText('${pm.walletAddress || pm.num}')" style="margin-top:15px;padding:8px 16px">📋 نسخ العنوان</button>
-          ${pm.phoneNumber ? `<div style="margin-top:10px;font-size:0.8rem;color:var(--text3)">📞 رقم الهاتف: ${pm.phoneNumber}</div>` : ''}
-        `;
+        fallbackEl.innerHTML = `<div style="font-size:2rem;margin-bottom:12px">💳</div><div style="font-weight:bold;margin-bottom:8px">عنوان محفظة شام كاش:</div><div style="font-size:1rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px;word-break:break-all">${pm.walletAddress || pm.num}</div><div>👤 اسم الحساب: ${pm.ownerName}</div><div>💵 المبلغ: $${safeToFixed(amt)}</div><button class="copy-btn" onclick="copyText('${pm.walletAddress || pm.num}')" style="margin-top:15px;padding:8px 16px">📋 نسخ العنوان</button>${pm.phoneNumber ? `<div style="margin-top:10px;font-size:0.8rem;color:var(--text3)">📞 رقم الهاتف: ${pm.phoneNumber}</div>` : ''}`;
       };
     } else {
       showQrLoading(false);
       imgEl.style.display = 'none';
       fallbackEl.style.display = 'block';
-      fallbackEl.innerHTML = `
-        <div style="font-size:2rem;margin-bottom:12px">💳</div>
-        <div style="font-weight:bold;margin-bottom:8px">عنوان محفظة شام كاش:</div>
-        <div style="font-size:1rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px;word-break:break-all">${pm.walletAddress || pm.num}</div>
-        <div>👤 اسم الحساب: ${pm.ownerName}</div>
-        <div>💵 المبلغ: $${safeToFixed(amt)}</div>
-        <button class="copy-btn" onclick="copyText('${pm.walletAddress || pm.num}')" style="margin-top:15px;padding:8px 16px">📋 نسخ العنوان</button>
-        ${pm.phoneNumber ? `<div style="margin-top:10px;font-size:0.8rem;color:var(--text3)">📞 رقم الهاتف: ${pm.phoneNumber}</div>` : ''}
-      `;
+      fallbackEl.innerHTML = `<div style="font-size:2rem;margin-bottom:12px">💳</div><div style="font-weight:bold;margin-bottom:8px">عنوان محفظة شام كاش:</div><div style="font-size:1rem;font-weight:bold;color:var(--gold);margin:10px 0;direction:ltr;background:var(--dark4);padding:10px;border-radius:10px;word-break:break-all">${pm.walletAddress || pm.num}</div><div>👤 اسم الحساب: ${pm.ownerName}</div><div>💵 المبلغ: $${safeToFixed(amt)}</div><button class="copy-btn" onclick="copyText('${pm.walletAddress || pm.num}')" style="margin-top:15px;padding:8px 16px">📋 نسخ العنوان</button>${pm.phoneNumber ? `<div style="margin-top:10px;font-size:0.8rem;color:var(--text3)">📞 رقم الهاتف: ${pm.phoneNumber}</div>` : ''}`;
     }
   }
   
@@ -819,39 +721,56 @@ async function confirmAddFundsRequest() {
   closeModal('addFundsModal');
   showToast('تم إرسال الطلب! تواصل مع الإدارة على واتساب ✅', 'success');
 }
-
 // ============================================================
-// MODIFIED BUY LOGIC - WITH CONFIRMATION MODAL
+// PURCHASE CONFIRMATION WITH NOTES
 // ============================================================
+let pendingOrderData = null;
 
-function openBuyNum(id) {
-    if (!currentUser) { showPage('login'); return; }
-    const n = DB.numbers.find(x => x.id === id);
-    if (!n || n.status !== 'available') { showToast('هذا الرقم غير متاح', 'error'); return; }
+function showPurchaseConfirmation(orderData) {
+    pendingOrderData = orderData;
     
-    // عرض نافذة التأكيد بدلاً من الإرسال المباشر
-    showPurchaseConfirmation({
-        type: 'رقم ' + (n.type === 'phone' ? 'هاتفي' : n.type === 'whatsapp' ? 'واتساب' : 'تلغرام'),
-        detail: n.operator ? n.operator + ' - ' + n.country : n.country,
-        price: n.price,
-        phone: n.phone,
-        status: 'pending'
-    });
+    const confirmModal = document.createElement('div');
+    confirmModal.className = 'modal-ov';
+    confirmModal.id = 'purchaseConfirmModal';
+    confirmModal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    
+    confirmModal.innerHTML = `
+        <div class="modal-box" style="max-width:500px;">
+            <div style="text-align:center;font-size:3rem;margin-bottom:15px">🛍️</div>
+            <div class="modal-title" style="text-align:center;margin-bottom:10px">تأكيد الطلب</div>
+            <div class="modal-sub" style="text-align:center;margin-bottom:20px">يرجى مراجعة تفاصيل طلبك</div>
+            <div style="background:var(--dark3);border-radius:12px;padding:20px;margin-bottom:20px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">الخدمة:</span><span style="font-weight:600">${orderData.type}</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">التفاصيل:</span><span style="font-weight:600">${orderData.detail}</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">السعر:</span><span style="color:var(--gold);font-weight:700">$${orderData.price.toFixed(2)}</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">رصيدك الحالي:</span><span style="color:var(--green);font-weight:700">$${safeToFixed(currentUser?.balance)}</span></div>
+            </div>
+            <div class="fg"><label class="fl">📝 ملاحظاتك (اختياري)</label><textarea id="orderNotes" class="fi" rows="3" placeholder="أدخل أي معلومات إضافية... مثال: رابط القناة، اسم المستخدم، رقم الحساب..." style="resize:vertical"></textarea></div>
+            <div style="background:rgba(245,200,66,0.1);border-radius:10px;padding:12px;margin:20px 0;font-size:0.85rem;color:var(--text2);text-align:center">⚠️ سيتم إرسال طلبك إلى فريق الدعم وسيتم التواصل معك عبر واتساب</div>
+            <div style="display:flex;gap:10px;justify-content:center"><button class="m-cancel" onclick="closePurchaseConfirm()" style="padding:12px 24px">إلغاء</button><button class="m-confirm" onclick="confirmPurchase()" style="padding:12px 24px">تأكيد الطلب</button></div>
+        </div>
+    `;
+    
+    document.body.appendChild(confirmModal);
+    setTimeout(() => confirmModal.classList.add('open'), 10);
 }
 
-function openBuyDirect(desc, price, cb, category, pkgId) {
-    if (!currentUser) { showPage('login'); return; }
-    
-    // عرض نافذة التأكيد بدلاً من الإرسال المباشر
-    showPurchaseConfirmation({
-        type: category === 'social' ? 'باقة سوشيال ميديا' :
-               category === 'tgverify' ? 'توثيق تلغرام' :
-               category === 'game' ? 'شحن لعبة' : 'خدمة',
-        detail: desc,
-        price: price,
-        category: category,
-        pkgId: pkgId
-    });
+function closePurchaseConfirm() {
+    const modal = document.getElementById('purchaseConfirmModal');
+    if (modal) {
+        modal.classList.remove('open');
+        setTimeout(() => modal.remove(), 300);
+    }
+    pendingOrderData = null;
+}
+
+function confirmPurchase() {
+    if (pendingOrderData) {
+        const userNotes = document.getElementById('orderNotes')?.value.trim() || '';
+        pendingOrderData.userNotes = userNotes;
+        closePurchaseConfirm();
+        sendWhatsAppOrderRequest(pendingOrderData);
+    }
 }
 
 function sendWhatsAppOrderRequest(orderData) {
@@ -860,7 +779,6 @@ function sendWhatsAppOrderRequest(orderData) {
         return;
     }
     
-    // بناء رسالة واتساب
     let message = `🛍️ *طلب شراء جديد من زود*\n\n`;
     message += `👤 *اسم المستخدم:* ${currentUser.name}\n`;
     message += `📧 *البريد الإلكتروني:* ${currentUser.email}\n`;
@@ -868,14 +786,13 @@ function sendWhatsAppOrderRequest(orderData) {
     message += `📦 *نوع الخدمة:* ${orderData.type}\n`;
     message += `📝 *تفاصيل الخدمة:* ${orderData.detail}\n`;
     message += `💰 *السعر:* $${orderData.price.toFixed(2)}\n`;
+    if (orderData.userNotes) message += `📌 *ملاحظات العميل:* ${orderData.userNotes}\n`;
     message += `📅 *تاريخ الطلب:* ${new Date().toLocaleString('ar')}\n\n`;
     message += `✅ *يرجى تأكيد الطلب وتزويد العميل بالبيانات المطلوبة*`;
     
     const encodedMessage = encodeURIComponent(message);
     const adminWhatsApp = '963949277889';
-    
     window.open(`https://wa.me/${adminWhatsApp}?text=${encodedMessage}`, '_blank');
-    
     saveOrderToDatabase(orderData);
     showToast('✅ تم إرسال طلبك! سيتم التواصل معك عبر واتساب خلال دقائق', 'success');
 }
@@ -887,6 +804,7 @@ async function saveOrderToDatabase(orderData) {
         user_id: currentUser.id,
         type: orderData.type,
         detail: orderData.detail,
+        user_notes: orderData.userNotes || '',
         amount: orderData.price,
         requested_amt: orderData.price,
         status: 'pending_approval',
@@ -902,6 +820,29 @@ async function saveOrderToDatabase(orderData) {
     }
 }
 
+function openBuyNum(id) {
+    if (!currentUser) { showPage('login'); return; }
+    const n = DB.numbers.find(x => x.id === id);
+    if (!n || n.status !== 'available') { showToast('هذا الرقم غير متاح', 'error'); return; }
+    showPurchaseConfirmation({
+        type: 'رقم ' + (n.type === 'phone' ? 'هاتفي' : n.type === 'whatsapp' ? 'واتساب' : 'تلغرام'),
+        detail: n.operator ? n.operator + ' - ' + n.country : n.country,
+        price: n.price,
+        phone: n.phone,
+        status: 'pending'
+    });
+}
+
+function openBuyDirect(desc, price, cb, category, pkgId) {
+    if (!currentUser) { showPage('login'); return; }
+    showPurchaseConfirmation({
+        type: category === 'social' ? 'باقة سوشيال ميديا' : category === 'tgverify' ? 'توثيق تلغرام' : category === 'game' ? 'شحن لعبة' : 'خدمة',
+        detail: desc,
+        price: price,
+        category: category,
+        pkgId: pkgId
+    });
+}
 // ============================================================
 // RECHARGE
 // ============================================================
@@ -921,15 +862,8 @@ function selectRcOp(op, region) {
     const g = document.getElementById('rcGrid' + cap);
     if (g) {
         g.innerHTML = pkgs.map(p => {
-            const qtyValue = p.quantity || p.qty || 0;
-            return `
-                <div class="rc-card" onclick="selectRcPkg('${region}',${p.id},this)">
-                    <div class="rc-icon">⚡</div>
-                    <div class="rc-amt">${qtyValue.toLocaleString()}</div>
-                    <div class="rc-lbl">وحدة</div>
-                    <div style="margin-top:7px;font-weight:700;color:var(--gold)">$${(p.price || 0).toFixed(2)}</div>
-                </div>
-            `;
+            const qtyValue = p.quantity || 0;
+            return `<div class="rc-card" onclick="selectRcPkg('${region}',${p.id},this)"><div class="rc-icon">⚡</div><div class="rc-amt">${qtyValue.toLocaleString()}</div><div class="rc-lbl">وحدة</div><div style="margin-top:7px;font-weight:700;color:var(--gold)">$${(p.price || 0).toFixed(2)}</div></div>`;
         }).join('');
     }
     const d = document.getElementById('rcPkgs' + cap);
@@ -951,14 +885,123 @@ function doRecharge(region) {
   const cap = region.charAt(0).toUpperCase() + region.slice(1);
   const num = document.getElementById('rcNum' + cap)?.value.trim();
   if (!num) { showToast('أدخل رقم الهاتف', 'error'); return; }
-  
-  const qtyValue = st.pkg.quantity || st.pkg.qty || 0;
+  const qtyValue = st.pkg.quantity || 0;
   openBuyDirect('شحن ' + qtyValue.toLocaleString() + ' وحدة - ' + st.op + ' - ' + num, st.pkg.price);
   rcState[region] = {};
 }
-
 // ============================================================
-// DASHBOARD (المختصر)
+// CUSTOM SERVICES MANAGEMENT
+// ============================================================
+
+function openAddCustomService() {
+    document.getElementById('newCustomServiceName').value = '';
+    document.getElementById('newCustomServiceDesc').value = '';
+    document.getElementById('newCustomServiceIcon').value = '';
+    document.getElementById('newCustomServiceColor').value = '';
+    document.getElementById('newCustomServiceNote').value = '';
+    openModal('addCustomServiceModal');
+}
+
+async function addCustomService() {
+    const name = document.getElementById('newCustomServiceName').value.trim();
+    const description = document.getElementById('newCustomServiceDesc').value.trim();
+    const icon = document.getElementById('newCustomServiceIcon').value.trim() || '📱';
+    const color = document.getElementById('newCustomServiceColor').value.trim();
+    const note = document.getElementById('newCustomServiceNote').value.trim();
+    
+    if (!name) {
+        showToast('الرجاء إدخال اسم الخدمة', 'error');
+        return;
+    }
+    
+    const newService = {
+        id: Date.now(),
+        name: name,
+        description: description,
+        icon: icon,
+        color: color,
+        page: 'home',
+        note: note,
+        is_active: true,
+        display_order: (DB.customServices?.length || 0),
+        created_at: new Date().toISOString()
+    };
+    
+    if (useSupabase && supabase) {
+        const { error } = await supabase.from('custom_services').insert(newService);
+        if (error) {
+            showToast('حدث خطأ أثناء إضافة الخدمة', 'error');
+            return;
+        }
+    }
+    
+    if (!DB.customServices) DB.customServices = [];
+    DB.customServices.push(newService);
+    saveDB();
+    
+    closeModal('addCustomServiceModal');
+    renderCustomServicesOnHome();
+    renderCustomServicesList();
+    showToast('تم إضافة الخدمة بنجاح ✅', 'success');
+}
+
+function renderCustomServicesOnHome() {
+    const servicesGrid = document.getElementById('servicesGrid');
+    if (!servicesGrid) return;
+    
+    while (servicesGrid.children.length > 8) {
+        servicesGrid.removeChild(servicesGrid.lastChild);
+    }
+    
+    if (DB.customServices) {
+        DB.customServices.forEach(service => {
+            const card = document.createElement('div');
+            card.className = 'svc-card';
+            card.onclick = () => requireLogin('home');
+            card.innerHTML = `
+                <div class="svc-icon" style="background:${service.color ? service.color + '22' : 'rgba(245,200,66,0.12)'};color:${service.color || 'var(--gold)'}">${service.icon}</div>
+                <div class="svc-name">${service.name}</div>
+                <div class="svc-desc">${service.description || 'خدمة جديدة من زود'}</div>
+                ${service.note ? `<div class="svc-badge" style="background:rgba(245,200,66,0.15);margin-top:8px">📝 ${service.note}</div>` : '<div class="svc-badge">✨ جديد</div>'}
+            `;
+            servicesGrid.appendChild(card);
+        });
+    }
+}
+
+function renderCustomServicesList() {
+    const container = document.getElementById('customServicesAdminList');
+    if (!container) return;
+    
+    const services = DB.customServices || [];
+    if (services.length === 0) {
+        container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">لا توجد خدمات مضافة</div>';
+        return;
+    }
+    
+    container.innerHTML = services.map(service => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--dark3);border-radius:10px;margin-bottom:8px">
+            <div><div style="font-weight:700">${service.icon} ${service.name}</div><div style="font-size:0.75rem;color:var(--text3)">${service.description || ''}</div>${service.note ? `<div style="font-size:0.7rem;color:var(--gold)">📝 ${service.note}</div>` : ''}</div>
+            <button class="del-btn" onclick="deleteCustomService(${service.id})">حذف</button>
+        </div>
+    `).join('');
+}
+
+async function deleteCustomService(id) {
+    if (!confirm('هل أنت متأكد من حذف هذه الخدمة؟')) return;
+    
+    if (useSupabase && supabase) {
+        await supabase.from('custom_services').delete().eq('id', id);
+    }
+    
+    DB.customServices = DB.customServices.filter(s => s.id !== id);
+    saveDB();
+    renderCustomServicesOnHome();
+    renderCustomServicesList();
+    showToast('تم حذف الخدمة', 'success');
+}
+// ============================================================
+// DASHBOARD
 // ============================================================
 function renderDashboard() {
   const avail = DB.numbers.filter(n => n.status === 'available').length;
@@ -979,135 +1022,74 @@ function renderDashboard() {
   
   renderDNum(); renderDWa(); renderDTg(); renderDSoc();
   renderDTgV(); renderDGames(); renderDRc(); renderDUsers(); renderDOrders(); renderDPM();
+  
+  const rb = document.getElementById('ovOrdersBody');
+  if (rb) rb.innerHTML = [...DB.orders].reverse().slice(0, 8).map(o => `<tr><td style="font-weight:600">${o.user || ''}</td><td style="color:var(--text2);font-size:.75rem">${o.type || ''}</td><td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td><td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
 }
 
 function renderDNum() {
   const nums = DB.numbers.filter(n => n.type === 'phone');
   const el = document.getElementById('dNumCount'); if (el) el.textContent = nums.length;
   const tb = document.getElementById('dNumBody'); if (!tb) return;
-  tb.innerHTML = nums.map(n => `<tr>
-    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td>
-    <td>📱 هاتفي<\/td><td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td><td>${n.operator || ''}<\/td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td>
-    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td>
-    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف<\/button>
-    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}<\/button><\/td>
-  </table>`).join('');
+  tb.innerHTML = nums.map(n => `<tr><td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td><td>📱 هاتفي</td><td>${countryFlags[n.country] || ''} ${n.country || ''}</td><td>${n.operator || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td><td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td></tr>`).join('');
 }
 
 function renderDWa() {
   const nums = DB.numbers.filter(n => n.type === 'whatsapp');
   const tb = document.getElementById('dWaBody'); if (!tb) return;
-  tb.innerHTML = nums.map(n => `<tr>
-    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td>
-    <td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td>
-    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td>
-    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف<\/button>
-    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}<\/button><\/td>
-  </tr>`).join('');
+  tb.innerHTML = nums.map(n => `<tr><td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td><td>${countryFlags[n.country] || ''} ${n.country || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td><td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td></tr>`).join('');
 }
 
 function renderDTg() {
   const nums = DB.numbers.filter(n => n.type === 'telegram');
   const tb = document.getElementById('dTgBody'); if (!tb) return;
-  tb.innerHTML = nums.map(n => `<tr>
-    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td>
-    <td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td>
-    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td>
-    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف<\/button>
-    <button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}<\/button><\/td>
-  </tr>`).join('');
+  tb.innerHTML = nums.map(n => `<tr><td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td><td>${countryFlags[n.country] || ''} ${n.country || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td><td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td></tr>`).join('');
 }
 
 function renderDSoc() {
   const tb = document.getElementById('dSocBody'); if (!tb) return;
-  tb.innerHTML = DB.socialPackages.map(p => `<tr>
-    <td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}<\/td>
-    <td>${p.type || ''}<\/td><td style="font-weight:700">${safeFormatNumber(p.qty)}<\/td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
-    <td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف<\/button><\/td>
-  <tr>`).join('');
+  tb.innerHTML = DB.socialPackages.map(p => `<tr><td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}</td><td>${p.type || ''}</td><td style="font-weight:700">${safeFormatNumber(p.qty)}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td><td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف</button></td></tr>`).join('');
 }
 
 function renderDTgV() {
   const tb = document.getElementById('dTgVerifyBody'); if (!tb) return;
-  tb.innerHTML = DB.tgVerifyPackages.map(p => `<tr>
-    <td style="font-weight:600">${p.type || ''}<\/td>
-    <td style="color:var(--text2);font-size:.82rem">${p.desc || ''}<\/td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
-    <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف<\/button><\/td>
-  </tr>`).join('');
+  tb.innerHTML = DB.tgVerifyPackages.map(p => `<tr><td style="font-weight:600">${p.type || ''}</td><td style="color:var(--text2);font-size:.82rem">${p.desc || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td><td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف</button></td></tr>`).join('');
 }
 
 function renderDGames() {
   const tb = document.getElementById('dGamesBody'); if (!tb) return;
-  tb.innerHTML = DB.gamePackages.map(p => `<tr>
-    <td>${p.icon || '🎮'} ${p.game || ''}<\/td>
-    <td style="font-weight:600">${p.package || ''}<\/td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
-    <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف<\/button><\/td>
-  </tr>`).join('');
+  tb.innerHTML = DB.gamePackages.map(p => `<tr><td>${p.icon || '🎮'} ${p.game || ''}</td><td style="font-weight:600">${p.package || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td><td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td></tr>`).join('');
 }
 
 function renderDRc() {
     const tb = document.getElementById('dRcBody'); 
     if (!tb) return;
-    
     if (!DB.rechargePkgs || DB.rechargePkgs.length === 0) {
-        tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
+        tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن</td></tr>';
         return;
     }
-    
-    tb.innerHTML = DB.rechargePkgs.map(pkg => {
-        const qtyValue = (pkg.quantity !== undefined && pkg.quantity !== null) ? pkg.quantity : 0;
-        const priceValue = (pkg.price !== undefined && pkg.price !== null) ? pkg.price : 0;
-        const operatorValue = pkg.operator || 'غير محدد';
-        const countryValue = pkg.country || 'غير محدد';
-        
-        return `
-            <tr>
-                <td style="font-weight:600">${operatorValue}<\/td>
-                <td>${countryFlags[countryValue] || '🌍'} ${countryValue}<\/td>
-                <td>${qtyValue.toLocaleString()} وحدة<\/td>
-                <td style="color:var(--gold);font-weight:700">$${priceValue.toFixed(2)}<\/td>
-                <td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف<\/button><\/td>
-            </tr>
-        `;
-    }).join('');
+    tb.innerHTML = DB.rechargePkgs.map(pkg => `<tr><td style="font-weight:600">${pkg.operator || 'غير محدد'}</td><td>${countryFlags[pkg.country] || '🌍'} ${pkg.country || 'غير محدد'}</td><td>${(pkg.quantity || 0).toLocaleString()} وحدة</td><td style="color:var(--gold);font-weight:700">$${(pkg.price || 0).toFixed(2)}</td><td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف</button></td></tr>`).join('');
 }
 
 function renderDUsers() {
     const tb = document.getElementById('dUsersBody');
     if (!tb) return;
+    tb.innerHTML = DB.users.map(u => `<tr><td style="font-weight:600">${u.name || ''}</td><td style="color:var(--text2)">${u.email || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(u.balance)}</td><td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td><td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}</td><td style="white-space: nowrap;">${u.role !== 'admin' ? `<button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')" style="background:rgba(0,224,154,0.15);color:var(--green);margin:2px">💰 إضافة</button><button class="edit-btn" onclick="quickDeductBal(${u.id},'${u.name || ''}')" style="background:rgba(255,77,109,0.15);color:var(--red);margin:2px">💸 خصم</button>` : '—'}</td></tr>`).join('');
     
-    tb.innerHTML = DB.users.map(u => `
-        <tr>
-            <td style="font-weight:600">${u.name || ''}</td>
-            <td style="color:var(--text2)">${u.email || ''}</td>
-            <td style="color:var(--gold);font-weight:700">$${safeToFixed(u.balance)}</td>
-            <td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td>
-            <td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}</td>
-            <td style="white-space: nowrap;">
-                ${u.role !== 'admin' ? `
-                    <button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')" style="background:rgba(0,224,154,0.15);color:var(--green);margin:2px">💰 إضافة</button>
-                    <button class="edit-btn" onclick="quickDeductBal(${u.id},'${u.name || ''}')" style="background:rgba(255,77,109,0.15);color:var(--red);margin:2px">💸 خصم</button>
-                ` : '—'}
-            <\/td>
-        </tr>
-    `).join('');
+    const pending = DB.orders.filter(o => o.status === 'pending');
+    const pb = document.getElementById('dPendingBody');
+    if (pb) {
+        if (pending.length) {
+            pb.innerHTML = pending.map((o, idx) => `<tr><td style="font-weight:600">${o.user || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}</td><td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}</td><td><button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button><button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button></td></tr>`).join('');
+        } else {
+            pb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة</td></tr>';
+        }
+    }
 }
 
 function renderDOrders() {
   const tb = document.getElementById('dOrdersBody'); if (!tb) return;
-  tb.innerHTML = [...DB.orders].reverse().map(o => `<tr>
-    <td>${o.user || ''}</td>
-    <td><span class="pt pt-avail" style="font-size:.75rem">${o.type || ''}</span></td>
-    <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
-    <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
-  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
+  tb.innerHTML = [...DB.orders].reverse().map(o => `<tr><td>${o.user || ''}</td><td><span class="pt pt-avail" style="font-size:.75rem">${o.type || ''}</span></td><td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td><td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
 }
 
 function renderDPM() {
@@ -1119,18 +1101,7 @@ function renderDPM() {
   ];
   const el = document.getElementById('pmGrid'); 
   if (!el) return;
-  
-  el.innerHTML = cards.map(c => `
-    <div class="pm-card ${c.active ? 'active-pm' : 'inactive-pm'}">
-      <div class="pm-header">
-        <div class="pm-icon" style="background:${c.color}22;font-size:1.4rem;display:flex;align-items:center;justify-content:center">${c.icon}</div>
-        <div><div class="pm-name">${c.name}</div><div class="pm-status" style="color:${c.active ? 'var(--green)' : 'var(--red)'}">${c.active ? '✅ مفعّل' : '❌ معطّل'}</div></div>
-      </div>
-      <div class="pm-details">
-        ${c.rows.map(r => r[1] ? `<div class="pm-detail-row"><span>${r[0]}</span><span style="word-break:break-all">${r[1]}</span></div>` : '').join('')}
-      </div>
-      ${c.qr ? `<div class="pm-qr"><img src="${c.qr}" alt="QR" onerror="this.style.display='none'" style="max-width:100px;border-radius:8px;border:2px solid rgba(245,200,66,0.3)"></div>` : ''}
-    </div>`).join('');
+  el.innerHTML = cards.map(c => `<div class="pm-card ${c.active ? 'active-pm' : 'inactive-pm'}"><div class="pm-header"><div class="pm-icon" style="background:${c.color}22;font-size:1.4rem;display:flex;align-items:center;justify-content:center">${c.icon}</div><div><div class="pm-name">${c.name}</div><div class="pm-status" style="color:${c.active ? 'var(--green)' : 'var(--red)'}">${c.active ? '✅ مفعّل' : '❌ معطّل'}</div></div></div><div class="pm-details">${c.rows.map(r => r[1] ? `<div class="pm-detail-row"><span>${r[0]}</span><span style="word-break:break-all">${r[1]}</span></div>` : '').join('')}</div>${c.qr ? `<div class="pm-qr"><img src="${c.qr}" alt="QR" onerror="this.style.display='none'" style="max-width:100px;border-radius:8px;border:2px solid rgba(245,200,66,0.3)"></div>` : ''}</div>`).join('');
 }
 
 function switchDash(name, el) {
@@ -1141,8 +1112,9 @@ function switchDash(name, el) {
   if (el) el.classList.add('active');
   renderDashboard();
 }
-
-// Admin helpers
+// ============================================================
+// ADMIN HELPERS
+// ============================================================
 async function quickAddBal(uid, name) {
   const amt = parseFloat(prompt('أدخل المبلغ لإضافته لـ ' + name + ' ($):'));
   if (!amt || amt <= 0 || isNaN(amt)) return;
@@ -1160,7 +1132,6 @@ async function quickAddBal(uid, name) {
       saveDB();
     }
   }
-  
   await refreshAllData();
   renderDashboard();
   showToast('تم إضافة $' + safeToFixed(amt) + ' لـ ' + name + ' ✅', 'success');
@@ -1168,11 +1139,7 @@ async function quickAddBal(uid, name) {
 
 async function quickDeductBal(uid, name) {
     const amt = parseFloat(prompt('💰 أدخل المبلغ لخصمه من رصيد ' + name + ' ($):'));
-    if (!amt || amt <= 0 || isNaN(amt)) {
-        showToast('الرجاء إدخال مبلغ صحيح', 'error');
-        return;
-    }
-    
+    if (!amt || amt <= 0 || isNaN(amt)) { showToast('الرجاء إدخال مبلغ صحيح', 'error'); return; }
     let currentBalance = 0;
     if (useSupabase && supabase) {
         const { data: user } = await supabase.from('users').select('balance').eq('id', uid).single();
@@ -1183,18 +1150,9 @@ async function quickDeductBal(uid, name) {
         if (userIndex === -1) { showToast('المستخدم غير موجود', 'error'); return; }
         currentBalance = DB.users[userIndex].balance || 0;
     }
-    
-    if (currentBalance < amt) {
-        showToast(`❌ رصيد المستخدم غير كافٍ! الرصيد الحالي: $${currentBalance.toFixed(2)}`, 'error');
-        return;
-    }
-    
-    if (!confirm(`⚠️ هل أنت متأكد من خصم $${amt.toFixed(2)} من رصيد ${name}؟\n\nالرصيد الحالي: $${currentBalance.toFixed(2)}\nالرصيد بعد الخصم: $${(currentBalance - amt).toFixed(2)}`)) {
-        return;
-    }
-    
+    if (currentBalance < amt) { showToast(`❌ رصيد المستخدم غير كافٍ! الرصيد الحالي: $${currentBalance.toFixed(2)}`, 'error'); return; }
+    if (!confirm(`⚠️ هل أنت متأكد من خصم $${amt.toFixed(2)} من رصيد ${name}؟\n\nالرصيد الحالي: $${currentBalance.toFixed(2)}\nالرصيد بعد الخصم: $${(currentBalance - amt).toFixed(2)}`)) return;
     const newBalance = currentBalance - amt;
-    
     if (useSupabase && supabase) {
         await supabase.from('users').update({ balance: newBalance }).eq('id', uid);
         await supabase.from('transactions').insert({ user_id: uid, type: 'debit', description: `💸 خصم رصيد من الإدارة - مبلغ: $${amt.toFixed(2)}`, amount: amt, transaction_date: new Date().toLocaleString('ar') });
@@ -1206,13 +1164,45 @@ async function quickDeductBal(uid, name) {
         DB.orders.push({ id: Date.now(), user: name, user_id: uid, type: 'خصم رصيد (أدمن)', detail: `💸 تم خصم $${amt.toFixed(2)} من الرصيد`, amount: amt, status: 'done', time: new Date().toLocaleString('ar') });
         saveDB();
     }
-    
     await refreshAllData();
     renderDashboard();
     showToast(`✅ تم خصم $${amt.toFixed(2)} من رصيد ${name}`, 'success');
 }
 
+async function approveWalletRequest(orderId) {
+  const order = DB.orders.find(o => o.id === orderId);
+  if (!order) return;
+  const amt = order.requested_amt || 0;
+  if (useSupabase && supabase) {
+    await supabase.from('orders').update({ status: 'approved', amount: amt }).eq('id', orderId);
+    const { data: user } = await supabase.from('users').select('balance').eq('id', order.user_id).single();
+    await supabase.from('users').update({ balance: (user?.balance || 0) + amt }).eq('id', order.user_id);
+    await supabase.from('transactions').insert({ user_id: order.user_id, type: 'credit', description: 'إضافة رصيد — تمت الموافقة', amount: amt, transaction_date: new Date().toLocaleString('ar') });
+  } else {
+    const ui = DB.users.findIndex(u => u.id === order.user_id);
+    if (ui !== -1) {
+      DB.users[ui].balance = (DB.users[ui].balance || 0) + amt;
+      order.status = 'approved';
+      order.amount = amt;
+      DB.transactions.push({ id: Date.now(), user_id: order.user_id, type: 'credit', description: 'إضافة رصيد — تمت الموافقة', amount: amt, date: new Date().toLocaleString('ar') });
+      saveDB();
+    }
+  }
+  await refreshAllData();
+  renderDashboard();
+  showToast('تمت الموافقة وإضافة $' + safeToFixed(amt) + ' لـ ' + order.user + ' ✅', 'success');
+}
+
+function rejectWalletRequest(orderId) {
+  const order = DB.orders.find(o => o.id === orderId);
+  if (order) order.status = 'rejected';
+  saveDB();
+  renderDashboard();
+  showToast('تم رفض الطلب', 'success');
+}
+// ============================================================
 // CRUD Operations
+// ============================================================
 async function deleteNum(id) {
   if (useSupabase && supabase) {
     await supabase.from('numbers').delete().eq('id', id);
@@ -1287,8 +1277,9 @@ async function deleteRcPkg(id) {
   renderDashboard();
   showToast('تم حذف الباقة', 'success');
 }
-
+// ============================================================
 // Modal Open Functions
+// ============================================================
 function openAddNum(type) {
     document.getElementById('addNumType').value = type;
     document.getElementById('addNumTitle').textContent = type === 'whatsapp' ? '💬 إضافة رقم واتساب' : type === 'telegram' ? '✈️ إضافة رقم تلغرام' : '📱 إضافة رقم هاتفي';
@@ -1303,18 +1294,18 @@ async function confirmAddNum() {
     const op = document.getElementById('newNumOp').value;
     const price = parseFloat(document.getElementById('newNumPrice').value);
     if (!phone || !price) { showToast('أدخل جميع البيانات', 'error'); return; }
+    if (!country) { showToast('أدخل اسم الدولة', 'error'); return; }
     const newNum = { id: Date.now(), type, phone, country, operator: op, price, status: 'available' };
-    
     if (useSupabase && supabase) {
         await supabase.from('numbers').insert(newNum);
     } else {
         DB.numbers.push(newNum);
         saveDB();
     }
-    
     closeModal('addNumModal');
     document.getElementById('newNumPhone').value = '';
     document.getElementById('newNumPrice').value = '';
+    document.getElementById('newNumCountry').value = '';
     await refreshAllData();
     renderDashboard();
     showToast('تم إضافة الرقم ✅', 'success');
@@ -1326,14 +1317,12 @@ async function confirmAddSocial() {
   const price = parseFloat(document.getElementById('nSocPrice').value);
   if (!qty || !price) { showToast('أدخل الكمية والسعر', 'error'); return; }
   const p = { id: Date.now(), platform: document.getElementById('nSocPlat').value, type: document.getElementById('nSocType').value, qty, price };
-  
   if (useSupabase && supabase) {
     await supabase.from('social_packages').insert(p);
   } else {
     DB.socialPackages.push(p);
     saveDB();
   }
-  
   closeModal('addSocialModal');
   await refreshAllData();
   renderDashboard();
@@ -1348,14 +1337,12 @@ async function confirmAddTgVerify() {
   const price = parseFloat(document.getElementById('nTgVPrice').value);
   if (!price) { showToast('أدخل السعر', 'error'); return; }
   const p = { id: Date.now(), type: document.getElementById('nTgVType').value, desc: document.getElementById('nTgVDesc').value, price };
-  
   if (useSupabase && supabase) {
     await supabase.from('tg_verify_packages').insert(p);
   } else {
     DB.tgVerifyPackages.push(p);
     saveDB();
   }
-  
   closeModal('addTgVerifyModal');
   await refreshAllData();
   renderDashboard();
@@ -1371,7 +1358,6 @@ function openAddGame() {
   document.getElementById('nGamePrice').value = '';
   openModal('addGameModal');
 }
-
 async function confirmAddGame() {
   const gameName = document.getElementById('nGameName').value.trim();
   const gameIcon = document.getElementById('nGameIcon').value.trim() || '🎮';
@@ -1379,14 +1365,12 @@ async function confirmAddGame() {
   const pkg = document.getElementById('nGamePkg').value.trim();
   if (!gameName || !price || !pkg) { showToast('أدخل جميع البيانات', 'error'); return; }
   const p = { id: Date.now(), game: gameName, icon: gameIcon, package: pkg, price };
-  
   if (useSupabase && supabase) {
     await supabase.from('game_packages').insert(p);
   } else {
     DB.gamePackages.push(p);
     saveDB();
   }
-  
   closeModal('addGameModal');
   await refreshAllData();
   renderDashboard();
@@ -1400,33 +1384,15 @@ async function confirmAddRcPkg() {
     const price = parseFloat(document.getElementById('nRcPrice').value);
     const country = document.getElementById('nRcCountry').value;
     const operator = document.getElementById('nRcOp').value.trim();
-    
-    if (!quantity || !price || !operator) {
-        showToast('أدخل جميع البيانات (الكمية، السعر، اسم الشبكة)', 'error');
-        return;
-    }
-    
-    const newPackage = {
-        id: Date.now(),
-        country: country,
-        operator: operator,
-        quantity: quantity,
-        price: price,
-        is_active: true,
-        created_at: new Date().toISOString()
-    };
-    
+    if (!quantity || !price || !operator) { showToast('أدخل جميع البيانات', 'error'); return; }
+    const newPackage = { id: Date.now(), country: country, operator: operator, quantity: quantity, price: price };
     if (useSupabase && supabase) {
         const { error } = await supabase.from('recharge_packages').insert(newPackage);
-        if (error) {
-            showToast('خطأ: ' + error.message, 'error');
-            return;
-        }
+        if (error) { showToast('خطأ: ' + error.message, 'error'); return; }
     } else {
         DB.rechargePkgs.push(newPackage);
         saveDB();
     }
-    
     closeModal('addRcPkgModal');
     await refreshAllData();
     renderDashboard();
@@ -1449,7 +1415,6 @@ async function confirmAdminAddBal() {
   const amt = parseFloat(document.getElementById('adminBalAmt').value);
   const note = document.getElementById('adminBalNote').value.trim() || 'إضافة من الإدارة';
   if (!uid || !amt || amt <= 0) { showToast('أدخل البيانات بشكل صحيح', 'error'); return; }
-  
   if (useSupabase && supabase) {
     const { data: user } = await supabase.from('users').select('balance, name').eq('id', uid).single();
     await supabase.from('users').update({ balance: (user?.balance || 0) + amt }).eq('id', uid);
@@ -1464,17 +1429,14 @@ async function confirmAdminAddBal() {
       saveDB();
     }
   }
-  
   closeModal('adminAddBalModal');
   await refreshAllData();
   renderDashboard();
   showToast('تم إضافة $' + safeToFixed(amt) + ' للحساب ✅', 'success');
 }
-
 // ============================================================
 // PAYMENT METHODS MANAGEMENT
 // ============================================================
-
 let selectedQRFile = null;
 
 function initFileUpload() {
@@ -1482,18 +1444,15 @@ function initFileUpload() {
     if (fileInput) {
         const newFileInput = fileInput.cloneNode(true);
         fileInput.parentNode.replaceChild(newFileInput, fileInput);
-        
         newFileInput.addEventListener('change', function(e) {
             if (e.target.files && e.target.files.length > 0) {
                 selectedQRFile = e.target.files[0];
-                
                 if (selectedQRFile.size > 2 * 1024 * 1024) {
                     showToast('حجم الصورة كبير جداً. الحد الأقصى 2 ميجابايت', 'error');
                     selectedQRFile = null;
                     e.target.value = '';
                     return;
                 }
-                
                 const reader = new FileReader();
                 reader.onload = function(evt) {
                     const previewImg = document.getElementById('shamQrPreviewImg');
@@ -1516,27 +1475,17 @@ async function uploadQRCodeAndGetURL(file) {
         showToast('قاعدة البيانات غير متصلة', 'error');
         return null;
     }
-    
     const previewDiv = document.getElementById('shamQrPreview');
     const previewImg = document.getElementById('shamQrPreviewImg');
     if (previewDiv && previewImg) {
         previewDiv.classList.add('loading');
         previewImg.style.opacity = '0.3';
     }
-    
     showLoadingOverlay('جاري رفع الصورة...');
-    
     try {
         const fileExt = file.name.split('.').pop();
         const fileName = `shamcash_qr_${Date.now()}.${fileExt}`;
-        
-        const { data, error } = await supabase.storage
-            .from('qr-codes')
-            .upload(fileName, file, {
-                cacheControl: '3600',
-                upsert: true
-            });
-        
+        const { data, error } = await supabase.storage.from('qr-codes').upload(fileName, file, { cacheControl: '3600', upsert: true });
         if (error) {
             console.error('Upload error:', error);
             showToast('فشل رفع الصورة: ' + error.message, 'error');
@@ -1544,21 +1493,12 @@ async function uploadQRCodeAndGetURL(file) {
             if (previewImg) previewImg.style.opacity = '1';
             return null;
         }
-        
-        const { data: urlData } = supabase.storage
-            .from('qr-codes')
-            .getPublicUrl(fileName);
-        
+        const { data: urlData } = supabase.storage.from('qr-codes').getPublicUrl(fileName);
         const publicUrl = urlData.publicUrl;
-        
         if (previewImg && previewDiv) {
             previewImg.src = publicUrl;
-            previewImg.onload = function() {
-                previewDiv.classList.remove('loading');
-                previewImg.style.opacity = '1';
-            };
+            previewImg.onload = function() { previewDiv.classList.remove('loading'); previewImg.style.opacity = '1'; };
         }
-        
         return publicUrl;
     } catch (error) {
         console.error('Error uploading:', error);
@@ -1573,91 +1513,58 @@ async function savePaymentMethods() {
     showLoadingOverlay('جاري حفظ الإعدادات...');
     try {
         let qrUrl = document.getElementById('pm-sham-qr')?.value.trim() || '';
-        
         if (selectedQRFile) {
             const saveBtn = document.querySelector('#editPMModal .m-confirm');
             const originalText = saveBtn?.innerHTML;
-            if (saveBtn) {
-                saveBtn.innerHTML = '<span class="loading-spinner-small"></span> جاري الرفع...';
-                saveBtn.disabled = true;
-            }
-            
+            if (saveBtn) { saveBtn.innerHTML = '<span class="loading-spinner-small"></span> جاري الرفع...'; saveBtn.disabled = true; }
             qrUrl = await uploadQRCodeAndGetURL(selectedQRFile);
-            
-            if (saveBtn) {
-                saveBtn.innerHTML = originalText;
-                saveBtn.disabled = false;
-            }
-            
+            if (saveBtn) { saveBtn.innerHTML = originalText; saveBtn.disabled = false; }
             if (qrUrl) {
                 const qrInput = document.getElementById('pm-sham-qr');
                 if (qrInput) qrInput.value = qrUrl;
                 showToast('تم رفع الصورة بنجاح ✅', 'success');
-            } else {
-                showToast('فشل رفع الصورة. سيتم حفظ الإعدادات بدون صورة', 'error');
-            }
+            } else { showToast('فشل رفع الصورة. سيتم حفظ الإعدادات بدون صورة', 'error'); }
             selectedQRFile = null;
             const fileInput = document.getElementById('shamQrFile');
             if (fileInput) fileInput.value = '';
         }
-        
         const methods = [
             { method: 'binance', data: { addr: document.getElementById('pm-binance-addr')?.value.trim() || '', uid: document.getElementById('pm-binance-uid')?.value.trim() || '', qr: document.getElementById('pm-binance-qr')?.value.trim() || '' }, active: document.getElementById('pm-binance-active')?.checked || false },
             { method: 'shamcash', data: { walletAddress: document.getElementById('pm-sham-num')?.value.trim() || 'c8a4d105019df664d62048e38d986', ownerName: document.getElementById('pm-sham-name')?.value.trim() || 'عبدالحميد محمد الحسين', phoneNumber: document.getElementById('pm-sham-phone')?.value.trim() || '0949277889', qr: qrUrl }, active: document.getElementById('pm-sham-active')?.checked || true },
             { method: 'western', data: { ownerName: document.getElementById('pm-wu-name')?.value.trim() || '', country: document.getElementById('pm-wu-country')?.value.trim() || '' }, active: document.getElementById('pm-wu-active')?.checked || false }
         ];
-        
         for (const m of methods) {
             DB.paymentMethods[m.method] = { ...m.data, active: m.active };
-            if (useSupabase && supabase) {
-                await supabase.from('payment_methods').upsert({ method: m.method, data: m.data, active: m.active }, { onConflict: 'method' });
-            }
+            if (useSupabase && supabase) { await supabase.from('payment_methods').upsert({ method: m.method, data: m.data, active: m.active }, { onConflict: 'method' }); }
         }
-        
         saveDB();
         closeModal('editPMModal');
         await refreshAllData();
         renderDashboard();
         showToast('تم حفظ الإعدادات بنجاح ✅', 'success');
-    } catch (error) {
-        console.error('Error in savePaymentMethods:', error);
-        showToast('حدث خطأ أثناء الحفظ', 'error');
-    } finally {
-        hideLoadingOverlay();
-    }
+    } catch (error) { console.error('Error in savePaymentMethods:', error); showToast('حدث خطأ أثناء الحفظ', 'error'); } finally { hideLoadingOverlay(); }
 }
 
 function openEditPM() {
     const pm = DB.paymentMethods;
-    
     document.getElementById('pm-binance-addr').value = pm.binance?.addr || '';
     document.getElementById('pm-binance-uid').value = pm.binance?.uid || '';
     document.getElementById('pm-binance-qr').value = pm.binance?.qr || '';
     document.getElementById('pm-binance-active').checked = pm.binance?.active || false;
-    
     document.getElementById('pm-sham-num').value = pm.shamcash?.walletAddress || pm.shamcash?.num || '';
     document.getElementById('pm-sham-name').value = pm.shamcash?.ownerName || '';
     document.getElementById('pm-sham-phone').value = pm.shamcash?.phoneNumber || '';
     document.getElementById('pm-sham-qr').value = pm.shamcash?.qr || '';
     document.getElementById('pm-sham-active').checked = pm.shamcash?.active || false;
-    
     document.getElementById('pm-wu-name').value = pm.western?.ownerName || '';
     document.getElementById('pm-wu-country').value = pm.western?.country || '';
     document.getElementById('pm-wu-active').checked = pm.western?.active || false;
-    
     const existingQr = pm.shamcash?.qr;
     if (existingQr && existingQr !== '' && (existingQr.startsWith('http') || existingQr.startsWith('https'))) {
         const previewImg = document.getElementById('shamQrPreviewImg');
         const previewDiv = document.getElementById('shamQrPreview');
-        if (previewImg && previewDiv) {
-            previewImg.src = existingQr;
-            previewDiv.style.display = 'block';
-        }
-    } else {
-        const previewDiv = document.getElementById('shamQrPreview');
-        if (previewDiv) previewDiv.style.display = 'none';
-    }
-    
+        if (previewImg && previewDiv) { previewImg.src = existingQr; previewDiv.style.display = 'block'; }
+    } else { const previewDiv = document.getElementById('shamQrPreview'); if (previewDiv) previewDiv.style.display = 'none'; }
     selectedQRFile = null;
     const fileInput = document.getElementById('shamQrFile');
     if (fileInput) fileInput.value = '';
@@ -1676,19 +1583,13 @@ function switchPMTab(key, el) {
 function handleQrUpload(event, type) {
     const file = event.target.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-        showToast('حجم الصورة كبير جداً. الحد الأقصى 2 ميجابايت', 'error');
-        return;
-    }
+    if (file.size > 2 * 1024 * 1024) { showToast('حجم الصورة كبير جداً. الحد الأقصى 2 ميجابايت', 'error'); return; }
     if (type === 'shamcash') {
         const reader = new FileReader();
         reader.onload = function(e) {
             const previewImg = document.getElementById('shamQrPreviewImg');
             const previewDiv = document.getElementById('shamQrPreview');
-            if (previewImg && previewDiv) {
-                previewImg.src = e.target.result;
-                previewDiv.style.display = 'block';
-            }
+            if (previewImg && previewDiv) { previewImg.src = e.target.result; previewDiv.style.display = 'block'; }
         };
         reader.readAsDataURL(file);
         showToast('تم تحديد الصورة. اضغط "حفظ التغييرات" لرفعها وحفظها', 'success');
@@ -1701,18 +1602,11 @@ function previewQrUrl(type) {
         const previewImg = document.getElementById('shamQrPreviewImg');
         const previewDiv = document.getElementById('shamQrPreview');
         if (url && previewImg && previewDiv) {
-            if (url.startsWith('http') || url.startsWith('https') || url.startsWith('data:image')) {
-                previewImg.src = url;
-                previewDiv.style.display = 'block';
-            } else {
-                previewDiv.style.display = 'none';
-            }
-        } else if (previewDiv) {
-            previewDiv.style.display = 'none';
-        }
+            if (url.startsWith('http') || url.startsWith('https') || url.startsWith('data:image')) { previewImg.src = url; previewDiv.style.display = 'block'; }
+            else { previewDiv.style.display = 'none'; }
+        } else if (previewDiv) { previewDiv.style.display = 'none'; }
     }
 }
-
 // ============================================================
 // MOBILE MENU
 // ============================================================
@@ -1767,6 +1661,9 @@ document.addEventListener('DOMContentLoaded', async function() {
   renderSocialPage();
   renderGames();
   renderTgVerify();
+  renderCustomServicesOnHome();
+  renderCustomServicesList();
+  
   if (currentUser) {
     const fresh = DB.users.find(u => u.id === currentUser.id);
     if (fresh) currentUser = fresh;
