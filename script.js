@@ -2039,3 +2039,87 @@ document.addEventListener('DOMContentLoaded', async function() {
     updateNav();
   }
 });
+
+
+
+
+// تحديث دوال التصفية لتعمل مع الحقل النصي
+function updateCountryFilters() {
+    const countries = [...new Set(DB.numbers.map(n => n.country).filter(Boolean))];
+    
+    const selectors = ['numCountryF', 'waCountryF', 'tgCountryF'];
+    for (const selectorId of selectors) {
+        const selector = document.getElementById(selectorId);
+        if (selector) {
+            const currentValue = selector.value;
+            selector.innerHTML = '<option value="">كل الدول</option>' + 
+                countries.map(c => `<option value="${c}">${window.countryFlags?.[c] || '🌍'} ${c}</option>`).join('');
+            if (currentValue && countries.includes(currentValue)) {
+                selector.value = currentValue;
+            }
+        }
+    }
+}
+
+// عرض طلبات الشراء المعلقة في لوحة التحكم
+function renderPendingOrders() {
+    const pendingOrders = DB.orders.filter(o => o.status === 'pending_approval');
+    const container = document.getElementById('pendingOrdersList');
+    if (!container) return;
+    
+    if (pendingOrders.length === 0) {
+        container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">لا توجد طلبات معلقة</div>';
+        return;
+    }
+    
+    container.innerHTML = pendingOrders.map(order => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--dark3);border-radius:10px;margin-bottom:8px">
+            <div>
+                <div style="font-weight:700">${order.user}</div>
+                <div style="font-size:0.75rem;color:var(--text3)">${order.type} - ${order.detail}</div>
+                <div style="font-size:0.7rem;color:var(--gold)">💰 $${order.amount.toFixed(2)}</div>
+            </div>
+            <div>
+                <button class="edit-btn" onclick="approveOrder(${order.id})">✅ تم التنفيذ</button>
+                <button class="del-btn" onclick="rejectOrder(${order.id})">❌ رفض</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// تأكيد تنفيذ الطلب
+async function approveOrder(orderId) {
+    const order = DB.orders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    order.status = 'completed';
+    order.completed_at = new Date().toLocaleString('ar');
+    
+    if (useSupabase && supabase) {
+        await supabase.from('orders').update({ status: 'completed' }).eq('id', orderId);
+    } else {
+        saveDB();
+    }
+    
+    renderPendingOrders();
+    showToast('تم تأكيد تنفيذ الطلب', 'success');
+}
+
+// رفض الطلب
+async function rejectOrder(orderId) {
+    if (!confirm('هل أنت متأكد من رفض هذا الطلب؟')) return;
+    
+    const order = DB.orders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    order.status = 'rejected';
+    
+    if (useSupabase && supabase) {
+        await supabase.from('orders').update({ status: 'rejected' }).eq('id', orderId);
+    } else {
+        saveDB();
+    }
+    
+    renderPendingOrders();
+    showToast('تم رفض الطلب', 'success');
+}
