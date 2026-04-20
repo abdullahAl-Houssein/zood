@@ -775,53 +775,112 @@ async function confirmAddFundsRequest() {
 // ============================================================
 let pendingBuy = null;
 
+// ============================================================
+// MODIFIED BUY LOGIC - SEND WHATSAPP REQUEST INSTEAD
+// ============================================================
+
+// فتح شراء رقم - إرسال طلب واتساب بدلاً من الشراء المباشر
 function openBuyNum(id) {
-  if (!currentUser) { showPage('login'); return; }
-  const n = DB.numbers.find(x => x.id === id);
-  if (!n || n.status !== 'available') { showToast('هذا الرقم غير متاح', 'error'); return; }
-  pendingBuy = { type: 'number', id, price: n.price, data: n };
-  showBuyModal('شراء رقم ' + n.phone + ' (' + n.country + ')', n.price, async () => {
-    const idx = DB.numbers.findIndex(x => x.id === id);
-    if (idx !== -1) DB.numbers[idx].status = 'sold';
-    if (useSupabase && supabase) {
-      await supabase.from('numbers').update({ status: 'sold' }).eq('id', id);
-    }
-    const order = { user: currentUser.name, user_id: currentUser.id, type: 'شراء رقم', detail: n.phone + ' | ' + n.country, amount: n.price, status: 'done', order_time: new Date().toLocaleString('ar') };
-    if (useSupabase && supabase) {
-      await supabase.from('orders').insert(order);
-    } else {
-      DB.orders.push({ ...order, id: Date.now() });
-      saveDB();
-    }
-    renderNumbersByType(n.type);
-    showToast('تم شراء الرقم ' + n.phone + ' 🎉', 'success');
-  });
+    if (!currentUser) { showPage('login'); return; }
+    const n = DB.numbers.find(x => x.id === id);
+    if (!n || n.status !== 'available') { showToast('هذا الرقم غير متاح', 'error'); return; }
+    
+    // إرسال طلب شراء عبر واتساب
+    sendWhatsAppOrderRequest({
+        type: 'رقم ' + (n.type === 'phone' ? 'هاتفي' : n.type === 'whatsapp' ? 'واتساب' : 'تلغرام'),
+        detail: n.operator ? n.operator + ' - ' + n.country : n.country,
+        price: n.price,
+        phone: n.phone,
+        status: 'pending'
+    });
 }
 
+// فتح شراء خدمة مباشرة - إرسال طلب واتساب
 function openBuyDirect(desc, price, cb, category, pkgId) {
-  if (!currentUser) { showPage('login'); return; }
-  pendingBuy = { desc, price, cb, category, pkgId };
-  showBuyModal(desc, price, cb || async function () {
-    const order = { user: currentUser.name, user_id: currentUser.id, type: category || 'خدمة', detail: desc, amount: price, status: 'done', order_time: new Date().toLocaleString('ar') };
-    if (useSupabase && supabase) {
-      await supabase.from('orders').insert(order);
-    } else {
-      DB.orders.push({ ...order, id: Date.now() });
-      saveDB();
-    }
-    showToast('تم الشراء بنجاح ✅', 'success');
-  });
+    if (!currentUser) { showPage('login'); return; }
+    
+    // إرسال طلب شراء عبر واتساب
+    sendWhatsAppOrderRequest({
+        type: category === 'social' ? 'باقة سوشيال ميديا' :
+               category === 'tgverify' ? 'توثيق تلغرام' :
+               category === 'game' ? 'شحن لعبة' : 'خدمة',
+        detail: desc,
+        price: price,
+        category: category,
+        pkgId: pkgId
+    });
 }
 
+// دالة إرسال طلب الشراء عبر واتساب
+function sendWhatsAppOrderRequest(orderData) {
+    if (!currentUser) {
+        showPage('login');
+        return;
+    }
+    
+    // بناء رسالة واتساب
+    let message = `🛍️ *طلب شراء جديد من زود*\n\n`;
+    message += `👤 *اسم المستخدم:* ${currentUser.name}\n`;
+    message += `📧 *البريد الإلكتروني:* ${currentUser.email}\n`;
+    message += `🆔 *رقم المستخدم:* ${currentUser.id}\n`;
+    message += `📦 *نوع الخدمة:* ${orderData.type}\n`;
+    message += `📝 *تفاصيل الخدمة:* ${orderData.detail}\n`;
+    message += `💰 *السعر:* $${orderData.price.toFixed(2)}\n`;
+    message += `📅 *تاريخ الطلب:* ${new Date().toLocaleString('ar')}\n\n`;
+    message += `🔗 *للتواصل مع العميل:* يرجى الرد على هذا الرقم\n`;
+    message += `📞 *رقم العميل:* متوفر في حساب الإدارة\n\n`;
+    message += `✅ *يرجى تأكيد الطلب وتزويد العميل بالبيانات المطلوبة*`;
+    
+    // إضافة معلومات إضافية حسب نوع الخدمة
+    if (orderData.phone) {
+        message += `\n📱 *الرقم المطلوب:* ${orderData.phone}`;
+    }
+    
+    // ترميز الرسالة للـ URL
+    const encodedMessage = encodeURIComponent(message);
+    
+    // رقم واتساب الإدارة (يمكن تغييره)
+    const adminWhatsApp = '963949277889';
+    
+    // فتح واتساب مع الرسالة
+    window.open(`https://wa.me/${adminWhatsApp}?text=${encodedMessage}`, '_blank');
+    
+    // تسجيل الطلب في قاعدة البيانات كـ "قيد الانتظار"
+    saveOrderToDatabase(orderData);
+    
+    showToast('✅ تم إرسال طلبك! سيتم التواصل معك عبر واتساب خلال دقائق', 'success');
+}
+
+// حفظ الطلب في قاعدة البيانات
+async function saveOrderToDatabase(orderData) {
+    const order = {
+        user: currentUser.name,
+        user_id: currentUser.id,
+        type: orderData.type,
+        detail: orderData.detail,
+        amount: orderData.price,
+        requested_amt: orderData.price,
+        status: 'pending_approval',
+        order_time: new Date().toLocaleString('ar'),
+        whatsapp_sent: true
+    };
+    
+    if (useSupabase && supabase) {
+        await supabase.from('orders').insert(order);
+    } else {
+        DB.orders.push({ ...order, id: Date.now() });
+        saveDB();
+    }
+}
+
+// تحديث دالة showBuyModal - إزالة التأكيد المباشر
 function showBuyModal(desc, price, onConfirm) {
-  document.getElementById('buyModalDesc').textContent = desc;
-  document.getElementById('bm-balance').textContent = '$' + safeToFixed(currentUser.balance);
-  document.getElementById('bm-price').textContent = '$' + safeToFixed(price);
-  const after = (currentUser.balance || 0) - price;
-  document.getElementById('bm-after').textContent = '$' + safeToFixed(after);
-  document.getElementById('bm-after').style.color = after >= 0 ? 'var(--green)' : 'var(--red)';
-  pendingBuy._onConfirm = onConfirm;
-  openModal('buyModal');
+    // هذه الدالة لم تعد مستخدمة بشكل مباشر، لكن نحتفظ بها للتوافق
+    sendWhatsAppOrderRequest({
+        type: 'خدمة',
+        detail: desc,
+        price: price
+    });
 }
 
 async function executeBuy() {
@@ -1353,36 +1412,109 @@ async function deleteRcPkg(id) {
   showToast('تم حذف الباقة', 'success');
 }
 
-// Modal Open Functions
+// تحديث دالة openAddNum - جعل الدولة حقل نصي
 function openAddNum(type) {
-  document.getElementById('addNumType').value = type;
-  document.getElementById('addNumTitle').textContent = type === 'whatsapp' ? '💬 إضافة رقم واتساب' : type === 'telegram' ? '✈️ إضافة رقم تلغرام' : '📱 إضافة رقم هاتفي';
-  document.getElementById('newNumOpGroup').style.display = type === 'phone' ? '' : 'none';
-  openModal('addNumModal');
+    document.getElementById('addNumType').value = type;
+    document.getElementById('addNumTitle').textContent = type === 'whatsapp' ? '💬 إضافة رقم واتساب' : type === 'telegram' ? '✈️ إضافة رقم تلغرام' : '📱 إضافة رقم هاتفي';
+    document.getElementById('newNumOpGroup').style.display = type === 'phone' ? '' : 'none';
+    
+    // تغيير حقل الدولة من قائمة منسدلة إلى حقل نصي
+    const countryField = document.getElementById('newNumCountry');
+    if (countryField) {
+        // تحويل select إلى input
+        const countryContainer = countryField.parentElement;
+        const countryValue = countryField.value;
+        
+        const newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.className = 'fi';
+        newInput.id = 'newNumCountry';
+        newInput.placeholder = 'اكتب اسم الدولة (مثال: الأردن، المغرب، عمان)';
+        newInput.value = countryValue;
+        newInput.setAttribute('list', 'countrySuggestions');
+        
+        // إضافة datalist للاقتراحات
+        let datalist = document.getElementById('countrySuggestions');
+        if (!datalist) {
+            datalist = document.createElement('datalist');
+            datalist.id = 'countrySuggestions';
+            document.body.appendChild(datalist);
+        }
+        
+        // تحديث الاقتراحات
+        const countries = ['سوريا', 'السعودية', 'الإمارات', 'عمان', 'الكويت', 'قطر', 'البحرين', 'مصر', 'العراق', 'الأردن', 'المغرب', 'الجزائر', 'تونس', 'ليبيا', 'تركيا', 'روسيا'];
+        datalist.innerHTML = countries.map(c => `<option value="${c}">`).join('');
+        
+        countryContainer.replaceChild(newInput, countryField);
+    }
+    
+    openModal('addNumModal');
 }
 
+// تحديث دالة confirmAddNum لاستخدام الحقل النصي
 async function confirmAddNum() {
-  const type = document.getElementById('addNumType').value;
-  const phone = document.getElementById('newNumPhone').value.trim();
-  const country = document.getElementById('newNumCountry').value;
-  const op = document.getElementById('newNumOp').value;
-  const price = parseFloat(document.getElementById('newNumPrice').value);
-  if (!phone || !price) { showToast('أدخل جميع البيانات', 'error'); return; }
-  const newNum = { id: Date.now(), type, phone, country, operator: op, price, status: 'available' };
-  
-  if (useSupabase && supabase) {
-    await supabase.from('numbers').insert(newNum);
-  } else {
-    DB.numbers.push(newNum);
-    saveDB();
-  }
-  
-  closeModal('addNumModal');
-  document.getElementById('newNumPhone').value = '';
-  document.getElementById('newNumPrice').value = '';
-  await refreshAllData();
-  renderDashboard();
-  showToast('تم إضافة الرقم ✅', 'success');
+    const type = document.getElementById('addNumType').value;
+    const phone = document.getElementById('newNumPhone').value.trim();
+    const country = document.getElementById('newNumCountry').value.trim(); // أصبح نصياً
+    const op = document.getElementById('newNumOp').value;
+    const price = parseFloat(document.getElementById('newNumPrice').value);
+    
+    if (!phone || !price) { showToast('أدخل جميع البيانات', 'error'); return; }
+    if (!country) { showToast('أدخل اسم الدولة', 'error'); return; }
+    
+    const newNum = { id: Date.now(), type, phone, country, operator: op, price, status: 'available' };
+    
+    if (useSupabase && supabase) {
+        await supabase.from('numbers').insert(newNum);
+    } else {
+        DB.numbers.push(newNum);
+        saveDB();
+    }
+    
+    closeModal('addNumModal');
+    document.getElementById('newNumPhone').value = '';
+    document.getElementById('newNumPrice').value = '';
+    document.getElementById('newNumCountry').value = '';
+    
+    await refreshAllData();
+    renderDashboard();
+    showToast('تم إضافة الرقم ✅', 'success');
+}
+
+// تحديث دالة renderNumbersByType - إخفاء الرقم عن المستخدم
+function renderNumbersByType(type) {
+    let gridId, countryFilterId;
+    if (type === 'phone') { gridId = 'numbersGrid'; countryFilterId = 'numCountryF'; }
+    else if (type === 'whatsapp') { gridId = 'waGrid'; countryFilterId = 'waCountryF'; }
+    else { gridId = 'tgGrid'; countryFilterId = 'tgCountryF'; }
+    
+    const cf = document.getElementById(countryFilterId)?.value || '';
+    const ofEl = document.getElementById('numOpF');
+    const of2 = ofEl && type === 'phone' ? ofEl.value : '';
+    let nums = DB.numbers.filter(n => n.type === type && (!cf || n.country === cf) && (!of2 || n.operator === of2));
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    if (!nums.length) { grid.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text3);grid-column:1/-1">لا توجد أرقام متاحة</div>'; return; }
+    
+    const icons = { phone: '📱', whatsapp: '💬', telegram: '✈️' };
+    
+    grid.innerHTML = nums.map(n => `
+        <div class="product-card">
+            <div class="flag-badge">${window.countryFlags?.[n.country] || '🌍'} ${n.country || ''}</div>
+            <div class="pc-header">
+                <div><div class="pc-name">${icons[n.type]} ${n.operator || ''}</div></div>
+                <span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? '✅ متاح' : '❌ مباع'}</span>
+            </div>
+            <!-- تم إخفاء الرقم - لن يظهر للمستخدم -->
+            <div class="pc-num" style="background:var(--dark4);color:var(--text3);font-style:italic">
+                🔒 الرقم متاح بعد الشراء
+            </div>
+            <div class="pc-price">$${safeToFixed(n.price)} <span>/ رقم واحد</span></div>
+            <button class="buy-btn" ${n.status !== 'available' ? 'disabled' : ''} onclick="openBuyNum(${n.id})">
+                ${n.status === 'available' ? '📞 طلب الشراء عبر واتساب' : 'تم البيع'}
+            </button>
+        </div>
+    `).join('');
 }
 
 function openAddSocial() { openModal('addSocialModal'); }
