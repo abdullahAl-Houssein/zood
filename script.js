@@ -832,9 +832,9 @@ function sendWhatsAppOrderRequest(orderData) {
     message += `✅ *يرجى تأكيد الطلب وتزويد العميل بالبيانات المطلوبة*`;
     
     // إضافة معلومات إضافية حسب نوع الخدمة
-    if (orderData.phone) {
-        message += `\n📱 *الرقم المطلوب:* ${orderData.phone}`;
-    }
+   // if (orderData.phone) {
+      //  message += `\n📱 *الرقم المطلوب:* ${orderData.phone}`;
+ //   }
     
     // ترميز الرسالة للـ URL
     const encodedMessage = encodeURIComponent(message);
