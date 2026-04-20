@@ -207,6 +207,13 @@ async function loadAllDataFromSupabase() {
         price: pkg.price || 0
       }));
     }
+    if (rechargeRes.data) {
+    DB.rechargePkgs = rechargeRes.data.map(pkg => ({
+        ...pkg,
+        qty: pkg.quantity || 0,  // تعيين qty من quantity للتوافق مع الكود الحالي
+        price: pkg.price || 0
+    }));
+}
     if (ordersRes.data) DB.orders = ordersRes.data;
     if (transactionsRes.data) DB.transactions = transactionsRes.data;
     
@@ -923,19 +930,26 @@ function switchRcTab(tab, el) {
   document.getElementById('rc-' + tab).classList.add('active');
 }
 function selectRcOp(op, region) {
-  rcState[region] = { op, pkg: null };
-  const pkgs = DB.rechargePkgs.filter(p => p.operator === op);
-  const cap = region.charAt(0).toUpperCase() + region.slice(1);
-  const g = document.getElementById('rcGrid' + cap);
-  if (g) g.innerHTML = pkgs.map(p => `
-    <div class="rc-card" onclick="selectRcPkg('${region}',${p.id},this)">
-      <div class="rc-icon">⚡</div>
-      <div class="rc-amt">${safeFormatNumber(p.qty)}</div>
-      <div class="rc-lbl">وحدة</div>
-      <div style="margin-top:7px;font-weight:700;color:var(--gold)">$${safeToFixed(p.price)}</div>
-    </div>`).join('');
-  const d = document.getElementById('rcPkgs' + cap);
-  if (d) d.style.display = 'block';
+    rcState[region] = { op, pkg: null };
+    const pkgs = DB.rechargePkgs.filter(p => p.operator === op);
+    const cap = region.charAt(0).toUpperCase() + region.slice(1);
+    const g = document.getElementById('rcGrid' + cap);
+    if (g) {
+        g.innerHTML = pkgs.map(p => {
+            // استخدام quantity أو qty حسب ما هو متوفر
+            const qtyValue = p.quantity || p.qty || 0;
+            return `
+                <div class="rc-card" onclick="selectRcPkg('${region}',${p.id},this)">
+                    <div class="rc-icon">⚡</div>
+                    <div class="rc-amt">${qtyValue.toLocaleString()}</div>
+                    <div class="rc-lbl">وحدة</div>
+                    <div style="margin-top:7px;font-weight:700;color:var(--gold)">$${(p.price || 0).toFixed(2)}</div>
+                </div>
+            `;
+        }).join('');
+    }
+    const d = document.getElementById('rcPkgs' + cap);
+    if (d) d.style.display = 'block';
 }
 function selectRcPkg(region, pkgId, el) {
   const pkg = DB.rechargePkgs.find(p => p.id === pkgId);
@@ -1068,30 +1082,32 @@ function renderDGames() {
 }
 
 function renderDRc() {
-  const tb = document.getElementById('dRcBody'); 
-  if (!tb) return;
-  
-  const validPackages = (DB.rechargePkgs || []).filter(pkg => pkg && pkg.id !== undefined);
-  
-  if (validPackages.length === 0) {
-    tb.innerHTML = '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
-    return;
-  }
-  
-  tb.innerHTML = validPackages.map(pkg => {
-    const qtyValue = (pkg.qty !== undefined && pkg.qty !== null) ? pkg.qty : 0;
-    const priceValue = (pkg.price !== undefined && pkg.price !== null) ? pkg.price : 0;
-    const operatorValue = pkg.operator || '';
-    const countryValue = pkg.country || '';
+    const tb = document.getElementById('dRcBody'); 
+    if (!tb) return;
     
-    return `<tr>
-      <td style="font-weight:600">${operatorValue}</td>
-      <td>${countryFlags[countryValue] || ''} ${countryValue}</td>
-      <td>${safeFormatNumber(qtyValue)} وحدة</td>
-      <td style="color:var(--gold);font-weight:700">$${safeToFixed(priceValue)}</td>
-      <td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف</button></td>
-    </tr>`;
-  }).join('');
+    // التأكد من وجود البيانات
+    if (!DB.rechargePkgs || DB.rechargePkgs.length === 0) {
+        tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
+        return;
+    }
+    
+    tb.innerHTML = DB.rechargePkgs.map(pkg => {
+        // استخدام quantity بدلاً من qty
+        const qtyValue = (pkg.quantity !== undefined && pkg.quantity !== null) ? pkg.quantity : 0;
+        const priceValue = (pkg.price !== undefined && pkg.price !== null) ? pkg.price : 0;
+        const operatorValue = pkg.operator || 'غير محدد';
+        const countryValue = pkg.country || 'غير محدد';
+        
+        return `
+            <tr>
+                <td style="font-weight:600">${operatorValue}<\/td>
+                <td>${countryFlags[countryValue] || '🌍'} ${countryValue}<\/td>
+                <td>${qtyValue.toLocaleString()} وحدة<\/td>
+                <td style="color:var(--gold);font-weight:700">$${priceValue.toFixed(2)}<\/td>
+                <td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف<\/button><\/td>
+            </tr>
+        `;
+    }).join('');
 }
 
 
@@ -1592,26 +1608,75 @@ async function confirmAddGame() {
 }
 
 function openAddRcPkg() { openModal('addRcPkgModal'); }
+// تحديث دالة إضافة باقة شحن - استخدام quantity بدلاً من qty
 async function confirmAddRcPkg() {
-  const qty = parseInt(document.getElementById('nRcQty').value);
-  const price = parseFloat(document.getElementById('nRcPrice').value);
-  if (!qty || !price) { showToast('أدخل البيانات', 'error'); return; }
-  const p = { id: Date.now(), country: document.getElementById('nRcCountry').value, operator: document.getElementById('nRcOp').value, qty, price };
-  
-  if (useSupabase && supabase) {
-    await supabase.from('recharge_packages').insert(p);
-  } else {
-    DB.rechargePkgs.push(p);
-    saveDB();
-  }
-  
-  closeModal('addRcPkgModal');
-  await refreshAllData();
-  renderDashboard();
-  document.getElementById('nRcOp').value = '';
-  document.getElementById('nRcQty').value = '';
-  document.getElementById('nRcPrice').value = '';
-  showToast('تمت الإضافة ✅', 'success');
+    const qty = parseInt(document.getElementById('nRcQty').value);
+    const price = parseFloat(document.getElementById('nRcPrice').value);
+    const country = document.getElementById('nRcCountry').value;
+    const operator = document.getElementById('nRcOp').value.trim();
+    
+    if (!qty || !price || !operator) {
+        showToast('أدخل جميع البيانات (الكمية، السعر، اسم الشبكة)', 'error');
+        return;
+    }
+    
+    if (isNaN(qty) || qty <= 0) {
+        showToast('الكمية يجب أن تكون رقماً موجباً', 'error');
+        return;
+    }
+    
+    if (isNaN(price) || price <= 0) {
+        showToast('السعر يجب أن يكون رقماً موجباً', 'error');
+        return;
+    }
+    
+    // ملاحظة: استخدام quantity بدلاً من qty لتتناسب مع هيكل الجدول
+    const newPackage = {
+        id: Date.now(),
+        country: country,
+        operator: operator,
+        quantity: qty,  // ← changed from 'qty' to 'quantity'
+        price: price,
+        is_active: true,
+        created_at: new Date().toISOString()
+    };
+    
+    console.log('Adding package:', newPackage);
+    
+    if (useSupabase && supabase) {
+        try {
+            const { data, error } = await supabase
+                .from('recharge_packages')
+                .insert(newPackage)
+                .select();
+            
+            if (error) {
+                console.error('Supabase error:', error);
+                showToast('خطأ في قاعدة البيانات: ' + error.message, 'error');
+                return;
+            }
+            
+            console.log('Package added successfully:', data);
+        } catch (err) {
+            console.error('Exception:', err);
+            showToast('حدث خطأ أثناء إضافة الباقة', 'error');
+            return;
+        }
+    } else {
+        DB.rechargePkgs.push(newPackage);
+        saveDB();
+    }
+    
+    closeModal('addRcPkgModal');
+    await refreshAllData();
+    renderDashboard();
+    
+    // تنظيف الحقول
+    document.getElementById('nRcOp').value = '';
+    document.getElementById('nRcQty').value = '';
+    document.getElementById('nRcPrice').value = '';
+    
+    showToast('تمت إضافة الباقة بنجاح ✅', 'success');
 }
 
 function openAdminAddBal() {
