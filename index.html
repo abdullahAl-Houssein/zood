@@ -339,6 +339,10 @@
     <div class="dash-sec" id="dash-users"><div class="dash-title">المستخدمون</div><div class="dash-sub">قائمة جميع المسجلين وإدارة أرصدتهم</div><div style="margin-bottom:16px"><button class="add-btn" onclick="openAdminAddBal()">💰 إضافة رصيد لمستخدم</button></div><div class="dtw"><div class="dth"><h3>المستخدمون</h3></div><table><thead><tr><th>الاسم</th><th>البريد</th><th>الرصيد</th><th>الدور</th><th>تاريخ التسجيل</th><th>إجراء</th></tr></thead><tbody id="dUsersBody"></tbody></table></div><div class="dtw" style="margin-top:20px"><div class="dth"><h3>🔔 طلبات شحن المحفظة المعلقة</h3></div><table><thead><tr><th>المستخدم</th><th>المبلغ المطلوب</th><th>الوقت</th><th>إجراء</th></tr></thead><tbody id="dPendingBody"></tbody></table></div></div>
     <div class="dash-sec" id="dash-orders"><div class="dash-title">الطلبات</div><div class="dash-sub">جميع العمليات المنفذة</div><div class="dtw"><div class="dth"><h3>سجل الطلبات</h3></div></table><thead><tr><th>المستخدم</th><th>النوع</th><th>التفاصيل</th><th>المبلغ</th><th>الوقت</th></tr></thead><tbody id="dOrdersBody"></tbody></table></div></div>
     <div class="dash-sec" id="dash-payment-methods"><div class="dash-title">💳 طرق الدفع</div><div class="dash-sub">إدارة طرق الدفع المتاحة للمستخدمين</div><div class="pm-grid" id="pmGrid"></div><button class="add-btn" onclick="openEditPM()">⚙️ تعديل إعدادات الدفع</button></div>
+    <div class="sb-link" onclick="switchDash('orders',this)">
+    <span class="si">🧾</span> الطلبات
+    <span id="pendingBadge" style="display:none;background:var(--red);color:#fff;font-size:0.7rem;padding:2px 7px;border-radius:50px;margin-right:auto">0</span>
+</div>
     <div class="dash-sec" id="dash-custom-services"><div class="dash-title">✨ الخدمات المخصصة</div><div class="dash-sub">إضافة وإدارة الخدمات الجديدة</div><div class="dtw"><div class="dth"><h3>الخدمات المضافة</h3><button class="add-btn" onclick="openAddCustomService()">+ إضافة خدمة</button></div><div id="customServicesAdminList" style="padding:16px"></div></div></div>
   </div>
 </div>
