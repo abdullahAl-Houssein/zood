@@ -724,20 +724,23 @@ async function confirmAddFundsRequest() {
 // ============================================================
 // PURCHASE CONFIRMATION WITH WHATSAPP DIRECT
 // ============================================================
+let pendingOrderData = null;
 
 function openBuyNum(id) {
     if (!currentUser) { showPage('login'); return; }
     const n = DB.numbers.find(x => x.id === id);
     if (!n || n.status !== 'available') { showToast('هذا الرقم غير متاح', 'error'); return; }
     
-    showPurchaseConfirmation({
+    pendingOrderData = {
         type: 'رقم ' + (n.type === 'phone' ? 'هاتفي' : n.type === 'whatsapp' ? 'واتساب' : 'تلغرام'),
         detail: n.operator ? n.operator + ' - ' + n.country : n.country,
         price: n.price,
         phone: n.phone,
         itemId: n.id,
         itemType: 'number'
-    });
+    };
+    
+    showPurchaseConfirmation();
 }
 
 function openBuyDirect(desc, price, cb, category, pkgId) {
@@ -748,18 +751,23 @@ function openBuyDirect(desc, price, cb, category, pkgId) {
     else if (category === 'tgverify') typeName = 'توثيق تلغرام';
     else if (category === 'game') typeName = 'شحن لعبة';
     
-    showPurchaseConfirmation({
+    pendingOrderData = {
         type: typeName,
         detail: desc,
         price: price,
         category: category,
         pkgId: pkgId,
         itemType: category
-    });
+    };
+    
+    showPurchaseConfirmation();
 }
 
-function showPurchaseConfirmation(orderData) {
-    pendingOrderData = orderData;
+function showPurchaseConfirmation() {
+    if (!pendingOrderData) {
+        showToast('حدث خطأ، يرجى المحاولة مرة أخرى', 'error');
+        return;
+    }
     
     const confirmModal = document.createElement('div');
     confirmModal.className = 'modal-ov';
@@ -772,9 +780,9 @@ function showPurchaseConfirmation(orderData) {
             <div class="modal-title" style="text-align:center;margin-bottom:10px">تأكيد الطلب</div>
             <div class="modal-sub" style="text-align:center;margin-bottom:20px">يرجى مراجعة تفاصيل طلبك</div>
             <div style="background:var(--dark3);border-radius:12px;padding:20px;margin-bottom:20px">
-                <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">الخدمة:</span><span style="font-weight:600">${orderData.type}</span></div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">التفاصيل:</span><span style="font-weight:600">${orderData.detail}</span></div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">السعر:</span><span style="color:var(--gold);font-weight:700">$${orderData.price.toFixed(2)}</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">الخدمة:</span><span style="font-weight:600">${pendingOrderData.type}</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">التفاصيل:</span><span style="font-weight:600">${pendingOrderData.detail}</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">السعر:</span><span style="color:var(--gold);font-weight:700">$${pendingOrderData.price.toFixed(2)}</span></div>
                 <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">رصيدك الحالي:</span><span style="color:var(--green);font-weight:700">$${safeToFixed(currentUser?.balance)}</span></div>
             </div>
             <div class="fg"><label class="fl">📝 ملاحظاتك (اختياري)</label><textarea id="orderNotes" class="fi" rows="3" placeholder="أدخل أي معلومات إضافية... مثال: رابط القناة، اسم المستخدم، رقم الحساب..." style="resize:vertical"></textarea></div>
@@ -798,16 +806,15 @@ function closePurchaseConfirm() {
         modal.classList.remove('open');
         setTimeout(() => modal.remove(), 300);
     }
-    pendingOrderData = null;
 }
 
 function confirmAndSendToWhatsApp() {
-    if (!pendingOrderData) return;
+    if (!pendingOrderData) {
+        showToast('حدث خطأ، يرجى المحاولة مرة أخرى', 'error');
+        return;
+    }
     
     const userNotes = document.getElementById('orderNotes')?.value.trim() || '';
-    pendingOrderData.userNotes = userNotes;
-    
-    closePurchaseConfirm();
     
     // بناء رسالة واتساب
     let message = `🛍️ *طلب شراء جديد من زود*\n\n`;
@@ -830,7 +837,10 @@ function confirmAndSendToWhatsApp() {
     // حفظ الطلب في قاعدة البيانات
     saveOrderToDatabase(pendingOrderData, userNotes);
     
+    closePurchaseConfirm();
     showToast('✅ تم إرسال طلبك! تم تحويلك إلى واتساب للتواصل', 'success');
+    
+    // إعادة تعيين pendingOrderData
     pendingOrderData = null;
 }
 
@@ -849,35 +859,19 @@ async function saveOrderToDatabase(orderData, userNotes) {
         whatsapp_sent: true
     };
     
+    console.log('Saving order:', order);
+    
     if (useSupabase && supabase) {
-        await supabase.from('orders').insert(order);
+        const { data, error } = await supabase.from('orders').insert(order).select();
+        if (error) {
+            console.error('Error saving order:', error);
+        } else {
+            console.log('Order saved successfully:', data);
+        }
     } else {
         DB.orders.push(order);
         saveDB();
     }
-}
-function openBuyNum(id) {
-    if (!currentUser) { showPage('login'); return; }
-    const n = DB.numbers.find(x => x.id === id);
-    if (!n || n.status !== 'available') { showToast('هذا الرقم غير متاح', 'error'); return; }
-    showPurchaseConfirmation({
-        type: 'رقم ' + (n.type === 'phone' ? 'هاتفي' : n.type === 'whatsapp' ? 'واتساب' : 'تلغرام'),
-        detail: n.operator ? n.operator + ' - ' + n.country : n.country,
-        price: n.price,
-        phone: n.phone,
-        status: 'pending'
-    });
-}
-
-function openBuyDirect(desc, price, cb, category, pkgId) {
-    if (!currentUser) { showPage('login'); return; }
-    showPurchaseConfirmation({
-        type: category === 'social' ? 'باقة سوشيال ميديا' : category === 'tgverify' ? 'توثيق تلغرام' : category === 'game' ? 'شحن لعبة' : 'خدمة',
-        detail: desc,
-        price: price,
-        category: category,
-        pkgId: pkgId
-    });
 }
 // ============================================================
 // RECHARGE
@@ -1140,40 +1134,56 @@ function renderDGames() {
     const tb = document.getElementById('dGamesBody');
     if (!tb) return;
     
-    if (!DB.gamePackages || DB.gamePackages.length === 0) {
-        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات<\/td><\/tr>';
-        return;
-    }
-    
-    tb.innerHTML = DB.gamePackages.map(p => `
-        <tr>
-            <td>${p.icon || '🎮'} ${p.game || ''}</td>
-            <td style="font-weight:600">${p.package_name || ''}</td>
-            <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
-            <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
-        </tr>
-    `).join('');
-}
-
-function renderDGames() {
-    const tb = document.getElementById('dGamesBody');
-    if (!tb) return;
-    
-    console.log('Rendering game packages:', DB.gamePackages);
+    console.log('Rendering game packages, data:', DB.gamePackages);
     
     if (!DB.gamePackages || DB.gamePackages.length === 0) {
         tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات ألعاب</td></tr>';
         return;
     }
     
-    tb.innerHTML = DB.gamePackages.map(p => `
-        <tr>
-            <td>${p.icon || '🎮'} ${p.game || ''}</td>
-            <td style="font-weight:600">${p.package_name || p.package || ''}</td>
-            <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
-            <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
-        </tr>
-    `).join('');
+    tb.innerHTML = DB.gamePackages.map(p => {
+        const packageName = p.package_name || p.package || 'غير محدد';
+        const gameName = p.game || 'غير محدد';
+        const gameIcon = p.icon || '🎮';
+        const gamePrice = (p.price !== undefined && p.price !== null) ? p.price : 0;
+        
+        return `
+            <tr>
+                <td style="font-weight:600">${gameIcon} ${gameName}</td>
+                <td>${packageName}</td>
+                <td style="color:var(--gold);font-weight:700">$${gamePrice.toFixed(2)}</td>
+                <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
+            </tr>
+        `;
+    }).join('');
+}
+function renderDRc() {
+    const tb = document.getElementById('dRcBody'); 
+    if (!tb) return;
+    
+    console.log('Rendering recharge packages, data:', DB.rechargePkgs);
+    
+    if (!DB.rechargePkgs || DB.rechargePkgs.length === 0) {
+        tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
+        return;
+    }
+    
+    tb.innerHTML = DB.rechargePkgs.map(pkg => {
+        const operatorValue = pkg.operator || 'غير محدد';
+        const countryValue = pkg.country || 'غير محدد';
+        const qtyValue = (pkg.quantity !== undefined && pkg.quantity !== null) ? pkg.quantity : 0;
+        const priceValue = (pkg.price !== undefined && pkg.price !== null) ? pkg.price : 0;
+        
+        return `
+            <tr>
+                <td style="font-weight:600">${operatorValue}</td>
+                <td>${countryFlags[countryValue] || '🌍'} ${countryValue}</td>
+                <td>${qtyValue.toLocaleString()} وحدة<\/td>
+                <td style="color:var(--gold);font-weight:700">$${priceValue.toFixed(2)}<\/td>
+                <td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف<\/button><\/td>
+            </tr>
+        `;
+    }).join('');
 }
 function renderDUsers() {
     const tb = document.getElementById('dUsersBody');
