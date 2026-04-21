@@ -6,7 +6,25 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 
 let supabase = null;
 let useSupabase = false;
-
+// ============================================================
+// CHECK DOM ELEMENTS ON LOAD
+// ============================================================
+function checkDashboardElements() {
+    const elements = [
+        'dGamesBody', 'dRcBody', 'dTgVerifyBody', 'dSocBody',
+        'dNumBody', 'dWaBody', 'dTgBody', 'dUsersBody', 'dOrdersBody', 'pmGrid'
+    ];
+    
+    console.log('=== Checking Dashboard Elements ===');
+    elements.forEach(el => {
+        const element = document.getElementById(el);
+        if (element) {
+            console.log(`✅ ${el} found`);
+        } else {
+            console.log(`❌ ${el} NOT found`);
+        }
+    });
+}
 // ============================================================
 // FALLBACK LOCAL DB
 // ============================================================
