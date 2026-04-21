@@ -24,11 +24,11 @@ const DEFAULT_DB = {
     { id: 3, platform: 'Facebook', type: 'متابعين', qty: 1000, price: 5.99 },
   ],
   tgVerifyPackages: [
-    { id: 1, type: 'توثيق حساب شخصي', desc: 'إضافة علامة التحقق للحساب الشخصي', price: 49.99 },
+    { id: 1, type: 'توثيق حساب شخصي', description: 'إضافة علامة التحقق للحساب الشخصي', price: 49.99 },
   ],
   gamePackages: [
-    { id: 1, game: 'PUBG Mobile', icon: '🎯', package: '60 UC', price: 0.99 },
-    { id: 2, game: 'Free Fire', icon: '🔥', package: '100 Diamond', price: 0.99 },
+    { id: 1, game: 'PUBG Mobile', icon: '🎯', package_name: '60 UC', price: 0.99 },
+    { id: 2, game: 'Free Fire', icon: '🔥', package_name: '100 Diamond', price: 0.99 },
   ],
   rechargePkgs: [
     { id: 1, country: 'سوريا', operator: 'سيريتل', quantity: 500, price: 1.99 },
@@ -482,7 +482,7 @@ function renderTgVerify() {
         <div class="soc-logo" style="background:rgba(77,159,255,0.12);color:#4D9FFF">${p.type && p.type.includes('بادج') ? '🏅' : '✅'}</div>
         <div><div class="soc-plat">${p.type || 'خدمة'}</div><div class="soc-type">توثيق تلغرام</div></div>
       </div>
-      <div style="font-size:0.85rem;color:var(--text2);margin-bottom:16px;line-height:1.6">${p.desc || ''}</div>
+      <div style="font-size:0.85rem;color:var(--text2);margin-bottom:16px;line-height:1.6">${p.description || p.desc || ''}</div>
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="font-size:1.5rem;font-weight:800;color:var(--gold)">$${safeToFixed(p.price)}</div>
         <button class="buy-btn" style="width:auto;padding:11px 22px" onclick="openBuyDirect('${p.type || 'خدمة'} تلغرام',${p.price || 0},null,'tgverify',${p.id})">طلب الخدمة</button>
@@ -502,8 +502,8 @@ function renderGames() {
       <div class="game-name">${game}</div>
       <div class="game-pkgs">
         ${pkgs.map(p => `
-        <div class="game-pkg-row" onclick="openBuyDirect('${p.package || ''} - ${game}',${p.price || 0},null,'game',${p.id})">
-          <div class="gp-name">${p.package || ''}</div>
+        <div class="game-pkg-row" onclick="openBuyDirect('${p.package_name || p.package || ''} - ${game}',${p.price || 0},null,'game',${p.id})">
+          <div class="gp-name">${p.package_name || p.package || ''}</div>
           <div class="gp-price">$${safeToFixed(p.price)}</div>
         </div>`).join('')}
       </div>
@@ -816,7 +816,6 @@ function confirmAndSendToWhatsApp() {
     
     const userNotes = document.getElementById('orderNotes')?.value.trim() || '';
     
-    // بناء رسالة واتساب
     let message = `🛍️ *طلب شراء جديد من زود*\n\n`;
     message += `👤 *اسم المستخدم:* ${currentUser.name}\n`;
     message += `📧 *البريد الإلكتروني:* ${currentUser.email}\n`;
@@ -831,16 +830,13 @@ function confirmAndSendToWhatsApp() {
     const encodedMessage = encodeURIComponent(message);
     const adminWhatsApp = '963949277889';
     
-    // فتح واتساب مباشرة
     window.open(`https://wa.me/${adminWhatsApp}?text=${encodedMessage}`, '_blank');
     
-    // حفظ الطلب في قاعدة البيانات
     saveOrderToDatabase(pendingOrderData, userNotes);
     
     closePurchaseConfirm();
     showToast('✅ تم إرسال طلبك! تم تحويلك إلى واتساب للتواصل', 'success');
     
-    // إعادة تعيين pendingOrderData
     pendingOrderData = null;
 }
 
@@ -982,23 +978,19 @@ function renderCustomServicesOnHome() {
     const servicesGrid = document.getElementById('servicesGrid');
     if (!servicesGrid) return;
     
-    // إزالة الخدمات المخصصة القديمة (تبدأ من الطفل التاسع)
     while (servicesGrid.children.length > 8) {
         servicesGrid.removeChild(servicesGrid.lastChild);
     }
     
-    // إضافة الخدمات الجديدة
     if (DB.customServices && DB.customServices.length > 0) {
         DB.customServices.forEach(service => {
             const card = document.createElement('div');
             card.className = 'svc-card';
-            // عند الضغط على الخدمة، تفتح واتساب مع رسالة مخصصة
             card.onclick = () => {
                 if (!currentUser) {
                     showPage('login');
                     return;
                 }
-                // بناء رسالة واتساب للخدمة المخصصة
                 let message = `🛍️ *طلب خدمة: ${service.name}*\n\n`;
                 message += `👤 *اسم المستخدم:* ${currentUser.name}\n`;
                 message += `📧 *البريد الإلكتروني:* ${currentUser.email}\n`;
@@ -1084,31 +1076,31 @@ function renderDashboard() {
   renderDTgV(); renderDGames(); renderDRc(); renderDUsers(); renderDOrders(); renderDPM();
   
   const rb = document.getElementById('ovOrdersBody');
-  if (rb) rb.innerHTML = [...DB.orders].reverse().slice(0, 8).map(o => `<tr><td style="font-weight:600">${o.user || ''}</td><td style="color:var(--text2);font-size:.75rem">${o.type || ''}</td><td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td><td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
+  if (rb) rb.innerHTML = [...DB.orders].reverse().slice(0, 8).map(o => `<td><td style="font-weight:600">${o.user || ''}</td><td style="color:var(--text2);font-size:.75rem">${o.type || ''}</td><td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td><td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td></tr>`).join('') || '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
 }
 
 function renderDNum() {
   const nums = DB.numbers.filter(n => n.type === 'phone');
   const el = document.getElementById('dNumCount'); if (el) el.textContent = nums.length;
   const tb = document.getElementById('dNumBody'); if (!tb) return;
-  tb.innerHTML = nums.map(n => `<tr><td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td><td>📱 هاتفي</td><td>${countryFlags[n.country] || ''} ${n.country || ''}</td><td>${n.operator || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td><td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td></tr>`).join('');
+  tb.innerHTML = nums.map(n => `<tr><td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td><td>📱 هاتفي<\/td><td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td><td>${n.operator || ''}<\/td><td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td><td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button><\/td></tr>`).join('');
 }
 
 function renderDWa() {
   const nums = DB.numbers.filter(n => n.type === 'whatsapp');
   const tb = document.getElementById('dWaBody'); if (!tb) return;
-  tb.innerHTML = nums.map(n => `<tr><td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td><td>${countryFlags[n.country] || ''} ${n.country || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td><td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td></tr>`).join('');
+  tb.innerHTML = nums.map(n => `<tr><td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td><td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td><td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td><td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button><\/td></tr>`).join('');
 }
 
 function renderDTg() {
   const nums = DB.numbers.filter(n => n.type === 'telegram');
   const tb = document.getElementById('dTgBody'); if (!tb) return;
-  tb.innerHTML = nums.map(n => `<tr><td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div></td><td>${countryFlags[n.country] || ''} ${n.country || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}</td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span></td><td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button></td></tr>`).join('');
+  tb.innerHTML = nums.map(n => `<tr><td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td><td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td><td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td><td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button><\/td></tr>`).join('');
 }
 
 function renderDSoc() {
   const tb = document.getElementById('dSocBody'); if (!tb) return;
-  tb.innerHTML = DB.socialPackages.map(p => `<tr><td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}</td><td>${p.type || ''}</td><td style="font-weight:700">${safeFormatNumber(p.qty)}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td><td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف</button></td></tr>`).join('');
+  tb.innerHTML = DB.socialPackages.map(p => `<tr><td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}<\/td><td>${p.type || ''}<\/td><td style="font-weight:700">${safeFormatNumber(p.qty)}<\/td><td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td><td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف</button><\/td></tr>`).join('');
 }
 
 function renderDTgV() {
@@ -1134,34 +1126,24 @@ function renderDGames() {
     const tb = document.getElementById('dGamesBody');
     if (!tb) return;
     
-    console.log('Rendering game packages, data:', DB.gamePackages);
-    
     if (!DB.gamePackages || DB.gamePackages.length === 0) {
-        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات ألعاب</td></tr>';
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات ألعاب<\/td><\/tr>';
         return;
     }
     
-    tb.innerHTML = DB.gamePackages.map(p => {
-        const packageName = p.package_name || p.package || 'غير محدد';
-        const gameName = p.game || 'غير محدد';
-        const gameIcon = p.icon || '🎮';
-        const gamePrice = (p.price !== undefined && p.price !== null) ? p.price : 0;
-        
-        return `
-            <tr>
-                <td style="font-weight:600">${gameIcon} ${gameName}</td>
-                <td>${packageName}</td>
-                <td style="color:var(--gold);font-weight:700">$${gamePrice.toFixed(2)}</td>
-                <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
-            </tr>
-        `;
-    }).join('');
+    tb.innerHTML = DB.gamePackages.map(p => `
+        <tr>
+            <td style="font-weight:600">${p.icon || '🎮'} ${p.game || ''}</td>
+            <td>${p.package_name || p.package || ''}</td>
+            <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
+            <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
+        </tr>
+    `).join('');
 }
+
 function renderDRc() {
     const tb = document.getElementById('dRcBody'); 
     if (!tb) return;
-    
-    console.log('Rendering recharge packages, data:', DB.rechargePkgs);
     
     if (!DB.rechargePkgs || DB.rechargePkgs.length === 0) {
         tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
@@ -1185,25 +1167,26 @@ function renderDRc() {
         `;
     }).join('');
 }
+
 function renderDUsers() {
     const tb = document.getElementById('dUsersBody');
     if (!tb) return;
-    tb.innerHTML = DB.users.map(u => `<tr><td style="font-weight:600">${u.name || ''}</td><td style="color:var(--text2)">${u.email || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(u.balance)}</td><td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span></td><td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}</td><td style="white-space: nowrap;">${u.role !== 'admin' ? `<button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')" style="background:rgba(0,224,154,0.15);color:var(--green);margin:2px">💰 إضافة</button><button class="edit-btn" onclick="quickDeductBal(${u.id},'${u.name || ''}')" style="background:rgba(255,77,109,0.15);color:var(--red);margin:2px">💸 خصم</button>` : '—'}</td></tr>`).join('');
+    tb.innerHTML = DB.users.map(u => `<tr><td style="font-weight:600">${u.name || ''}</td><td style="color:var(--text2)">${u.email || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(u.balance)}<\/td><td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span><\/td><td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}<\/td><td style="white-space: nowrap;">${u.role !== 'admin' ? `<button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')" style="background:rgba(0,224,154,0.15);color:var(--green);margin:2px">💰 إضافة</button><button class="edit-btn" onclick="quickDeductBal(${u.id},'${u.name || ''}')" style="background:rgba(255,77,109,0.15);color:var(--red);margin:2px">💸 خصم</button>` : '—'}<\/td></tr>`).join('');
     
     const pending = DB.orders.filter(o => o.status === 'pending');
     const pb = document.getElementById('dPendingBody');
     if (pb) {
         if (pending.length) {
-            pb.innerHTML = pending.map((o, idx) => `<tr><td style="font-weight:600">${o.user || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}</td><td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}</td><td><button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button><button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button></td></tr>`).join('');
+            pb.innerHTML = pending.map((o, idx) => `<tr><td style="font-weight:600">${o.user || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}<\/td><td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}<\/td><td><button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button><button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button><\/td></tr>`).join('');
         } else {
-            pb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة</td></tr>';
+            pb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
         }
     }
 }
 
 function renderDOrders() {
   const tb = document.getElementById('dOrdersBody'); if (!tb) return;
-  tb.innerHTML = [...DB.orders].reverse().map(o => `<tr><td>${o.user || ''}</td><td><span class="pt pt-avail" style="font-size:.75rem">${o.type || ''}</span></td><td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td><td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
+  tb.innerHTML = [...DB.orders].reverse().map(o => `<tr><td>${o.user || ''}<\/td><td><span class="pt pt-avail" style="font-size:.75rem">${o.type || ''}</span><\/td><td style="color:var(--text2);font-size:.82rem">${o.detail || ''}<\/td><td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}<\/td><td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}<\/td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
 }
 
 function renderDPM() {
@@ -1537,7 +1520,7 @@ async function confirmAddGame() {
         id: Date.now(), 
         game: gameName, 
         icon: gameIcon, 
-        package_name: packageName,  // ملاحظة: package_name وليس package
+        package_name: packageName,
         price: price,
         created_at: new Date().toISOString()
     };
@@ -1596,7 +1579,7 @@ async function confirmAddRcPkg() {
         id: Date.now(), 
         country: country, 
         operator: operator, 
-        quantity: quantity,  // استخدام quantity
+        quantity: quantity,
         price: price,
         created_at: new Date().toISOString()
     };
