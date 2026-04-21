@@ -179,6 +179,9 @@ async function loadAllDataFromSupabase() {
         quantity: pkg.quantity || 0,
         price: pkg.price || 0
       }));
+      console.log('Loaded recharge packages:', DB.rechargePkgs.length);
+    } else {
+      DB.rechargePkgs = [];
     }
     
     if (ordersRes.data) {
@@ -203,6 +206,7 @@ async function loadAllDataFromSupabase() {
     if (servicesRes.data) DB.customServices = servicesRes.data;
     
     saveDB();
+    console.log('All data loaded successfully');
   } catch (e) {
     console.error('Error loading data from Supabase:', e);
   } finally {
@@ -1274,10 +1278,16 @@ function renderDTgV() {
 
 function renderDGames() {
     const tb = document.getElementById('dGamesBody');
-    if (!tb) return;
+    if (!tb) {
+        console.log('dGamesBody element not found');
+        return;
+    }
+    
+    console.log('Rendering game packages, data length:', DB.gamePackages?.length);
+    console.log('Game packages data:', DB.gamePackages);
     
     if (!DB.gamePackages || DB.gamePackages.length === 0) {
-        tb.innerHTML = '<td><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات ألعاب<\/td><\/tr>';
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات ألعاب<\/td><\/tr>';
         return;
     }
     
@@ -1289,18 +1299,26 @@ function renderDGames() {
         
         return `
             <tr>
-                <td style="font-weight:600">${gameIcon} ${gameName}</td>
-                <td>${packageName}</td>
-                <td style="color:var(--gold);font-weight:700">$${gamePrice.toFixed(2)}<\/td>
-                <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف<\/button><\/td>
+                <td style="font-weight:600;padding:12px">${gameIcon} ${gameName}<\/td>
+                <td style="padding:12px">${packageName}<\/td>
+                <td style="color:var(--gold);font-weight:700;padding:12px">$${gamePrice.toFixed(2)}<\/td>
+                <td style="padding:12px"><button class="del-btn" onclick="deleteGame(${p.id})">حذف<\/button><\/td>
             </tr>
         `;
     }).join('');
+    
+    console.log('Rendered game packages HTML length:', tb.innerHTML.length);
 }
 
 function renderDRc() {
     const tb = document.getElementById('dRcBody');
-    if (!tb) return;
+    if (!tb) {
+        console.log('dRcBody element not found');
+        return;
+    }
+    
+    console.log('Rendering recharge packages, data length:', DB.rechargePkgs?.length);
+    console.log('Recharge packages data:', DB.rechargePkgs);
     
     if (!DB.rechargePkgs || DB.rechargePkgs.length === 0) {
         tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
@@ -1315,16 +1333,17 @@ function renderDRc() {
         
         return `
             <tr>
-                <td style="font-weight:600">${operatorValue}</td>
-                <td>${countryFlags[countryValue] || '🌍'} ${countryValue}</td>
-                <td>${qtyValue.toLocaleString()} وحدة<\/td>
-                <td style="color:var(--gold);font-weight:700">$${priceValue.toFixed(2)}<\/td>
-                <td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف<\/button><\/td>
-            </tr>
+                <td style="font-weight:600;padding:12px">${operatorValue}<\/td>
+                <td style="padding:12px">${countryFlags[countryValue] || '🌍'} ${countryValue}<\/td>
+                <td style="padding:12px">${qtyValue.toLocaleString()} وحدة<\/td>
+                <td style="color:var(--gold);font-weight:700;padding:12px">$${priceValue.toFixed(2)}<\/td>
+                <td style="padding:12px"><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف<\/button><\/td>
+            <tr>
         `;
     }).join('');
+    
+    console.log('Rendered recharge packages HTML length:', tb.innerHTML.length);
 }
-
 function renderDUsers() {
     const tb = document.getElementById('dUsersBody');
     if (!tb) return;
@@ -1950,7 +1969,11 @@ async function confirmAddRcPkg() {
     }
     
     closeModal('addRcPkgModal');
+    
+    // إعادة تحميل البيانات من قاعدة البيانات
     await refreshAllData();
+    
+    // إعادة عرض لوحة التحكم
     renderDashboard();
     
     document.getElementById('nRcOp').value = '';
