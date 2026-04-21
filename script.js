@@ -722,9 +722,41 @@ async function confirmAddFundsRequest() {
   showToast('تم إرسال الطلب! تواصل مع الإدارة على واتساب ✅', 'success');
 }
 // ============================================================
-// PURCHASE CONFIRMATION WITH NOTES
+// PURCHASE CONFIRMATION WITH WHATSAPP DIRECT
 // ============================================================
-let pendingOrderData = null;
+
+function openBuyNum(id) {
+    if (!currentUser) { showPage('login'); return; }
+    const n = DB.numbers.find(x => x.id === id);
+    if (!n || n.status !== 'available') { showToast('هذا الرقم غير متاح', 'error'); return; }
+    
+    showPurchaseConfirmation({
+        type: 'رقم ' + (n.type === 'phone' ? 'هاتفي' : n.type === 'whatsapp' ? 'واتساب' : 'تلغرام'),
+        detail: n.operator ? n.operator + ' - ' + n.country : n.country,
+        price: n.price,
+        phone: n.phone,
+        itemId: n.id,
+        itemType: 'number'
+    });
+}
+
+function openBuyDirect(desc, price, cb, category, pkgId) {
+    if (!currentUser) { showPage('login'); return; }
+    
+    let typeName = 'خدمة';
+    if (category === 'social') typeName = 'باقة سوشيال ميديا';
+    else if (category === 'tgverify') typeName = 'توثيق تلغرام';
+    else if (category === 'game') typeName = 'شحن لعبة';
+    
+    showPurchaseConfirmation({
+        type: typeName,
+        detail: desc,
+        price: price,
+        category: category,
+        pkgId: pkgId,
+        itemType: category
+    });
+}
 
 function showPurchaseConfirmation(orderData) {
     pendingOrderData = orderData;
@@ -746,8 +778,13 @@ function showPurchaseConfirmation(orderData) {
                 <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">رصيدك الحالي:</span><span style="color:var(--green);font-weight:700">$${safeToFixed(currentUser?.balance)}</span></div>
             </div>
             <div class="fg"><label class="fl">📝 ملاحظاتك (اختياري)</label><textarea id="orderNotes" class="fi" rows="3" placeholder="أدخل أي معلومات إضافية... مثال: رابط القناة، اسم المستخدم، رقم الحساب..." style="resize:vertical"></textarea></div>
-            <div style="background:rgba(245,200,66,0.1);border-radius:10px;padding:12px;margin:20px 0;font-size:0.85rem;color:var(--text2);text-align:center">⚠️ سيتم إرسال طلبك إلى فريق الدعم وسيتم التواصل معك عبر واتساب</div>
-            <div style="display:flex;gap:10px;justify-content:center"><button class="m-cancel" onclick="closePurchaseConfirm()" style="padding:12px 24px">إلغاء</button><button class="m-confirm" onclick="confirmPurchase()" style="padding:12px 24px">تأكيد الطلب</button></div>
+            <div style="background:rgba(245,200,66,0.1);border-radius:10px;padding:12px;margin:20px 0;font-size:0.85rem;color:var(--text2);text-align:center">
+                ⚠️ سيتم تحويلك إلى واتساب لإتمام الطلب
+            </div>
+            <div style="display:flex;gap:10px;justify-content:center">
+                <button class="m-cancel" onclick="closePurchaseConfirm()" style="padding:12px 24px">إلغاء</button>
+                <button class="m-confirm" onclick="confirmAndSendToWhatsApp()" style="padding:12px 24px">تأكيد وإرسال</button>
+            </div>
         </div>
     `;
     
@@ -764,47 +801,47 @@ function closePurchaseConfirm() {
     pendingOrderData = null;
 }
 
-function confirmPurchase() {
-    if (pendingOrderData) {
-        const userNotes = document.getElementById('orderNotes')?.value.trim() || '';
-        pendingOrderData.userNotes = userNotes;
-        closePurchaseConfirm();
-        sendWhatsAppOrderRequest(pendingOrderData);
-    }
-}
-
-function sendWhatsAppOrderRequest(orderData) {
-    if (!currentUser) {
-        showPage('login');
-        return;
-    }
+function confirmAndSendToWhatsApp() {
+    if (!pendingOrderData) return;
     
+    const userNotes = document.getElementById('orderNotes')?.value.trim() || '';
+    pendingOrderData.userNotes = userNotes;
+    
+    closePurchaseConfirm();
+    
+    // بناء رسالة واتساب
     let message = `🛍️ *طلب شراء جديد من زود*\n\n`;
     message += `👤 *اسم المستخدم:* ${currentUser.name}\n`;
     message += `📧 *البريد الإلكتروني:* ${currentUser.email}\n`;
     message += `🆔 *رقم المستخدم:* ${currentUser.id}\n`;
-    message += `📦 *نوع الخدمة:* ${orderData.type}\n`;
-    message += `📝 *تفاصيل الخدمة:* ${orderData.detail}\n`;
-    message += `💰 *السعر:* $${orderData.price.toFixed(2)}\n`;
-    if (orderData.userNotes) message += `📌 *ملاحظات العميل:* ${orderData.userNotes}\n`;
+    message += `📦 *نوع الخدمة:* ${pendingOrderData.type}\n`;
+    message += `📝 *تفاصيل الخدمة:* ${pendingOrderData.detail}\n`;
+    message += `💰 *السعر:* $${pendingOrderData.price.toFixed(2)}\n`;
+    if (userNotes) message += `📌 *ملاحظات العميل:* ${userNotes}\n`;
     message += `📅 *تاريخ الطلب:* ${new Date().toLocaleString('ar')}\n\n`;
     message += `✅ *يرجى تأكيد الطلب وتزويد العميل بالبيانات المطلوبة*`;
     
     const encodedMessage = encodeURIComponent(message);
     const adminWhatsApp = '963949277889';
+    
+    // فتح واتساب مباشرة
     window.open(`https://wa.me/${adminWhatsApp}?text=${encodedMessage}`, '_blank');
-    saveOrderToDatabase(orderData);
-    showToast('✅ تم إرسال طلبك! سيتم التواصل معك عبر واتساب خلال دقائق', 'success');
+    
+    // حفظ الطلب في قاعدة البيانات
+    saveOrderToDatabase(pendingOrderData, userNotes);
+    
+    showToast('✅ تم إرسال طلبك! تم تحويلك إلى واتساب للتواصل', 'success');
+    pendingOrderData = null;
 }
 
-async function saveOrderToDatabase(orderData) {
+async function saveOrderToDatabase(orderData, userNotes) {
     const order = {
         id: Date.now(),
         user: currentUser.name,
         user_id: currentUser.id,
         type: orderData.type,
         detail: orderData.detail,
-        user_notes: orderData.userNotes || '',
+        user_notes: userNotes || '',
         amount: orderData.price,
         requested_amt: orderData.price,
         status: 'pending_approval',
@@ -819,7 +856,6 @@ async function saveOrderToDatabase(orderData) {
         saveDB();
     }
 }
-
 function openBuyNum(id) {
     if (!currentUser) { showPage('login'); return; }
     const n = DB.numbers.find(x => x.id === id);
@@ -920,10 +956,8 @@ async function addCustomService() {
         description: description,
         icon: icon,
         color: color,
-        page: 'home',
         note: note,
         is_active: true,
-        display_order: (DB.customServices?.length || 0),
         created_at: new Date().toISOString()
     };
     
@@ -964,7 +998,28 @@ function renderCustomServicesOnHome() {
         DB.customServices.forEach(service => {
             const card = document.createElement('div');
             card.className = 'svc-card';
-            card.onclick = () => requireLogin('home');
+            // عند الضغط على الخدمة، تفتح واتساب مع رسالة مخصصة
+            card.onclick = () => {
+                if (!currentUser) {
+                    showPage('login');
+                    return;
+                }
+                // بناء رسالة واتساب للخدمة المخصصة
+                let message = `🛍️ *طلب خدمة: ${service.name}*\n\n`;
+                message += `👤 *اسم المستخدم:* ${currentUser.name}\n`;
+                message += `📧 *البريد الإلكتروني:* ${currentUser.email}\n`;
+                message += `🆔 *رقم المستخدم:* ${currentUser.id}\n`;
+                message += `📦 *الخدمة:* ${service.name}\n`;
+                if (service.description) message += `📝 *الوصف:* ${service.description}\n`;
+                if (service.note) message += `📌 *ملاحظة:* ${service.note}\n`;
+                message += `📅 *تاريخ الطلب:* ${new Date().toLocaleString('ar')}\n\n`;
+                message += `✅ *يرجى التواصل مع العميل لتقديم الخدمة*`;
+                
+                const encodedMessage = encodeURIComponent(message);
+                const adminWhatsApp = '963949277889';
+                window.open(`https://wa.me/${adminWhatsApp}?text=${encodedMessage}`, '_blank');
+                showToast('✅ تم تحويلك إلى واتساب للتواصل', 'success');
+            };
             card.innerHTML = `
                 <div class="svc-icon" style="background:${service.color ? service.color + '22' : 'rgba(245,200,66,0.12)'};color:${service.color || 'var(--gold)'}">${service.icon}</div>
                 <div class="svc-name">${service.name}</div>
@@ -1100,29 +1155,26 @@ function renderDGames() {
     `).join('');
 }
 
-function renderDRc() {
-    const tb = document.getElementById('dRcBody'); 
+function renderDGames() {
+    const tb = document.getElementById('dGamesBody');
     if (!tb) return;
     
-    if (!DB.rechargePkgs || DB.rechargePkgs.length === 0) {
-        tb.innerHTML = '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
+    console.log('Rendering game packages:', DB.gamePackages);
+    
+    if (!DB.gamePackages || DB.gamePackages.length === 0) {
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات ألعاب</td></tr>';
         return;
     }
     
-    tb.innerHTML = DB.rechargePkgs.map(pkg => {
-        const qtyValue = (pkg.quantity !== undefined && pkg.quantity !== null) ? pkg.quantity : 0;
-        return `
-            <tr>
-                <td style="font-weight:600">${pkg.operator || 'غير محدد'}<\/td>
-                <td>${countryFlags[pkg.country] || '🌍'} ${pkg.country || 'غير محدد'}<\/td>
-                <td>${qtyValue.toLocaleString()} وحدة<\/td>
-                <td style="color:var(--gold);font-weight:700">$${(pkg.price || 0).toFixed(2)}<\/td>
-                <td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف<\/button><\/td>
-            </tr>
-        `;
-    }).join('');
+    tb.innerHTML = DB.gamePackages.map(p => `
+        <tr>
+            <td>${p.icon || '🎮'} ${p.game || ''}</td>
+            <td style="font-weight:600">${p.package_name || p.package || ''}</td>
+            <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
+            <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
+        </tr>
+    `).join('');
 }
-
 function renderDUsers() {
     const tb = document.getElementById('dUsersBody');
     if (!tb) return;
