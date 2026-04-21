@@ -188,7 +188,10 @@ async function loadAllDataFromSupabase() {
       });
     }
     if (servicesRes.data) DB.customServices = servicesRes.data;
-    
+    if (ordersRes.data) {
+    DB.orders = ordersRes.data;
+    console.log('Loaded orders:', DB.orders.length);
+}
     saveDB();
   } catch (e) {
     console.error('Error loading data from Supabase:', e);
@@ -210,6 +213,7 @@ async function refreshAllData() {
   }
   renderCustomServicesOnHome();
   renderCustomServicesList();
+  renderDOrders();
 }
 
 function saveDB() {
@@ -1996,3 +2000,157 @@ document.addEventListener('DOMContentLoaded', async function() {
     updateNav();
   }
 });
+
+
+
+
+// ============================================================
+// ORDERS MANAGEMENT WITH FILTERS
+// ============================================================
+let currentOrderFilter = 'all';
+
+function filterOrders(type, el) {
+    currentOrderFilter = type;
+    // تحديث حالة الأزرار
+    document.querySelectorAll('#dash-orders .tab-btn').forEach(btn => btn.classList.remove('active'));
+    if (el) el.classList.add('active');
+    renderDOrders();
+}
+
+function renderDOrders() {
+    const tb = document.getElementById('dOrdersBody');
+    if (!tb) return;
+    
+    let filteredOrders = [...DB.orders].reverse();
+    
+    // تصفية حسب الحالة
+    if (currentOrderFilter === 'completed') {
+        filteredOrders = filteredOrders.filter(o => o.status === 'completed' || o.is_completed === true);
+    } else if (currentOrderFilter === 'pending') {
+        filteredOrders = filteredOrders.filter(o => o.status === 'pending' || o.status === 'pending_approval');
+    }
+    
+    // تحديث عدد الطلبات المعلقة
+    const pendingCount = DB.orders.filter(o => o.status === 'pending' || o.status === 'pending_approval').length;
+    const pendingSpan = document.getElementById('pendingOrdersCount');
+    if (pendingSpan) pendingSpan.textContent = pendingCount;
+    
+    if (filteredOrders.length === 0) {
+        tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات</td></tr>';
+        return;
+    }
+    
+    tb.innerHTML = filteredOrders.map(o => {
+        const isCompleted = (o.status === 'completed' || o.status === 'approved' || o.is_completed === true);
+        const isPending = (o.status === 'pending' || o.status === 'pending_approval');
+        
+        let statusHtml = '';
+        if (isCompleted) {
+            statusHtml = '<span class="pt pt-avail" style="background:rgba(0,224,154,0.15);color:var(--green)">✅ منتهي</span>';
+        } else if (isPending) {
+            statusHtml = '<span class="pt pt-sold" style="background:rgba(245,200,66,0.15);color:var(--gold)">⏳ قيد الانتظار</span>';
+        } else {
+            statusHtml = `<span class="pt pt-sold">${o.status || 'غير محدد'}</span>`;
+        }
+        
+        return `
+            <tr style="${isPending ? 'background:rgba(245,200,66,0.05)' : ''}">
+                <td style="font-weight:600">${o.user || ''}</td>
+                <td><span class="pt pt-avail" style="font-size:.75rem">${o.type || ''}</span></td>
+                <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
+                <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
+                <td style="color:var(--text3);font-size:.75rem;max-width:150px;word-break:break-word">${o.user_notes || '—'}</td>
+                <td>${statusHtml}</td>
+                <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
+                <td>
+                    ${isPending ? `<button class="edit-btn" onclick="markOrderCompleted(${o.id})" style="background:rgba(0,224,154,0.15);color:var(--green)">✅ تم التنفيذ</button>` : ''}
+                    ${isPending ? `<button class="del-btn" onclick="cancelOrder(${o.id})" style="margin-top:5px">❌ إلغاء</button>` : ''}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function markOrderCompleted(orderId) {
+    if (!confirm('هل أنت متأكد من تأكيد تنفيذ هذا الطلب؟')) return;
+    
+    const orderIndex = DB.orders.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) return;
+    
+    DB.orders[orderIndex].status = 'completed';
+    DB.orders[orderIndex].is_completed = true;
+    DB.orders[orderIndex].completed_at = new Date().toLocaleString('ar');
+    
+    if (useSupabase && supabase) {
+        await supabase.from('orders').update({ 
+            status: 'completed', 
+            is_completed: true,
+            completed_at: new Date().toLocaleString('ar')
+        }).eq('id', orderId);
+    } else {
+        saveDB();
+    }
+    
+    renderDOrders();
+    showToast('تم تأكيد تنفيذ الطلب ✅', 'success');
+}
+
+async function cancelOrder(orderId) {
+    if (!confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) return;
+    
+    const orderIndex = DB.orders.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) return;
+    
+    const order = DB.orders[orderIndex];
+    
+    // إعادة المبلغ إلى المستخدم إذا كان قد خصم
+    if (order.status !== 'completed' && order.amount > 0) {
+        const userIndex = DB.users.findIndex(u => u.id === order.user_id);
+        if (userIndex !== -1) {
+            DB.users[userIndex].balance = (DB.users[userIndex].balance || 0) + order.amount;
+            
+            if (useSupabase && supabase) {
+                await supabase.from('users').update({ balance: DB.users[userIndex].balance }).eq('id', order.user_id);
+                await supabase.from('transactions').insert({
+                    user_id: order.user_id,
+                    type: 'credit',
+                    description: `استرداد مبلغ طلب ملغي: ${order.type}`,
+                    amount: order.amount,
+                    transaction_date: new Date().toLocaleString('ar')
+                });
+            } else {
+                DB.transactions.push({
+                    id: Date.now(),
+                    user_id: order.user_id,
+                    type: 'credit',
+                    description: `استرداد مبلغ طلب ملغي: ${order.type}`,
+                    amount: order.amount,
+                    date: new Date().toLocaleString('ar')
+                });
+                saveDB();
+            }
+            
+            if (currentUser && currentUser.id === order.user_id) {
+                currentUser.balance = DB.users[userIndex].balance;
+                updateNav();
+            }
+            
+            showToast(`تم إلغاء الطلب واسترداد $${order.amount.toFixed(2)} إلى رصيد المستخدم`, 'success');
+        }
+    }
+    
+    DB.orders[orderIndex].status = 'cancelled';
+    DB.orders[orderIndex].cancelled_at = new Date().toLocaleString('ar');
+    
+    if (useSupabase && supabase) {
+        await supabase.from('orders').update({ 
+            status: 'cancelled',
+            cancelled_at: new Date().toLocaleString('ar')
+        }).eq('id', orderId);
+    } else {
+        saveDB();
+    }
+    
+    renderDOrders();
+    showToast('تم إلغاء الطلب', 'success');
+}
