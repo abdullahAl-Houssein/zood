@@ -43,7 +43,67 @@ const DEFAULT_DB = {
   },
   customServices: []
 };
+async function loadAndRenderAll() {
+    console.log('loadAndRenderAll started');
+    await refreshAllData();
+    console.log('Data refreshed, now rendering...');
+    
+    // عرض جميع البيانات في لوحة التحكم
+    renderDNum();
+    renderDWa();
+    renderDTg();
+    renderDSoc();
+    renderDTgV();
+    renderDGames();
+    renderDRc();
+    renderDUsers();
+    renderDOrders();
+    renderDPM();
+    
+    // عرض الخدمات في الصفحة الرئيسية
+    renderCustomServicesOnHome();
+    renderCustomServicesList();
+    
+    console.log('All renders completed');
+}
+// ============================================================
+// DEBUG FUNCTIONS - لفحص البيانات
+// ============================================================
+function checkData() {
+    console.log('=== DATA CHECK ===');
+    console.log('Recharge packages:', DB.rechargePkgs);
+    console.log('Game packages:', DB.gamePackages);
+    console.log('Social packages:', DB.socialPackages);
+    console.log('TG Verify packages:', DB.tgVerifyPackages);
+    console.log('Numbers:', DB.numbers);
+    console.log('Users:', DB.users);
+    console.log('Orders:', DB.orders);
+}
 
+// دالة لإعادة تحميل البيانات يدوياً (يمكن استدعاؤها من Console)
+window.reloadData = async function() {
+    showLoadingOverlay('جاري إعادة تحميل البيانات...');
+    await loadAllDataFromSupabase();
+    await loadAndRenderAll();
+    hideLoadingOverlay();
+    showToast('تم تحديث البيانات بنجاح', 'success');
+};
+// استبدال دالة showPage لضمان تحميل البيانات عند فتح لوحة التحكم
+const originalShowPage = showPage;
+showPage = function(name) {
+    originalShowPage(name);
+    if (name === 'dashboard') {
+        // تأخير بسيط لضمان تحميل العناصر
+        setTimeout(() => {
+            loadAndRenderAll();
+        }, 200);
+    }
+    if (name === 'home') {
+        setTimeout(() => {
+            renderCustomServicesOnHome();
+        }, 100);
+    }
+};
 let DB = JSON.parse(JSON.stringify(DEFAULT_DB));
 
 // ============================================================
@@ -205,6 +265,12 @@ async function loadAllDataFromSupabase() {
     
     saveDB();
     console.log('All data loaded successfully');
+    // بعد saveDB(); أضف:
+console.log('=== FINAL DATA LOADED ===');
+console.log('Recharge packages count:', DB.rechargePkgs?.length);
+console.log('Game packages count:', DB.gamePackages?.length);
+console.log('Social packages count:', DB.socialPackages?.length);
+console.log('TG Verify packages count:', DB.tgVerifyPackages?.length);
   } catch (e) {
     console.error('Error loading data from Supabase:', e);
   } finally {
@@ -213,23 +279,29 @@ async function loadAllDataFromSupabase() {
 }
 
 async function refreshAllData() {
-  if (useSupabase && supabase) {
-    await loadAllDataFromSupabase();
-  } else {
-    loadDB();
-  }
-  if (currentUser) {
-    const fresh = DB.users.find(u => u.id === currentUser.id);
-    if (fresh) currentUser = fresh;
-    updateNav();
-  }
-  renderCustomServicesOnHome();
-  renderCustomServicesList();
-  renderDOrders();
-  renderDGames();
-  renderDRc();
-  renderDTgV();
-  renderDSoc();
+    console.log('refreshAllData called, useSupabase:', useSupabase);
+    
+    if (useSupabase && supabase) {
+        await loadAllDataFromSupabase();
+    } else {
+        loadDB();
+    }
+    
+    if (currentUser) {
+        const fresh = DB.users.find(u => u.id === currentUser.id);
+        if (fresh) currentUser = fresh;
+        updateNav();
+    }
+    
+    // تحديث المحفظة إذا كانت مفتوحة
+    if (document.getElementById('page-wallet').classList.contains('active')) {
+        renderWallet();
+    }
+    
+    console.log('refreshAllData completed, DB.rechargePkgs:', DB.rechargePkgs);
+    console.log('DB.gamePackages:', DB.gamePackages);
+    console.log('DB.socialPackages:', DB.socialPackages);
+    console.log('DB.tgVerifyPackages:', DB.tgVerifyPackages);
 }
 
 function saveDB() {
