@@ -113,6 +113,7 @@ function closeModal(id) {
   const modal = document.getElementById(id);
   if (modal) modal.classList.remove('open');
 }
+
 // ============================================================
 // SUPABASE FUNCTIONS
 // ============================================================
@@ -171,6 +172,7 @@ async function loadAllDataFromSupabase() {
     if (socialRes.data) DB.socialPackages = socialRes.data;
     if (tgVerifyRes.data) DB.tgVerifyPackages = tgVerifyRes.data;
     if (gamesRes.data) DB.gamePackages = gamesRes.data;
+    
     if (rechargeRes.data) {
       DB.rechargePkgs = rechargeRes.data.map(pkg => ({
         ...pkg,
@@ -178,8 +180,18 @@ async function loadAllDataFromSupabase() {
         price: pkg.price || 0
       }));
     }
-    if (ordersRes.data) DB.orders = ordersRes.data;
+    
+    if (ordersRes.data) {
+      DB.orders = ordersRes.data.map(o => ({
+        ...o,
+        user: o.user || o.user_name,
+        user_name: o.user_name || o.user
+      }));
+      console.log('Loaded orders:', DB.orders.length);
+    }
+    
     if (transactionsRes.data) DB.transactions = transactionsRes.data;
+    
     if (pmRes.data && pmRes.data.length > 0) {
       pmRes.data.forEach(pm => {
         if (pm.method && pm.data) {
@@ -187,6 +199,7 @@ async function loadAllDataFromSupabase() {
         }
       });
     }
+    
     if (servicesRes.data) DB.customServices = servicesRes.data;
     
     saveDB();
@@ -210,6 +223,7 @@ async function refreshAllData() {
   }
   renderCustomServicesOnHome();
   renderCustomServicesList();
+  renderDOrders();
 }
 
 function saveDB() {
@@ -239,6 +253,7 @@ function ensureDBSchema() {
     price: pkg.price || 0
   }));
 }
+
 // ============================================================
 // QR LOADING INDICATORS
 // ============================================================
@@ -268,6 +283,7 @@ function setImageLoading(imgElement, isLoading) {
         imgElement.classList.add('loaded');
     }
 }
+
 // ============================================================
 // SESSION & AUTH
 // ============================================================
@@ -399,6 +415,7 @@ function updateNav() {
   if (mmUserSec) mmUserSec.style.display = ok ? '' : 'none';
   if (mmDashBtn2) mmDashBtn2.style.display = admin ? '' : 'none';
 }
+
 // ============================================================
 // PAGE ROUTING
 // ============================================================
@@ -562,6 +579,7 @@ function renderTxList(type) {
       <div class="tx-amt ${t.type}">${t.type === 'credit' ? '+' : '-'}$${safeToFixed(t.amount)}</div>
     </div>`).join('');
 }
+
 // ============================================================
 // ADD FUNDS WITH QR FROM DATABASE
 // ============================================================
@@ -721,8 +739,9 @@ async function confirmAddFundsRequest() {
   closeModal('addFundsModal');
   showToast('تم إرسال الطلب! تواصل مع الإدارة على واتساب ✅', 'success');
 }
+
 // ============================================================
-// PURCHASE CONFIRMATION WITH WHATSAPP DIRECT
+// PURCHASE SYSTEM WITH BALANCE DEDUCTION
 // ============================================================
 let pendingOrderData = null;
 
@@ -730,6 +749,11 @@ function openBuyNum(id) {
     if (!currentUser) { showPage('login'); return; }
     const n = DB.numbers.find(x => x.id === id);
     if (!n || n.status !== 'available') { showToast('هذا الرقم غير متاح', 'error'); return; }
+    
+    if ((currentUser.balance || 0) < n.price) {
+        showToast(`❌ رصيدك غير كافٍ! تحتاج إلى $${n.price.toFixed(2)} ورصيدك الحالي $${(currentUser.balance || 0).toFixed(2)}`, 'error');
+        return;
+    }
     
     pendingOrderData = {
         type: 'رقم ' + (n.type === 'phone' ? 'هاتفي' : n.type === 'whatsapp' ? 'واتساب' : 'تلغرام'),
@@ -745,6 +769,11 @@ function openBuyNum(id) {
 
 function openBuyDirect(desc, price, cb, category, pkgId) {
     if (!currentUser) { showPage('login'); return; }
+    
+    if ((currentUser.balance || 0) < price) {
+        showToast(`❌ رصيدك غير كافٍ! تحتاج إلى $${price.toFixed(2)} ورصيدك الحالي $${(currentUser.balance || 0).toFixed(2)}`, 'error');
+        return;
+    }
     
     let typeName = 'خدمة';
     if (category === 'social') typeName = 'باقة سوشيال ميديا';
@@ -774,24 +803,27 @@ function showPurchaseConfirmation() {
     confirmModal.id = 'purchaseConfirmModal';
     confirmModal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;';
     
+    const afterBalance = (currentUser.balance || 0) - pendingOrderData.price;
+    
     confirmModal.innerHTML = `
         <div class="modal-box" style="max-width:500px;">
             <div style="text-align:center;font-size:3rem;margin-bottom:15px">🛍️</div>
-            <div class="modal-title" style="text-align:center;margin-bottom:10px">تأكيد الطلب</div>
+            <div class="modal-title" style="text-align:center;margin-bottom:10px">تأكيد الشراء</div>
             <div class="modal-sub" style="text-align:center;margin-bottom:20px">يرجى مراجعة تفاصيل طلبك</div>
             <div style="background:var(--dark3);border-radius:12px;padding:20px;margin-bottom:20px">
                 <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">الخدمة:</span><span style="font-weight:600">${pendingOrderData.type}</span></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">التفاصيل:</span><span style="font-weight:600">${pendingOrderData.detail}</span></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">السعر:</span><span style="color:var(--gold);font-weight:700">$${pendingOrderData.price.toFixed(2)}</span></div>
                 <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">رصيدك الحالي:</span><span style="color:var(--green);font-weight:700">$${safeToFixed(currentUser?.balance)}</span></div>
+                <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1)"><span style="color:var(--text2)">الرصيد بعد الشراء:</span><span style="color:${afterBalance >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">$${afterBalance.toFixed(2)}</span></div>
             </div>
             <div class="fg"><label class="fl">📝 ملاحظاتك (اختياري)</label><textarea id="orderNotes" class="fi" rows="3" placeholder="أدخل أي معلومات إضافية... مثال: رابط القناة، اسم المستخدم، رقم الحساب..." style="resize:vertical"></textarea></div>
             <div style="background:rgba(245,200,66,0.1);border-radius:10px;padding:12px;margin:20px 0;font-size:0.85rem;color:var(--text2);text-align:center">
-                ⚠️ سيتم تحويلك إلى واتساب لإتمام الطلب
+                ⚠️ سيتم خصم المبلغ من رصيدك فور تأكيد الطلب
             </div>
             <div style="display:flex;gap:10px;justify-content:center">
                 <button class="m-cancel" onclick="closePurchaseConfirm()" style="padding:12px 24px">إلغاء</button>
-                <button class="m-confirm" onclick="confirmAndSendToWhatsApp()" style="padding:12px 24px">تأكيد وإرسال</button>
+                <button class="m-confirm" onclick="confirmPurchaseAndDeduct()" style="padding:12px 24px">تأكيد الشراء</button>
             </div>
         </div>
     `;
@@ -808,36 +840,98 @@ function closePurchaseConfirm() {
     }
 }
 
-function confirmAndSendToWhatsApp() {
+async function confirmPurchaseAndDeduct() {
     if (!pendingOrderData) {
         showToast('حدث خطأ، يرجى المحاولة مرة أخرى', 'error');
         return;
     }
     
     const userNotes = document.getElementById('orderNotes')?.value.trim() || '';
+    const price = pendingOrderData.price;
     
+    if ((currentUser.balance || 0) < price) {
+        showToast(`❌ رصيدك غير كافٍ!`, 'error');
+        closePurchaseConfirm();
+        pendingOrderData = null;
+        return;
+    }
+    
+    const newBalance = (currentUser.balance || 0) - price;
+    
+    if (useSupabase && supabase) {
+        const { error: updateError } = await supabase.from('users').update({ balance: newBalance }).eq('id', currentUser.id);
+        if (updateError) {
+            console.error('Error updating balance:', updateError);
+            showToast('حدث خطأ أثناء معالجة الطلب', 'error');
+            return;
+        }
+        
+        await supabase.from('transactions').insert({
+            user_id: currentUser.id,
+            type: 'debit',
+            description: `شراء: ${pendingOrderData.type} - ${pendingOrderData.detail}`,
+            amount: price,
+            transaction_date: new Date().toLocaleString('ar')
+        });
+    } else {
+        const userIndex = DB.users.findIndex(u => u.id === currentUser.id);
+        if (userIndex !== -1) {
+            DB.users[userIndex].balance = newBalance;
+        }
+        DB.transactions.push({
+            id: Date.now(),
+            user_id: currentUser.id,
+            type: 'debit',
+            description: `شراء: ${pendingOrderData.type} - ${pendingOrderData.detail}`,
+            amount: price,
+            date: new Date().toLocaleString('ar')
+        });
+        saveDB();
+    }
+    
+    currentUser.balance = newBalance;
+    updateNav();
+    
+    await saveOrderToDatabase(pendingOrderData, userNotes);
+    sendWhatsAppNotification(pendingOrderData, userNotes);
+    
+    closePurchaseConfirm();
+    showToast(`✅ تم شراء الخدمة بنجاح! تم خصم $${price.toFixed(2)} من رصيدك`, 'success');
+    
+    if (pendingOrderData.itemType === 'number' && pendingOrderData.itemId) {
+        if (useSupabase && supabase) {
+            await supabase.from('numbers').update({ status: 'sold' }).eq('id', pendingOrderData.itemId);
+        } else {
+            const numIndex = DB.numbers.findIndex(n => n.id === pendingOrderData.itemId);
+            if (numIndex !== -1) DB.numbers[numIndex].status = 'sold';
+            saveDB();
+        }
+        renderNumbersByType('phone');
+        renderNumbersByType('whatsapp');
+        renderNumbersByType('telegram');
+    }
+    
+    renderWallet();
+    renderDashboard();
+    pendingOrderData = null;
+}
+
+function sendWhatsAppNotification(orderData, userNotes) {
     let message = `🛍️ *طلب شراء جديد من زود*\n\n`;
     message += `👤 *اسم المستخدم:* ${currentUser.name}\n`;
     message += `📧 *البريد الإلكتروني:* ${currentUser.email}\n`;
     message += `🆔 *رقم المستخدم:* ${currentUser.id}\n`;
-    message += `📦 *نوع الخدمة:* ${pendingOrderData.type}\n`;
-    message += `📝 *تفاصيل الخدمة:* ${pendingOrderData.detail}\n`;
-    message += `💰 *السعر:* $${pendingOrderData.price.toFixed(2)}\n`;
+    message += `📦 *نوع الخدمة:* ${orderData.type}\n`;
+    message += `📝 *تفاصيل الخدمة:* ${orderData.detail}\n`;
+    message += `💰 *السعر:* $${orderData.price.toFixed(2)}\n`;
+    message += `💵 *تم الخصم من الرصيد:* ✅\n`;
     if (userNotes) message += `📌 *ملاحظات العميل:* ${userNotes}\n`;
     message += `📅 *تاريخ الطلب:* ${new Date().toLocaleString('ar')}\n\n`;
-    message += `✅ *يرجى تأكيد الطلب وتزويد العميل بالبيانات المطلوبة*`;
+    message += `✅ *يرجى تجهيز الطلب وتزويد العميل بالبيانات المطلوبة*`;
     
     const encodedMessage = encodeURIComponent(message);
     const adminWhatsApp = '963949277889';
-    
     window.open(`https://wa.me/${adminWhatsApp}?text=${encodedMessage}`, '_blank');
-    
-    saveOrderToDatabase(pendingOrderData, userNotes);
-    
-    closePurchaseConfirm();
-    showToast('✅ تم إرسال طلبك! تم تحويلك إلى واتساب للتواصل', 'success');
-    
-    pendingOrderData = null;
 }
 
 async function saveOrderToDatabase(orderData, userNotes) {
@@ -850,25 +944,33 @@ async function saveOrderToDatabase(orderData, userNotes) {
         user_notes: userNotes || '',
         amount: orderData.price,
         requested_amt: orderData.price,
-        status: 'pending_approval',
-        order_time: new Date().toLocaleString('ar'),
-        whatsapp_sent: true
+        status: 'completed',
+        order_time: new Date().toLocaleString('ar')
     };
     
     console.log('Saving order:', order);
     
     if (useSupabase && supabase) {
-        const { data, error } = await supabase.from('orders').insert(order).select();
-        if (error) {
-            console.error('Error saving order:', error);
-        } else {
-            console.log('Order saved successfully:', data);
+        try {
+            const { data, error } = await supabase.from('orders').insert(order).select();
+            if (error) {
+                console.error('Error saving order:', error);
+                DB.orders.push({...order, id: order.id});
+                saveDB();
+            } else {
+                console.log('Order saved successfully:', data);
+            }
+        } catch (err) {
+            console.error('Exception saving order:', err);
+            DB.orders.push({...order, id: order.id});
+            saveDB();
         }
     } else {
         DB.orders.push(order);
         saveDB();
     }
 }
+
 // ============================================================
 // RECHARGE
 // ============================================================
@@ -915,10 +1017,10 @@ function doRecharge(region) {
   openBuyDirect('شحن ' + qtyValue.toLocaleString() + ' وحدة - ' + st.op + ' - ' + num, st.pkg.price);
   rcState[region] = {};
 }
+
 // ============================================================
 // CUSTOM SERVICES MANAGEMENT
 // ============================================================
-
 function openAddCustomService() {
     document.getElementById('newCustomServiceName').value = '';
     document.getElementById('newCustomServiceDesc').value = '';
@@ -1052,6 +1154,7 @@ async function deleteCustomService(id) {
     renderCustomServicesList();
     showToast('تم حذف الخدمة', 'success');
 }
+
 // ============================================================
 // DASHBOARD
 // ============================================================
@@ -1076,31 +1179,67 @@ function renderDashboard() {
   renderDTgV(); renderDGames(); renderDRc(); renderDUsers(); renderDOrders(); renderDPM();
   
   const rb = document.getElementById('ovOrdersBody');
-  if (rb) rb.innerHTML = [...DB.orders].reverse().slice(0, 8).map(o => `<td><td style="font-weight:600">${o.user || ''}</td><td style="color:var(--text2);font-size:.75rem">${o.type || ''}</td><td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td><td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td></tr>`).join('') || '<td><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
+  if (rb) {
+    rb.innerHTML = [...DB.orders].reverse().slice(0, 8).map(o => `
+      <tr>
+        <td style="font-weight:600">${o.user || o.user_name || ''}</td>
+        <td style="color:var(--text2);font-size:.75rem">${o.type || ''}</td>
+        <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
+        <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}</td>
+        <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
+  }
 }
 
 function renderDNum() {
   const nums = DB.numbers.filter(n => n.type === 'phone');
   const el = document.getElementById('dNumCount'); if (el) el.textContent = nums.length;
   const tb = document.getElementById('dNumBody'); if (!tb) return;
-  tb.innerHTML = nums.map(n => `<tr><td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td><td>📱 هاتفي<\/td><td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td><td>${n.operator || ''}<\/td><td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td><td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button><\/td></tr>`).join('');
+  tb.innerHTML = nums.map(n => `<tr>
+    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td>
+    <td>📱 هاتفي<\/td>
+    <td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td>
+    <td>${n.operator || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td>
+    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td>
+    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button><\/td>
+  </tr>`).join('');
 }
 
 function renderDWa() {
   const nums = DB.numbers.filter(n => n.type === 'whatsapp');
   const tb = document.getElementById('dWaBody'); if (!tb) return;
-  tb.innerHTML = nums.map(n => `<tr><td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td><td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td><td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td><td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button><\/td></tr>`).join('');
+  tb.innerHTML = nums.map(n => `<tr>
+    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td>
+    <td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td>
+    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td>
+    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button><\/td>
+  </tr>`).join('');
 }
 
 function renderDTg() {
   const nums = DB.numbers.filter(n => n.type === 'telegram');
   const tb = document.getElementById('dTgBody'); if (!tb) return;
-  tb.innerHTML = nums.map(n => `<tr><td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td><td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td><td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td><td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td><td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button><\/td></tr>`).join('');
+  tb.innerHTML = nums.map(n => `<tr>
+    <td><div class="pc-num" style="font-size:.82rem;padding:5px 9px;margin:0">${n.phone || ''}</div><\/td>
+    <td>${countryFlags[n.country] || ''} ${n.country || ''}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(n.price)}<\/td>
+    <td><span class="pt ${n.status === 'available' ? 'pt-avail' : 'pt-sold'}">${n.status === 'available' ? 'متاح' : 'مباع'}</span><\/td>
+    <td><button class="del-btn" onclick="deleteNum(${n.id})">حذف</button><button class="edit-btn" onclick="toggleNumStatus(${n.id})">${n.status === 'available' ? 'تعطيل' : 'تفعيل'}</button><\/td>
+  </tr>`).join('');
 }
 
 function renderDSoc() {
   const tb = document.getElementById('dSocBody'); if (!tb) return;
-  tb.innerHTML = DB.socialPackages.map(p => `<tr><td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}<\/td><td>${p.type || ''}<\/td><td style="font-weight:700">${safeFormatNumber(p.qty)}<\/td><td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td><td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف</button><\/td></tr>`).join('');
+  tb.innerHTML = DB.socialPackages.map(p => `<tr>
+    <td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}<\/td>
+    <td>${p.type || ''}<\/td>
+    <td style="font-weight:700">${safeFormatNumber(p.qty)}<\/td>
+    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
+    <td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف<\/button><\/td>
+  </tr>`).join('');
 }
 
 function renderDTgV() {
@@ -1108,7 +1247,7 @@ function renderDTgV() {
     if (!tb) return;
     
     if (!DB.tgVerifyPackages || DB.tgVerifyPackages.length === 0) {
-        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات<\/td><\/tr>';
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات توثيق<\/td><\/tr>';
         return;
     }
     
@@ -1116,8 +1255,8 @@ function renderDTgV() {
         <tr>
             <td style="font-weight:600">${p.type || ''}</td>
             <td style="color:var(--text2);font-size:.82rem">${p.description || ''}</td>
-            <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
-            <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف</button></td>
+            <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
+            <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف<\/button><\/td>
         </tr>
     `).join('');
 }
@@ -1127,22 +1266,29 @@ function renderDGames() {
     if (!tb) return;
     
     if (!DB.gamePackages || DB.gamePackages.length === 0) {
-        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات ألعاب<\/td><\/tr>';
+        tb.innerHTML = '<td><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات ألعاب<\/td><\/tr>';
         return;
     }
     
-    tb.innerHTML = DB.gamePackages.map(p => `
-        <tr>
-            <td style="font-weight:600">${p.icon || '🎮'} ${p.game || ''}</td>
-            <td>${p.package_name || p.package || ''}</td>
-            <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
-            <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
-        </tr>
-    `).join('');
+    tb.innerHTML = DB.gamePackages.map(p => {
+        const packageName = p.package_name || p.package || 'غير محدد';
+        const gameName = p.game || 'غير محدد';
+        const gameIcon = p.icon || '🎮';
+        const gamePrice = (p.price !== undefined && p.price !== null) ? p.price : 0;
+        
+        return `
+            <tr>
+                <td style="font-weight:600">${gameIcon} ${gameName}</td>
+                <td>${packageName}</td>
+                <td style="color:var(--gold);font-weight:700">$${gamePrice.toFixed(2)}<\/td>
+                <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف<\/button><\/td>
+            </tr>
+        `;
+    }).join('');
 }
 
 function renderDRc() {
-    const tb = document.getElementById('dRcBody'); 
+    const tb = document.getElementById('dRcBody');
     if (!tb) return;
     
     if (!DB.rechargePkgs || DB.rechargePkgs.length === 0) {
@@ -1171,22 +1317,212 @@ function renderDRc() {
 function renderDUsers() {
     const tb = document.getElementById('dUsersBody');
     if (!tb) return;
-    tb.innerHTML = DB.users.map(u => `<tr><td style="font-weight:600">${u.name || ''}</td><td style="color:var(--text2)">${u.email || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(u.balance)}<\/td><td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span><\/td><td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}<\/td><td style="white-space: nowrap;">${u.role !== 'admin' ? `<button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')" style="background:rgba(0,224,154,0.15);color:var(--green);margin:2px">💰 إضافة</button><button class="edit-btn" onclick="quickDeductBal(${u.id},'${u.name || ''}')" style="background:rgba(255,77,109,0.15);color:var(--red);margin:2px">💸 خصم</button>` : '—'}<\/td></tr>`).join('');
+    tb.innerHTML = DB.users.map(u => `<tr>
+        <td style="font-weight:600">${u.name || ''}</td>
+        <td style="color:var(--text2)">${u.email || ''}</td>
+        <td style="color:var(--gold);font-weight:700">$${safeToFixed(u.balance)}<\/td>
+        <td><span class="pt ${u.role === 'admin' ? 'pt-sold' : 'pt-avail'}">${u.role === 'admin' ? 'أدمن' : 'مستخدم'}</span><\/td>
+        <td style="color:var(--text3)">${u.createdAt || u.created_at?.split('T')[0] || ''}<\/td>
+        <td style="white-space: nowrap;">
+            ${u.role !== 'admin' ? `
+                <button class="edit-btn" onclick="quickAddBal(${u.id},'${u.name || ''}')" style="background:rgba(0,224,154,0.15);color:var(--green);margin:2px">💰 إضافة</button>
+                <button class="edit-btn" onclick="quickDeductBal(${u.id},'${u.name || ''}')" style="background:rgba(255,77,109,0.15);color:var(--red);margin:2px">💸 خصم</button>
+            ` : '—'}
+        <\/td>
+    </tr>`).join('');
     
     const pending = DB.orders.filter(o => o.status === 'pending');
     const pb = document.getElementById('dPendingBody');
     if (pb) {
         if (pending.length) {
-            pb.innerHTML = pending.map((o, idx) => `<tr><td style="font-weight:600">${o.user || ''}</td><td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}<\/td><td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}<\/td><td><button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button><button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button><\/td></tr>`).join('');
+            pb.innerHTML = pending.map((o, idx) => `<tr>
+                <td style="font-weight:600">${o.user || ''}</td>
+                <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.requested_amt)}<\/td>
+                <td style="color:var(--text3);font-size:.8rem">${o.order_time || o.time || ''}<\/td>
+                <td>
+                    <button class="edit-btn" onclick="approveWalletRequest(${o.id || idx})">✅ موافقة</button>
+                    <button class="del-btn" onclick="rejectWalletRequest(${o.id || idx})">❌ رفض</button>
+                <\/td>
+            </tr>`).join('');
         } else {
-            pb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
+            pb.innerHTML = '<td><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
         }
     }
 }
 
+// ============================================================
+// ORDERS MANAGEMENT WITH FILTERS
+// ============================================================
+let currentOrderFilter = 'all';
+
+function filterOrders(type, el) {
+    currentOrderFilter = type;
+    const btns = document.querySelectorAll('#dash-orders .tab-btn');
+    if (btns) {
+        btns.forEach(btn => btn.classList.remove('active'));
+    }
+    if (el) el.classList.add('active');
+    renderDOrders();
+}
+
 function renderDOrders() {
-  const tb = document.getElementById('dOrdersBody'); if (!tb) return;
-  tb.innerHTML = [...DB.orders].reverse().map(o => `<tr><td>${o.user || ''}<\/td><td><span class="pt pt-avail" style="font-size:.75rem">${o.type || ''}</span><\/td><td style="color:var(--text2);font-size:.82rem">${o.detail || ''}<\/td><td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}<\/td><td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}<\/td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
+    const tb = document.getElementById('dOrdersBody');
+    if (!tb) return;
+    
+    const orders = DB.orders || [];
+    let filteredOrders = [...orders].reverse();
+    
+    if (currentOrderFilter === 'completed') {
+        filteredOrders = filteredOrders.filter(o => o.status === 'completed' || o.is_completed === true);
+    } else if (currentOrderFilter === 'pending') {
+        filteredOrders = filteredOrders.filter(o => o.status === 'pending' || o.status === 'pending_approval');
+    }
+    
+    const pendingCount = orders.filter(o => o.status === 'pending' || o.status === 'pending_approval').length;
+    const pendingSpan = document.getElementById('pendingOrdersCount');
+    if (pendingSpan) pendingSpan.textContent = pendingCount;
+    
+    const pendingBadge = document.getElementById('pendingBadge');
+    if (pendingBadge) {
+        if (pendingCount > 0) {
+            pendingBadge.style.display = 'inline-block';
+            pendingBadge.textContent = pendingCount;
+        } else {
+            pendingBadge.style.display = 'none';
+        }
+    }
+    
+    if (filteredOrders.length === 0) {
+        tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
+        return;
+    }
+    
+    tb.innerHTML = filteredOrders.map(o => {
+        const isCompleted = (o.status === 'completed' || o.status === 'approved' || o.is_completed === true);
+        const isPending = (o.status === 'pending' || o.status === 'pending_approval');
+        
+        let statusHtml = '';
+        if (isCompleted) {
+            statusHtml = '<span class="pt pt-avail" style="background:rgba(0,224,154,0.15);color:var(--green)">✅ منتهي</span>';
+        } else if (isPending) {
+            statusHtml = '<span class="pt pt-sold" style="background:rgba(245,200,66,0.15);color:var(--gold)">⏳ قيد الانتظار</span>';
+        } else {
+            statusHtml = `<span class="pt pt-sold">${o.status || 'غير محدد'}</span>`;
+        }
+        
+        return `
+            <tr style="${isPending ? 'background:rgba(245,200,66,0.05)' : ''}">
+                <td style="font-weight:600">${o.user || o.user_name || ''}</td>
+                <td><span class="pt pt-avail" style="font-size:.75rem">${o.type || ''}</span></td>
+                <td style="color:var(--text2);font-size:.82rem">${o.detail || ''}</td>
+                <td style="color:var(--gold);font-weight:700">$${safeToFixed(o.amount)}<\/td>
+                <td style="color:var(--text3);font-size:.75rem;max-width:150px;word-break:break-word">${o.user_notes || '—'}<\/td>
+                <td>${statusHtml}<\/td>
+                <td style="color:var(--text3);font-size:.78rem">${o.order_time || o.time || ''}<\/td>
+                <td>
+                    ${isPending ? `<button class="edit-btn" onclick="markOrderCompleted(${o.id})" style="background:rgba(0,224,154,0.15);color:var(--green);margin-bottom:3px">✅ تم التنفيذ</button>` : ''}
+                    ${isPending ? `<button class="del-btn" onclick="cancelOrder(${o.id})">❌ إلغاء</button>` : ''}
+                <\/td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function markOrderCompleted(orderId) {
+    if (!confirm('هل أنت متأكد من تأكيد تنفيذ هذا الطلب؟')) return;
+    
+    const orderIndex = DB.orders.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) return;
+    
+    DB.orders[orderIndex].status = 'completed';
+    DB.orders[orderIndex].is_completed = true;
+    DB.orders[orderIndex].completed_at = new Date().toLocaleString('ar');
+    
+    if (useSupabase && supabase) {
+        try {
+            await supabase.from('orders').update({ 
+                status: 'completed', 
+                is_completed: true,
+                completed_at: new Date().toLocaleString('ar')
+            }).eq('id', orderId);
+        } catch(err) {
+            console.error('Error updating order:', err);
+        }
+    } else {
+        saveDB();
+    }
+    
+    renderDOrders();
+    renderDashboard();
+    showToast('تم تأكيد تنفيذ الطلب ✅', 'success');
+}
+
+async function cancelOrder(orderId) {
+    if (!confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) return;
+    
+    const orderIndex = DB.orders.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) return;
+    
+    const order = DB.orders[orderIndex];
+    
+    if (order.status !== 'completed' && order.status !== 'cancelled' && order.amount > 0) {
+        const userIndex = DB.users.findIndex(u => u.id === order.user_id);
+        if (userIndex !== -1) {
+            DB.users[userIndex].balance = (DB.users[userIndex].balance || 0) + order.amount;
+            
+            if (useSupabase && supabase) {
+                try {
+                    await supabase.from('users').update({ balance: DB.users[userIndex].balance }).eq('id', order.user_id);
+                    await supabase.from('transactions').insert({
+                        user_id: order.user_id,
+                        type: 'credit',
+                        description: `استرداد مبلغ طلب ملغي: ${order.type}`,
+                        amount: order.amount,
+                        transaction_date: new Date().toLocaleString('ar')
+                    });
+                } catch(err) {
+                    console.error('Error refunding:', err);
+                }
+            } else {
+                DB.transactions.push({
+                    id: Date.now(),
+                    user_id: order.user_id,
+                    type: 'credit',
+                    description: `استرداد مبلغ طلب ملغي: ${order.type}`,
+                    amount: order.amount,
+                    date: new Date().toLocaleString('ar')
+                });
+                saveDB();
+            }
+            
+            if (currentUser && currentUser.id === order.user_id) {
+                currentUser.balance = DB.users[userIndex].balance;
+                updateNav();
+            }
+            
+            showToast(`تم إلغاء الطلب واسترداد $${order.amount.toFixed(2)} إلى رصيد المستخدم`, 'success');
+        }
+    }
+    
+    DB.orders[orderIndex].status = 'cancelled';
+    DB.orders[orderIndex].cancelled_at = new Date().toLocaleString('ar');
+    
+    if (useSupabase && supabase) {
+        try {
+            await supabase.from('orders').update({ 
+                status: 'cancelled',
+                cancelled_at: new Date().toLocaleString('ar')
+            }).eq('id', orderId);
+        } catch(err) {
+            console.error('Error cancelling order:', err);
+        }
+    } else {
+        saveDB();
+    }
+    
+    renderDOrders();
+    renderDashboard();
+    showToast('تم إلغاء الطلب', 'success');
 }
 
 function renderDPM() {
@@ -1209,6 +1545,7 @@ function switchDash(name, el) {
   if (el) el.classList.add('active');
   renderDashboard();
 }
+
 // ============================================================
 // ADMIN HELPERS
 // ============================================================
@@ -1297,6 +1634,7 @@ function rejectWalletRequest(orderId) {
   renderDashboard();
   showToast('تم رفض الطلب', 'success');
 }
+
 // ============================================================
 // CRUD Operations
 // ============================================================
@@ -1392,6 +1730,7 @@ async function deleteRcPkg(id) {
     renderDashboard();
     showToast('تم حذف الباقة', 'success');
 }
+
 // ============================================================
 // Modal Open Functions
 // ============================================================
@@ -1641,6 +1980,7 @@ async function confirmAdminAddBal() {
   renderDashboard();
   showToast('تم إضافة $' + safeToFixed(amt) + ' للحساب ✅', 'success');
 }
+
 // ============================================================
 // PAYMENT METHODS MANAGEMENT
 // ============================================================
@@ -1814,6 +2154,7 @@ function previewQrUrl(type) {
         } else if (previewDiv) { previewDiv.style.display = 'none'; }
     }
 }
+
 // ============================================================
 // MOBILE MENU
 // ============================================================
