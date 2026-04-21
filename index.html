@@ -154,26 +154,26 @@
     <div class="sb-sec"><div class="sb-title">الإدارة</div><div class="sb-link" onclick="switchDash('users',this)"><span class="si">👤</span> المستخدمون <span id="pendingBadge" style="display:none;background:var(--red);color:#fff;font-size:0.7rem;padding:2px 7px;border-radius:50px;margin-right:auto">0</span></div><div class="sb-link" onclick="switchDash('orders',this)"><span class="si">🧾</span> الطلبات</div><div class="sb-link" onclick="switchDash('payment-methods',this)"><span class="si">💳</span> طرق الدفع</div><div class="sb-link" onclick="switchDash('custom-services',this)"><span class="si">✨</span> خدمات مخصصة</div></div>
   </div>
   <div class="dash-main">
-    
+
     <!-- OVERVIEW -->
     <div class="dash-sec active" id="dash-overview"><div class="dash-title">نظرة عامة</div><div class="dash-sub">مرحباً بك في لوحة تحكم زود</div><div class="dash-stats"><div class="stat-card"><div class="sl">الأرقام المتاحة</div><div class="sv gold" id="ov-avail">0</div><div class="ss">رقم متاح</div></div><div class="stat-card"><div class="sl">الأرقام المباعة</div><div class="sv red" id="ov-sold">0</div><div class="ss">رقم</div></div><div class="stat-card"><div class="sl">المستخدمون</div><div class="sv blue" id="ov-users">0</div><div class="ss">مسجل</div></div><div class="stat-card"><div class="sl">إجمالي الطلبات</div><div class="sv green" id="ov-orders">0</div><div class="ss">طلب</div></div><div class="stat-card"><div class="sl">طلبات شحن معلقة</div><div class="sv red" id="ov-pending">0</div><div class="ss" style="color:var(--red)">تحتاج موافقة</div></div><div class="stat-card"><div class="sl">إيرادات اليوم</div><div class="sv purple" id="ov-revenue">$0</div><div class="ss">دولار</div></div></div><div class="dtw"><div class="dth"><h3>آخر الطلبات</h3></div><table><thead><tr><th>المستخدم</th><th>الخدمة</th><th>التفاصيل</th><th>المبلغ</th><th>الوقت</th></tr></thead><tbody id="ovOrdersBody"></tbody></table></div></div>
 
     <!-- PHONE NUMBERS -->
-    <div class="dash-sec" id="dash-numbers"><div class="dash-title">الخطوط الهاتفية</div><div class="dash-sub">إدارة أرقام الخطوط العادية</div><div class="dtw"><div class="dth"><h3>الأرقام (<span id="dNumCount">0</span>)</h3><button class="add-btn" onclick="openAddNum('phone')">+ إضافة رقم</button></div><tr><thead><tr><th>الرقم</th><th>النوع</th><th>الدولة</th><th>الشبكة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="dNumBody"></tbody></table></div></div>
+    <div class="dash-sec" id="dash-numbers"><div class="dash-title">الخطوط الهاتفية</div><div class="dash-sub">إدارة أرقام الخطوط العادية</div><div class="dtw"><div class="dth"><h3>الأرقام (<span id="dNumCount">0</span>)</h3><button class="add-btn" onclick="openAddNum('phone')">+ إضافة رقم</button></div><table style="width:100%"><thead><tr><th>الرقم</th><th>النوع</th><th>الدولة</th><th>الشبكة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="dNumBody"></tbody></table></div></div>
 
     <!-- WHATSAPP NUMS -->
-    <div class="dash-sec" id="dash-whatsapp-nums"><div class="dash-title">أرقام واتساب</div><div class="dash-sub">إدارة أرقام واتساب</div><div class="dtw"><div class="dth"><h3>الأرقام</h3><button class="add-btn" onclick="openAddNum('whatsapp')">+ إضافة رقم</button></div><tr><thead><tr><th>الرقم</th><th>الدولة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></td></thead><tbody id="dWaBody"></tbody></table></div></div>
+    <div class="dash-sec" id="dash-whatsapp-nums"><div class="dash-title">أرقام واتساب</div><div class="dash-sub">إدارة أرقام واتساب</div><div class="dtw"><div class="dth"><h3>الأرقام</h3><button class="add-btn" onclick="openAddNum('whatsapp')">+ إضافة رقم</button></div><table style="width:100%"><thead><tr><th>الرقم</th><th>الدولة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="dWaBody"></tbody></table></div></div>
 
     <!-- TG NUMS -->
-    <div class="dash-sec" id="dash-tg-nums"><div class="dash-title">أرقام تلغرام</div><div class="dash-sub">إدارة أرقام تلغرام</div><div class="dtw"><div class="dth"><h3>الأرقام</h3><button class="add-btn" onclick="openAddNum('telegram')">+ إضافة رقم</button></div></table><thead><tr><th>الرقم</th><th>الدولة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="dTgBody"></tbody></table></div></div>
+    <div class="dash-sec" id="dash-tg-nums"><div class="dash-title">أرقام تلغرام</div><div class="dash-sub">إدارة أرقام تلغرام</div><div class="dtw"><div class="dth"><h3>الأرقام</h3><button class="add-btn" onclick="openAddNum('telegram')">+ إضافة رقم</button></div><table style="width:100%"><thead><tr><th>الرقم</th><th>الدولة</th><th>السعر</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="dTgBody"></tbody></table></div></div>
 
     <!-- SOCIAL PACKAGES -->
-    <div class="dash-sec" id="dash-social-pkgs"><div class="dash-title">باقات السوشيال</div><div class="dash-sub">إدارة باقات المتابعين والتفاعل</div><div class="dtw"><div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddSocial()">+ إضافة باقة</button></div><tr><thead><tr><th>المنصة</th><th>النوع</th><th>الكمية</th><th>السعر</th><th>إجراء</th></tr></thead><tbody id="dSocBody"></tbody></td></div></div>
+    <div class="dash-sec" id="dash-social-pkgs"><div class="dash-title">باقات السوشيال</div><div class="dash-sub">إدارة باقات المتابعين والتفاعل</div><div class="dtw"><div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddSocial()">+ إضافة باقة</button></div><table style="width:100%"><thead><tr><th>المنصة</th><th>النوع</th><th>الكمية</th><th>السعر</th><th>إجراء</th></tr></thead><tbody id="dSocBody"></tbody></table></div></div>
 
     <!-- TG VERIFY -->
-    <div class="dash-sec" id="dash-tg-verify"><div class="dash-title">باقات توثيق تلغرام</div><div class="dash-sub">إدارة خدمات توثيق تلغرام</div><div class="dtw"><div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddTgVerify()">+ إضافة باقة</button></div><tr><thead><tr><th>النوع</th><th>الوصف</th><th>السعر</th><th>إجراء</th></tr></thead><tbody id="dTgVerifyBody"></tbody></td></div></div>
+    <div class="dash-sec" id="dash-tg-verify"><div class="dash-title">باقات توثيق تلغرام</div><div class="dash-sub">إدارة خدمات توثيق تلغرام</div><div class="dtw"><div class="dth"><h3>الباقات</h3><button class="add-btn" onclick="openAddTgVerify()">+ إضافة باقة</button></div><table style="width:100%"><thead><tr><th>النوع</th><th>الوصف</th><th>السعر</th><th>إجراء</th></tr></thead><tbody id="dTgVerifyBody"></tbody></table></div></div>
 
-    <!-- GAMES - FIXED -->
+    <!-- GAMES -->
     <div class="dash-sec" id="dash-games-pkgs">
       <div class="dash-title">باقات الألعاب والبرامج</div>
       <div class="dash-sub">إدارة باقات شحن الألعاب</div>
@@ -186,7 +186,7 @@
       </div>
     </div>
 
-    <!-- RECHARGE PKGS - FIXED -->
+    <!-- RECHARGE PKGS -->
     <div class="dash-sec" id="dash-recharge-pkgs">
       <div class="dash-title">باقات شحن الرصيد</div>
       <div class="dash-sub">إدارة فئات الشحن</div>
@@ -200,7 +200,7 @@
     </div>
 
     <!-- USERS -->
-    <div class="dash-sec" id="dash-users"><div class="dash-title">المستخدمون</div><div class="dash-sub">قائمة جميع المسجلين وإدارة أرصدتهم</div><div style="margin-bottom:16px"><button class="add-btn" onclick="openAdminAddBal()">💰 إضافة رصيد لمستخدم</button></div><div class="dtw"><div class="dth"><h3>المستخدمون</h3></div><table><thead><tr><th>الاسم</th><th>البريد</th><th>الرصيد</th><th>الدور</th><th>تاريخ التسجيل</th><th>إجراء</th></tr></thead><tbody id="dUsersBody"></tbody></table></div><div class="dtw" style="margin-top:20px"><div class="dth"><h3>🔔 طلبات شحن المحفظة المعلقة</h3></div></td><thead><tr><th>المستخدم</th><th>المبلغ المطلوب</th><th>الوقت</th><th>إجراء</th></tr></thead><tbody id="dPendingBody"></tbody></table></div></div>
+    <div class="dash-sec" id="dash-users"><div class="dash-title">المستخدمون</div><div class="dash-sub">قائمة جميع المسجلين وإدارة أرصدتهم</div><div style="margin-bottom:16px"><button class="add-btn" onclick="openAdminAddBal()">💰 إضافة رصيد لمستخدم</button></div><div class="dtw"><div class="dth"><h3>المستخدمون</h3></div><table style="width:100%"><thead><tr><th>الاسم</th><th>البريد</th><th>الرصيد</th><th>الدور</th><th>تاريخ التسجيل</th><th>إجراء</th></tr></thead><tbody id="dUsersBody"></tbody></table></div><div class="dtw" style="margin-top:20px"><div class="dth"><h3>🔔 طلبات شحن المحفظة المعلقة</h3></div><table style="width:100%"><thead><tr><th>المستخدم</th><th>المبلغ المطلوب</th><th>الوقت</th><th>إجراء</th></tr></thead><tbody id="dPendingBody"></tbody></table></div></div>
 
     <!-- ORDERS -->
     <div class="dash-sec" id="dash-orders">
