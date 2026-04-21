@@ -211,7 +211,7 @@ async function loadAllDataFromSupabase() {
 }
 
 async function refreshAllData() {
-  if (useSupabase) {
+  if (useSupabase && supabase) {
     await loadAllDataFromSupabase();
   } else {
     loadDB();
@@ -224,6 +224,17 @@ async function refreshAllData() {
   renderCustomServicesOnHome();
   renderCustomServicesList();
   renderDOrders();
+  
+  // إعادة تحميل جميع جداول لوحة التحكم
+  renderDNum();
+  renderDWa();
+  renderDTg();
+  renderDSoc();
+  renderDTgV();
+  renderDGames();
+  renderDRc();
+  renderDUsers();
+  renderDPM();
 }
 
 function saveDB() {
