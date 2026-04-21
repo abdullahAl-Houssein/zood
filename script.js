@@ -722,7 +722,7 @@ async function confirmAddFundsRequest() {
   showToast('تم إرسال الطلب! تواصل مع الإدارة على واتساب ✅', 'success');
 }
 // ============================================================
-// PURCHASE CONFIRMATION WITH WHATSAPP DIRECT
+// PURCHASE SYSTEM WITH BALANCE DEDUCTION
 // ============================================================
 let pendingOrderData = null;
 
@@ -730,6 +730,12 @@ function openBuyNum(id) {
     if (!currentUser) { showPage('login'); return; }
     const n = DB.numbers.find(x => x.id === id);
     if (!n || n.status !== 'available') { showToast('هذا الرقم غير متاح', 'error'); return; }
+    
+    // التحقق من الرصيد أولاً
+    if ((currentUser.balance || 0) < n.price) {
+        showToast(`❌ رصيدك غير كافٍ! تحتاج إلى $${n.price.toFixed(2)} ورصيدك الحالي $${(currentUser.balance || 0).toFixed(2)}`, 'error');
+        return;
+    }
     
     pendingOrderData = {
         type: 'رقم ' + (n.type === 'phone' ? 'هاتفي' : n.type === 'whatsapp' ? 'واتساب' : 'تلغرام'),
@@ -745,6 +751,12 @@ function openBuyNum(id) {
 
 function openBuyDirect(desc, price, cb, category, pkgId) {
     if (!currentUser) { showPage('login'); return; }
+    
+    // التحقق من الرصيد أولاً
+    if ((currentUser.balance || 0) < price) {
+        showToast(`❌ رصيدك غير كافٍ! تحتاج إلى $${price.toFixed(2)} ورصيدك الحالي $${(currentUser.balance || 0).toFixed(2)}`, 'error');
+        return;
+    }
     
     let typeName = 'خدمة';
     if (category === 'social') typeName = 'باقة سوشيال ميديا';
@@ -774,24 +786,27 @@ function showPurchaseConfirmation() {
     confirmModal.id = 'purchaseConfirmModal';
     confirmModal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;';
     
+    const afterBalance = (currentUser.balance || 0) - pendingOrderData.price;
+    
     confirmModal.innerHTML = `
         <div class="modal-box" style="max-width:500px;">
             <div style="text-align:center;font-size:3rem;margin-bottom:15px">🛍️</div>
-            <div class="modal-title" style="text-align:center;margin-bottom:10px">تأكيد الطلب</div>
+            <div class="modal-title" style="text-align:center;margin-bottom:10px">تأكيد الشراء</div>
             <div class="modal-sub" style="text-align:center;margin-bottom:20px">يرجى مراجعة تفاصيل طلبك</div>
             <div style="background:var(--dark3);border-radius:12px;padding:20px;margin-bottom:20px">
                 <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">الخدمة:</span><span style="font-weight:600">${pendingOrderData.type}</span></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">التفاصيل:</span><span style="font-weight:600">${pendingOrderData.detail}</span></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="color:var(--text2)">السعر:</span><span style="color:var(--gold);font-weight:700">$${pendingOrderData.price.toFixed(2)}</span></div>
                 <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">رصيدك الحالي:</span><span style="color:var(--green);font-weight:700">$${safeToFixed(currentUser?.balance)}</span></div>
+                <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1)"><span style="color:var(--text2)">الرصيد بعد الشراء:</span><span style="color:${afterBalance >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">$${afterBalance.toFixed(2)}</span></div>
             </div>
             <div class="fg"><label class="fl">📝 ملاحظاتك (اختياري)</label><textarea id="orderNotes" class="fi" rows="3" placeholder="أدخل أي معلومات إضافية... مثال: رابط القناة، اسم المستخدم، رقم الحساب..." style="resize:vertical"></textarea></div>
             <div style="background:rgba(245,200,66,0.1);border-radius:10px;padding:12px;margin:20px 0;font-size:0.85rem;color:var(--text2);text-align:center">
-                ⚠️ سيتم تحويلك إلى واتساب لإتمام الطلب
+                ⚠️ سيتم خصم المبلغ من رصيدك فور تأكيد الطلب
             </div>
             <div style="display:flex;gap:10px;justify-content:center">
                 <button class="m-cancel" onclick="closePurchaseConfirm()" style="padding:12px 24px">إلغاء</button>
-                <button class="m-confirm" onclick="confirmAndSendToWhatsApp()" style="padding:12px 24px">تأكيد وإرسال</button>
+                <button class="m-confirm" onclick="confirmPurchaseAndDeduct()" style="padding:12px 24px">تأكيد الشراء</button>
             </div>
         </div>
     `;
@@ -808,36 +823,107 @@ function closePurchaseConfirm() {
     }
 }
 
-function confirmAndSendToWhatsApp() {
+async function confirmPurchaseAndDeduct() {
     if (!pendingOrderData) {
         showToast('حدث خطأ، يرجى المحاولة مرة أخرى', 'error');
         return;
     }
     
     const userNotes = document.getElementById('orderNotes')?.value.trim() || '';
+    const price = pendingOrderData.price;
     
+    // التحقق من الرصيد مرة أخرى
+    if ((currentUser.balance || 0) < price) {
+        showToast(`❌ رصيدك غير كافٍ!`, 'error');
+        closePurchaseConfirm();
+        pendingOrderData = null;
+        return;
+    }
+    
+    // خصم الرصيد
+    const newBalance = (currentUser.balance || 0) - price;
+    
+    if (useSupabase && supabase) {
+        // تحديث رصيد المستخدم
+        const { error: updateError } = await supabase.from('users').update({ balance: newBalance }).eq('id', currentUser.id);
+        if (updateError) {
+            console.error('Error updating balance:', updateError);
+            showToast('حدث خطأ أثناء معالجة الطلب', 'error');
+            return;
+        }
+        
+        // تسجيل المعاملة
+        await supabase.from('transactions').insert({
+            user_id: currentUser.id,
+            type: 'debit',
+            description: `شراء: ${pendingOrderData.type} - ${pendingOrderData.detail}`,
+            amount: price,
+            transaction_date: new Date().toLocaleString('ar')
+        });
+    } else {
+        const userIndex = DB.users.findIndex(u => u.id === currentUser.id);
+        if (userIndex !== -1) {
+            DB.users[userIndex].balance = newBalance;
+        }
+        DB.transactions.push({
+            id: Date.now(),
+            user_id: currentUser.id,
+            type: 'debit',
+            description: `شراء: ${pendingOrderData.type} - ${pendingOrderData.detail}`,
+            amount: price,
+            date: new Date().toLocaleString('ar')
+        });
+        saveDB();
+    }
+    
+    // تحديث currentUser
+    currentUser.balance = newBalance;
+    updateNav();
+    
+    // حفظ الطلب في قاعدة البيانات
+    await saveOrderToDatabase(pendingOrderData, userNotes);
+    
+    // إرسال إشعار واتساب للإدارة
+    sendWhatsAppNotification(pendingOrderData, userNotes);
+    
+    closePurchaseConfirm();
+    showToast(`✅ تم شراء الخدمة بنجاح! تم خصم $${price.toFixed(2)} من رصيدك`, 'success');
+    
+    // إذا كان شراء رقم، قم بتحديث حالة الرقم
+    if (pendingOrderData.itemType === 'number' && pendingOrderData.itemId) {
+        if (useSupabase && supabase) {
+            await supabase.from('numbers').update({ status: 'sold' }).eq('id', pendingOrderData.itemId);
+        } else {
+            const numIndex = DB.numbers.findIndex(n => n.id === pendingOrderData.itemId);
+            if (numIndex !== -1) DB.numbers[numIndex].status = 'sold';
+            saveDB();
+        }
+        renderNumbersByType('phone');
+        renderNumbersByType('whatsapp');
+        renderNumbersByType('telegram');
+    }
+    
+    renderWallet();
+    renderDashboard();
+    pendingOrderData = null;
+}
+
+function sendWhatsAppNotification(orderData, userNotes) {
     let message = `🛍️ *طلب شراء جديد من زود*\n\n`;
     message += `👤 *اسم المستخدم:* ${currentUser.name}\n`;
     message += `📧 *البريد الإلكتروني:* ${currentUser.email}\n`;
     message += `🆔 *رقم المستخدم:* ${currentUser.id}\n`;
-    message += `📦 *نوع الخدمة:* ${pendingOrderData.type}\n`;
-    message += `📝 *تفاصيل الخدمة:* ${pendingOrderData.detail}\n`;
-    message += `💰 *السعر:* $${pendingOrderData.price.toFixed(2)}\n`;
+    message += `📦 *نوع الخدمة:* ${orderData.type}\n`;
+    message += `📝 *تفاصيل الخدمة:* ${orderData.detail}\n`;
+    message += `💰 *السعر:* $${orderData.price.toFixed(2)}\n`;
+    message += `💵 *تم الخصم من الرصيد:* ✅\n`;
     if (userNotes) message += `📌 *ملاحظات العميل:* ${userNotes}\n`;
     message += `📅 *تاريخ الطلب:* ${new Date().toLocaleString('ar')}\n\n`;
-    message += `✅ *يرجى تأكيد الطلب وتزويد العميل بالبيانات المطلوبة*`;
+    message += `✅ *يرجى تجهيز الطلب وتزويد العميل بالبيانات المطلوبة*`;
     
     const encodedMessage = encodeURIComponent(message);
     const adminWhatsApp = '963949277889';
-    
     window.open(`https://wa.me/${adminWhatsApp}?text=${encodedMessage}`, '_blank');
-    
-    saveOrderToDatabase(pendingOrderData, userNotes);
-    
-    closePurchaseConfirm();
-    showToast('✅ تم إرسال طلبك! تم تحويلك إلى واتساب للتواصل', 'success');
-    
-    pendingOrderData = null;
 }
 
 async function saveOrderToDatabase(orderData, userNotes) {
@@ -850,9 +936,10 @@ async function saveOrderToDatabase(orderData, userNotes) {
         user_notes: userNotes || '',
         amount: orderData.price,
         requested_amt: orderData.price,
-        status: 'pending_approval',
+        status: 'completed', // تم التنفيذ لأن الرصيد خصم
         order_time: new Date().toLocaleString('ar'),
-        whatsapp_sent: true
+        is_completed: true,
+        completed_at: new Date().toLocaleString('ar')
     };
     
     console.log('Saving order:', order);
@@ -1105,48 +1192,79 @@ function renderDSoc() {
 
 function renderDTgV() {
     const tb = document.getElementById('dTgVerifyBody');
-    if (!tb) return;
-    
-    if (!DB.tgVerifyPackages || DB.tgVerifyPackages.length === 0) {
-        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات<\/td><\/tr>';
+    if (!tb) {
+        console.log('dTgVerifyBody element not found');
         return;
     }
     
-    tb.innerHTML = DB.tgVerifyPackages.map(p => `
-        <tr>
-            <td style="font-weight:600">${p.type || ''}</td>
-            <td style="color:var(--text2);font-size:.82rem">${p.description || ''}</td>
-            <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
-            <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف</button></td>
-        </tr>
-    `).join('');
+    console.log('Rendering TG verify packages, data length:', DB.tgVerifyPackages?.length);
+    
+    if (!DB.tgVerifyPackages || DB.tgVerifyPackages.length === 0) {
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات توثيق</td></tr>';
+        return;
+    }
+    
+    tb.innerHTML = DB.tgVerifyPackages.map(p => {
+        const typeValue = p.type || 'غير محدد';
+        const descValue = p.description || p.desc || '';
+        const priceValue = (p.price !== undefined && p.price !== null) ? p.price : 0;
+        
+        return `
+            <tr>
+                <td style="font-weight:600">${typeValue}</td>
+                <td style="color:var(--text2);font-size:.82rem">${descValue}</td>
+                <td style="color:var(--gold);font-weight:700">$${priceValue.toFixed(2)}</td>
+                <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف</button></td>
+            </tr>
+        `;
+    }).join('');
 }
 
 function renderDGames() {
     const tb = document.getElementById('dGamesBody');
-    if (!tb) return;
-    
-    if (!DB.gamePackages || DB.gamePackages.length === 0) {
-        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات ألعاب<\/td><\/tr>';
+    if (!tb) {
+        console.log('dGamesBody element not found');
         return;
     }
     
-    tb.innerHTML = DB.gamePackages.map(p => `
-        <tr>
-            <td style="font-weight:600">${p.icon || '🎮'} ${p.game || ''}</td>
-            <td>${p.package_name || p.package || ''}</td>
-            <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}</td>
-            <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
-        </tr>
-    `).join('');
+    console.log('Rendering game packages, data length:', DB.gamePackages?.length);
+    console.log('Game packages data:', DB.gamePackages);
+    
+    if (!DB.gamePackages || DB.gamePackages.length === 0) {
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات ألعاب</td></tr>';
+        return;
+    }
+    
+    tb.innerHTML = DB.gamePackages.map(p => {
+        const packageName = p.package_name || p.package || 'غير محدد';
+        const gameName = p.game || 'غير محدد';
+        const gameIcon = p.icon || '🎮';
+        const gamePrice = (p.price !== undefined && p.price !== null) ? p.price : 0;
+        
+        return `
+            <tr>
+                <td style="font-weight:600">${gameIcon} ${gameName}</td>
+                <td>${packageName}</td>
+                <td style="color:var(--gold);font-weight:700">$${gamePrice.toFixed(2)}</td>
+                <td><button class="del-btn" onclick="deleteGame(${p.id})">حذف</button></td>
+            </tr>
+        `;
+    }).join('');
 }
+
 
 function renderDRc() {
     const tb = document.getElementById('dRcBody'); 
-    if (!tb) return;
+    if (!tb) {
+        console.log('dRcBody element not found');
+        return;
+    }
+    
+    console.log('Rendering recharge packages, data length:', DB.rechargePkgs?.length);
+    console.log('Recharge packages data:', DB.rechargePkgs);
     
     if (!DB.rechargePkgs || DB.rechargePkgs.length === 0) {
-        tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
+        tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن</td></tr>';
         return;
     }
     
@@ -1160,13 +1278,14 @@ function renderDRc() {
             <tr>
                 <td style="font-weight:600">${operatorValue}</td>
                 <td>${countryFlags[countryValue] || '🌍'} ${countryValue}</td>
-                <td>${qtyValue.toLocaleString()} وحدة<\/td>
-                <td style="color:var(--gold);font-weight:700">$${priceValue.toFixed(2)}<\/td>
-                <td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف<\/button><\/td>
+                <td>${qtyValue.toLocaleString()} وحدة</td>
+                <td style="color:var(--gold);font-weight:700">$${priceValue.toFixed(2)}</td>
+                <td><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف</button></td>
             </tr>
         `;
     }).join('');
 }
+
 
 function renderDUsers() {
     const tb = document.getElementById('dUsersBody');
