@@ -6,25 +6,7 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 
 let supabase = null;
 let useSupabase = false;
-// ============================================================
-// CHECK DOM ELEMENTS ON LOAD
-// ============================================================
-function checkDashboardElements() {
-    const elements = [
-        'dGamesBody', 'dRcBody', 'dTgVerifyBody', 'dSocBody',
-        'dNumBody', 'dWaBody', 'dTgBody', 'dUsersBody', 'dOrdersBody', 'pmGrid'
-    ];
-    
-    console.log('=== Checking Dashboard Elements ===');
-    elements.forEach(el => {
-        const element = document.getElementById(el);
-        if (element) {
-            console.log(`✅ ${el} found`);
-        } else {
-            console.log(`❌ ${el} NOT found`);
-        }
-    });
-}
+
 // ============================================================
 // FALLBACK LOCAL DB
 // ============================================================
@@ -198,8 +180,6 @@ async function loadAllDataFromSupabase() {
         price: pkg.price || 0
       }));
       console.log('Loaded recharge packages:', DB.rechargePkgs.length);
-    } else {
-      DB.rechargePkgs = [];
     }
     
     if (ordersRes.data) {
@@ -246,17 +226,10 @@ async function refreshAllData() {
   renderCustomServicesOnHome();
   renderCustomServicesList();
   renderDOrders();
-  
-  // إعادة تحميل جميع جداول لوحة التحكم
-  renderDNum();
-  renderDWa();
-  renderDTg();
-  renderDSoc();
-  renderDTgV();
   renderDGames();
   renderDRc();
-  renderDUsers();
-  renderDPM();
+  renderDTgV();
+  renderDSoc();
 }
 
 function saveDB() {
@@ -1189,9 +1162,11 @@ async function deleteCustomService(id) {
 }
 
 // ============================================================
-// DASHBOARD
+// DASHBOARD - FIXED RENDER FUNCTIONS
 // ============================================================
 function renderDashboard() {
+  console.log('=== renderDashboard called ===');
+  
   const avail = DB.numbers.filter(n => n.status === 'available').length;
   const sold = DB.numbers.filter(n => n.status === 'sold').length;
   const elA = document.getElementById('ov-avail'), elS = document.getElementById('ov-sold');
@@ -1208,8 +1183,17 @@ function renderDashboard() {
   const badge = document.getElementById('pendingBadge');
   if (badge) { badge.style.display = pending > 0 ? '' : 'none'; badge.textContent = pending; }
   
-  renderDNum(); renderDWa(); renderDTg(); renderDSoc();
-  renderDTgV(); renderDGames(); renderDRc(); renderDUsers(); renderDOrders(); renderDPM();
+  // استدعاء جميع دوال العرض
+  renderDNum();
+  renderDWa();
+  renderDTg();
+  renderDSoc();
+  renderDTgV();
+  renderDGames();
+  renderDRc();
+  renderDUsers();
+  renderDOrders();
+  renderDPM();
   
   const rb = document.getElementById('ovOrdersBody');
   if (rb) {
@@ -1223,6 +1207,8 @@ function renderDashboard() {
       </tr>
     `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد طلبات<\/td><\/tr>';
   }
+  
+  console.log('=== renderDashboard completed ===');
 }
 
 function renderDNum() {
@@ -1265,103 +1251,135 @@ function renderDTg() {
 }
 
 function renderDSoc() {
-  const tb = document.getElementById('dSocBody'); if (!tb) return;
-  tb.innerHTML = DB.socialPackages.map(p => `<tr>
-    <td>${socialEmojis[p.platform] || '📱'} ${p.platform || ''}<\/td>
-    <td>${p.type || ''}<\/td>
-    <td style="font-weight:700">${safeFormatNumber(p.qty)}<\/td>
-    <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
-    <td><button class="del-btn" onclick="deleteSoc(${p.id})">حذف<\/button><\/td>
-  </tr>`).join('');
+    const tb = document.getElementById('dSocBody');
+    if (!tb) {
+        console.error('dSocBody element not found!');
+        return;
+    }
+    
+    console.log('Rendering social packages, count:', DB.socialPackages?.length);
+    
+    if (!DB.socialPackages || DB.socialPackages.length === 0) {
+        tb.innerHTML = '</table><td colspan="5" style="text-align:center;padding:30px;color:var(--text3)">لا توجد باقات سوشيال<\/td><\/tr>';
+        return;
+    }
+    
+    let html = '';
+    for (const p of DB.socialPackages) {
+        html += `
+            <tr>
+                <td style="padding:12px">${socialEmojis[p.platform] || '📱'} ${p.platform || ''}<\/td>
+                <td style="padding:12px">${p.type || ''}<\/td>
+                <td style="padding:12px;font-weight:700">${(p.qty || 0).toLocaleString()}<\/td>
+                <td style="color:var(--gold);font-weight:700;padding:12px">$${(p.price || 0).toFixed(2)}<\/td>
+                <td style="padding:12px"><button class="del-btn" onclick="deleteSoc(${p.id})">حذف<\/button><\/td>
+            </tr>
+        `;
+    }
+    tb.innerHTML = html;
+    console.log('Social packages rendered, rows:', DB.socialPackages.length);
 }
 
 function renderDTgV() {
     const tb = document.getElementById('dTgVerifyBody');
-    if (!tb) return;
-    
-    if (!DB.tgVerifyPackages || DB.tgVerifyPackages.length === 0) {
-        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات توثيق<\/td><\/tr>';
+    if (!tb) {
+        console.error('dTgVerifyBody element not found!');
         return;
     }
     
-    tb.innerHTML = DB.tgVerifyPackages.map(p => `
-        <tr>
-            <td style="font-weight:600">${p.type || ''}</td>
-            <td style="color:var(--text2);font-size:.82rem">${p.description || ''}</td>
-            <td style="color:var(--gold);font-weight:700">$${safeToFixed(p.price)}<\/td>
-            <td><button class="del-btn" onclick="deleteTgV(${p.id})">حذف<\/button><\/td>
-        </tr>
-    `).join('');
+    console.log('Rendering TG verify packages, count:', DB.tgVerifyPackages?.length);
+    
+    if (!DB.tgVerifyPackages || DB.tgVerifyPackages.length === 0) {
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text3)">لا توجد باقات توثيق<\/td><\/tr>';
+        return;
+    }
+    
+    let html = '';
+    for (const p of DB.tgVerifyPackages) {
+        html += `
+            <tr>
+                <td style="padding:12px;font-weight:600">${p.type || ''}<\/td>
+                <td style="padding:12px;color:var(--text2)">${p.description || p.desc || ''}<\/td>
+                <td style="color:var(--gold);font-weight:700;padding:12px">$${(p.price || 0).toFixed(2)}<\/td>
+                <td style="padding:12px"><button class="del-btn" onclick="deleteTgV(${p.id})">حذف<\/button><\/td>
+            </tr>
+        `;
+    }
+    tb.innerHTML = html;
+    console.log('TG verify packages rendered, rows:', DB.tgVerifyPackages.length);
 }
 
 function renderDGames() {
     const tb = document.getElementById('dGamesBody');
     if (!tb) {
-        console.log('dGamesBody element not found');
+        console.error('dGamesBody element not found!');
         return;
     }
     
-    console.log('Rendering game packages, data length:', DB.gamePackages?.length);
-    console.log('Game packages data:', DB.gamePackages);
+    console.log('Rendering game packages, count:', DB.gamePackages?.length);
+    console.log('Game data:', DB.gamePackages);
     
     if (!DB.gamePackages || DB.gamePackages.length === 0) {
-        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات ألعاب<\/td><\/tr>';
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text3)">لا توجد باقات ألعاب<\/td><\/tr>';
         return;
     }
     
-    tb.innerHTML = DB.gamePackages.map(p => {
+    let html = '';
+    for (const p of DB.gamePackages) {
         const packageName = p.package_name || p.package || 'غير محدد';
         const gameName = p.game || 'غير محدد';
         const gameIcon = p.icon || '🎮';
         const gamePrice = (p.price !== undefined && p.price !== null) ? p.price : 0;
         
-        return `
+        html += `
             <tr>
-                <td style="font-weight:600;padding:12px">${gameIcon} ${gameName}<\/td>
+                <td style="padding:12px;font-weight:600">${gameIcon} ${gameName}<\/td>
                 <td style="padding:12px">${packageName}<\/td>
                 <td style="color:var(--gold);font-weight:700;padding:12px">$${gamePrice.toFixed(2)}<\/td>
                 <td style="padding:12px"><button class="del-btn" onclick="deleteGame(${p.id})">حذف<\/button><\/td>
             </tr>
         `;
-    }).join('');
-    
-    console.log('Rendered game packages HTML length:', tb.innerHTML.length);
+    }
+    tb.innerHTML = html;
+    console.log('Game packages rendered, rows:', DB.gamePackages.length);
 }
 
 function renderDRc() {
     const tb = document.getElementById('dRcBody');
     if (!tb) {
-        console.log('dRcBody element not found');
+        console.error('dRcBody element not found!');
         return;
     }
     
-    console.log('Rendering recharge packages, data length:', DB.rechargePkgs?.length);
-    console.log('Recharge packages data:', DB.rechargePkgs);
+    console.log('Rendering recharge packages, count:', DB.rechargePkgs?.length);
+    console.log('Recharge data:', DB.rechargePkgs);
     
     if (!DB.rechargePkgs || DB.rechargePkgs.length === 0) {
-        tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد باقات شحن<\/td><\/tr>';
+        tb.innerHTML = '<td><td colspan="5" style="text-align:center;padding:30px;color:var(--text3)">لا توجد باقات شحن<\/td><\/tr>';
         return;
     }
     
-    tb.innerHTML = DB.rechargePkgs.map(pkg => {
+    let html = '';
+    for (const pkg of DB.rechargePkgs) {
         const operatorValue = pkg.operator || 'غير محدد';
         const countryValue = pkg.country || 'غير محدد';
         const qtyValue = (pkg.quantity !== undefined && pkg.quantity !== null) ? pkg.quantity : 0;
         const priceValue = (pkg.price !== undefined && pkg.price !== null) ? pkg.price : 0;
         
-        return `
+        html += `
             <tr>
-                <td style="font-weight:600;padding:12px">${operatorValue}<\/td>
+                <td style="padding:12px;font-weight:600">${operatorValue}<\/td>
                 <td style="padding:12px">${countryFlags[countryValue] || '🌍'} ${countryValue}<\/td>
                 <td style="padding:12px">${qtyValue.toLocaleString()} وحدة<\/td>
                 <td style="color:var(--gold);font-weight:700;padding:12px">$${priceValue.toFixed(2)}<\/td>
                 <td style="padding:12px"><button class="del-btn" onclick="deleteRcPkg(${pkg.id})">حذف<\/button><\/td>
-            <tr>
+            </tr>
         `;
-    }).join('');
-    
-    console.log('Rendered recharge packages HTML length:', tb.innerHTML.length);
+    }
+    tb.innerHTML = html;
+    console.log('Recharge packages rendered, rows:', DB.rechargePkgs.length);
 }
+
 function renderDUsers() {
     const tb = document.getElementById('dUsersBody');
     if (!tb) return;
@@ -1393,7 +1411,7 @@ function renderDUsers() {
                 <\/td>
             </tr>`).join('');
         } else {
-            pb.innerHTML = '<td><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
+            pb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">لا توجد طلبات معلقة<\/td><\/tr>';
         }
     }
 }
@@ -1987,11 +2005,7 @@ async function confirmAddRcPkg() {
     }
     
     closeModal('addRcPkgModal');
-    
-    // إعادة تحميل البيانات من قاعدة البيانات
     await refreshAllData();
-    
-    // إعادة عرض لوحة التحكم
     renderDashboard();
     
     document.getElementById('nRcOp').value = '';
