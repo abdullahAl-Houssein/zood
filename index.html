@@ -353,7 +353,28 @@
 
 <!-- ADMIN ADD BALANCE MODAL -->
 <div class="modal-ov" id="adminAddBalModal"><div class="modal-box"><div class="modal-title">💰 إضافة رصيد لمستخدم</div><div class="modal-sub">إضافة رصيد مباشرة من الأدمن لأي حساب</div><div class="fg"><label class="fl">اختر المستخدم</label><select class="fi" id="adminBalUser"></select></div><div class="fg"><label class="fl">المبلغ (USD)</label><input type="number" class="fi" id="adminBalAmt" placeholder="مثال: 10" min="0.5" step="0.5"></div><div class="fg"><label class="fl">ملاحظة (اختياري)</label><input type="text" class="fi" id="adminBalNote" placeholder="سبب الإضافة"></div><div class="modal-foot"><button class="m-cancel" onclick="closeModal('adminAddBalModal')">إلغاء</button><button class="m-confirm" onclick="confirmAdminAddBal()">إضافة الرصيد</button></div></div></div>
-
+<!-- ORDERS - أضف هذا القسم هنا -->
+<div class="dash-sec" id="dash-orders">
+    <div class="dash-title">الطلبات</div>
+    <div class="dash-sub">جميع العمليات المنفذة - <span id="pendingOrdersCount">0</span> طلب قيد الانتظار</div>
+    
+    <!-- أزرار التصفية -->
+    <div class="tab-bar" style="margin-bottom:20px">
+        <button class="tab-btn active" onclick="filterOrders('all',this)">📋 الكل</button>
+        <button class="tab-btn" onclick="filterOrders('completed',this)">✅ المنتهية</button>
+        <button class="tab-btn" onclick="filterOrders('pending',this)">⏳ قيد الانتظار</button>
+    </div>
+    
+    <div class="dtw">
+        <div class="dth"><h3>سجل الطلبات</h3></div>
+        <table style="width:100%">
+            <thead>
+                <tr><th>المستخدم</th><th>النوع</th><th>التفاصيل</th><th>المبلغ</th><th>ملاحظات</th><th>الحالة</th><th>الوقت</th><th>إجراء</th></tr>
+            </thead>
+            <tbody id="dOrdersBody"></tbody>
+        </table>
+    </div>
+</div>
 <!-- EDIT PAYMENT METHODS MODAL -->
 <div class="modal-ov" id="editPMModal"><div class="modal-box"><div class="modal-title">⚙️ إعدادات طرق الدفع</div><div class="modal-sub">تعديل معلومات كل طريقة دفع</div><div class="tab-bar"><button class="tab-btn active" onclick="switchPMTab('binance',this)">Binance</button><button class="tab-btn" onclick="switchPMTab('shamcash',this)">شام كاش</button><button class="tab-btn" onclick="switchPMTab('western',this)">Western Union</button></div><div id="pmt-binance" class="tab-content active"><div class="fg"><label class="fl">رقم محفظة USDT (TRC20)</label><input type="text" class="fi" id="pm-binance-addr" placeholder="T..."></div><div class="fg"><label class="fl">UID Binance Pay</label><input type="text" class="fi" id="pm-binance-uid" placeholder="123456789"></div><div class="fg"><label class="fl">رابط QR Code</label><input type="text" class="fi" id="pm-binance-qr" placeholder="https://..."></div><div class="fg" style="display:flex;align-items:center;gap:12px"><label class="fl" style="margin:0">تفعيل طريقة الدفع</label><input type="checkbox" id="pm-binance-active" style="width:18px;height:18px;cursor:pointer"></div></div><div id="pmt-shamcash" class="tab-content"><div class="fg"><label class="fl">عنوان محفظة شام كاش</label><input type="text" class="fi" id="pm-sham-num" placeholder="c8a4d105019df664d62048e38d986"></div><div class="fg"><label class="fl">اسم صاحب المحفظة</label><input type="text" class="fi" id="pm-sham-name" placeholder="عبدالحميد محمد الحسين"></div><div class="fg"><label class="fl">رقم الهاتف</label><input type="text" class="fi" id="pm-sham-phone" placeholder="0949277889"></div><div class="fg"><label class="fl">صورة الباركود</label><div style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label style="flex:1;padding:12px;background:var(--dark4);border:1.5px dashed rgba(245,200,66,0.3);border-radius:10px;cursor:pointer;text-align:center;font-size:0.85rem;color:var(--text2);min-width:120px">📁 اختيار صورة<input type="file" id="shamQrFile" accept="image/*" style="display:none"></label></div><div id="shamQrPreview" style="display:none;text-align:center"><img id="shamQrPreviewImg" src="" style="max-width:120px;border-radius:10px;border:2px solid rgba(245,200,66,0.4)"><br><small style="color:var(--text3);font-size:0.75rem">الصورة المرفوعة</small></div><input type="text" class="fi" id="pm-sham-qr" placeholder="رابط الصورة" readonly style="background:var(--dark4);direction:ltr"></div></div><div class="fg" style="display:flex;align-items:center;gap:12px"><label class="fl" style="margin:0">تفعيل طريقة الدفع</label><input type="checkbox" id="pm-sham-active" style="width:18px;height:18px;cursor:pointer"></div></div><div id="pmt-western" class="tab-content"><div class="fg"><label class="fl">الاسم الكامل</label><input type="text" class="fi" id="pm-wu-name" placeholder="Full Name"></div><div class="fg"><label class="fl">الدولة</label><input type="text" class="fi" id="pm-wu-country" placeholder="Syria"></div><div class="fg" style="display:flex;align-items:center;gap:12px"><label class="fl" style="margin:0">تفعيل طريقة الدفع</label><input type="checkbox" id="pm-wu-active" style="width:18px;height:18px;cursor:pointer"></div></div><div class="modal-foot"><button class="m-cancel" onclick="closeModal('editPMModal')">إلغاء</button><button class="m-confirm" onclick="savePaymentMethods()">حفظ التغييرات</button></div></div></div>
 
